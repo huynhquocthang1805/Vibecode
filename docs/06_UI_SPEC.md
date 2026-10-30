@@ -57,5 +57,8 @@ Nút → Dialog xem trước text (font mono), chọn "Ngắn (Zalo/Messenger)" 
 ## 7. Live mode
 Toggle "● Live" (đỏ nhấp nháy khi bật) + tốc độ x1/x10/x60. Thẻ KPI nhấp sáng nhẹ khi giá trị đổi; số đếm tăng dần (animate). Bất thường → toast vàng/đỏ + mục mới ở AnomalyFeed.
 
+## 7b. Dữ liệu lớn & khi có lỗi
+ErrorBoundary từng khu, khoảng mặc định 90 ngày, giữ dữ liệu cũ khi đang tính, tiến độ + Huỷ, đồng hồ dung lượng, lưu trữ năm cũ, banner chế độ suy giảm, chặn phình ở form: `docs/13_SCALE_RESILIENCE.md` §7.
+
 ## 8. Khả năng truy cập
 Label cho mọi input, tương phản ≥ 4.5:1, không chỉ dùng màu để biểu thị tăng/giảm (kèm ▲▼), focus ring rõ, thao tác bàn phím đầy đủ cho form.

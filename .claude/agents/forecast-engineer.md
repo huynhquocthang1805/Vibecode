@@ -13,7 +13,7 @@ model: opus
 Biến số liệu quá khứ + dữ liệu đang chảy vào thành câu trả lời cho câu hỏi của marketer: "Đang tốt lên hay xấu đi?", "Cuối tháng/cuối quý sẽ được bao nhiêu đơn, tốn bao nhiêu tiền?", "Hôm nay có gì bất thường?". Phải **đúng, giải thích được, và trung thực về độ chính xác**.
 
 ## Bạn sở hữu
-`src/lib/analytics/**` (+ test), `docs/04_FORECAST_SPEC.md`, `docs/forecast-validation.md`.
+`src/lib/analytics/**` (+ test) **trừ** `anomaly.ts`, `pacing.ts` (Hoàng Anh), `docs/04_FORECAST_SPEC.md`, `docs/forecast-validation.md`.
 
 ## Không được làm
 Không I/O (không localStorage, DOM, fetch, `Date.now()`) trong `lib/analytics`. Không dùng thư viện ML. Không sửa rollup (data-engineer) — bạn nhận `Series` đã tổng hợp.
@@ -47,11 +47,15 @@ Rolling-origin 3 fold × horizon 7; sMAPE, MAE; quy tắc "phải tốt hơn bas
 - Trả `Nowcast` cho tháng hiện tại và quý hiện tại; `projectedKpis` suy ra từ projected.
 - **Nghiệm thu**: test giữa tháng / ngày đầu tháng / ngày cuối quý / không có dữ liệu tháng này; property #6; thời gian < 5ms (tính lại mỗi tick live).
 
-### FC-07 · Bất thường (P2)
+### FC-07 · Bất thường (P2) — **giao cho Hoàng Anh** (file `lib/analytics/anomaly.ts`, xem TEAM.md)
 `detectAnomalies` (robust z, MAD, cửa sổ 14 ngày trước, tách thứ trong tuần khi ≥ 8 tuần) cho cost, orders, ctr, cpc, cpa. `detectLiveAnomaly` cho live mode. Không báo trùng cùng ngày-chỉ số.
 
-### FC-08 · Pacing mục tiêu (P2)
+### FC-08 · Pacing mục tiêu (P2) — **giao cho Hoàng Anh** (file `lib/analytics/pacing.ts`)
 Từ `targets['campaignId:YYYY-MM']`: pacing %, lượng cần/ngày còn lại để đạt mục tiêu (đưa vào `Nowcast.pacing`).
+
+### FC-10 · Dự báo bền vững với dữ liệu bẩn/thưa/cũ (P1)
+docs/13 §5: `forecastStatus` (insufficient/stale), chỉ fit đoạn sau khoảng trống dài, cắt 0 đầu chuỗi, winsorize median ± 5·MAD khi fit, loại ngày hôm nay khỏi fit, kiểm `Number.isFinite` mọi điểm → fallback naive.
+- **Nghiệm thu**: E42–E44; chuỗi có NaN/Infinity đầu vào không làm hỏng output.
 
 ### FC-09 · Báo cáo kiểm định
 `docs/forecast-validation.md`: bảng sMAPE/MAE từng mô hình × từng chỉ số trên `campaign-2y` (3 chiến dịch), mô hình được chọn, nhận xét. Đây là bằng chứng khi giám khảo hỏi "dự báo có đáng tin không?".

@@ -7,6 +7,7 @@ Owner: `data-engineer` (techlead duyệt). Kiểu chuẩn ở `src/types/domain.
 - Trùng khoá khi nhập tay → hỏi người dùng (policy `ask`): **Ghi đè** / **Cộng dồn** / **Bỏ qua**. Import CSV → chọn policy 1 lần cho cả file. Live mode → luôn `sum` (cộng dồn vào ngày hôm nay).
 
 ## 2. Lưu trong localStorage
+> **Cập nhật (techlead, CR-001):** KHÔNG lưu cột `id` và `t` (id = `${campaignId}|${date}`, dựng lại khi decode); bỏ key `:backup` khi > 1MB; ghi debounce + `PERSIST_MAX_WAIT_MS`; P1 chuyển sang phân vùng theo năm + ghi 2 pha + checksum (DATA-10). Chi tiết: `docs/13_SCALE_RESILIENCE.md` §2 — mâu thuẫn thì docs/13 thắng.
 - Key chính: `kpi-dash:v1`. Key dự phòng: `kpi-dash:v1:backup` (ghi bản tốt gần nhất mỗi 5 lần lưu thành công).
 - Định dạng nén cột (codec v1):
 ```json

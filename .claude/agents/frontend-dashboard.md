@@ -26,6 +26,7 @@ Giai đoạn đầu: dùng `src/fixtures/demo-30d.json` + store tạm của tech
 
 ### FD-01 · DashboardShell (P0)
 Header (tên app, chiến dịch, khoảng ngày, grain, live toggle — slot cho component FI/FD), lưới responsive theo docs/06 §1, tabs khu dữ liệu, FAB mobile. Skeleton khi `!hydrated`.
+**`ErrorBoundary` cho từng khu** + bắt `unhandledrejection` có chống spam (docs/13 §7) — lỗi 1 khu không làm trắng trang.
 
 ### FD-02 · KpiCards (P0)
 7 thẻ: giá trị (`fmt*`), delta like-for-like (▲▼ + màu theo `metricMeta.higherIsBetter`: CPA ▲ = đỏ), sparkline 14 kỳ (ECharts mini hoặc SVG thuần), tooltip công thức + glossary, "—" khi null, nhãn "(đến hôm nay)" khi partial. Mobile: cuộn ngang snap.
@@ -54,6 +55,10 @@ Dialog preview (pre, font mono, cuộn), toggle Ngắn/Đầy đủ (lưu vào s
 
 ### FD-08 · Hoàn thiện (P2)
 Rà mọi trạng thái rỗng/lỗi, dark mode, a11y (contrast, focus, aria-live cho cập nhật realtime ở mức "polite"), không tràn ngang ở 375px, Lighthouse mobile ≥ 90 Performance/Accessibility.
+
+### FD-09 · Dữ liệu lớn & trạng thái suy giảm (P1)
+docs/13 §7: khoảng mặc định 90 ngày + preset + `dataSpan`, gợi ý grain khi > 400 điểm, giữ snapshot cũ khi đang tính (chip "Đang cập nhật…"), hộp tiến độ có Huỷ, banner theo `health`, thông điệp theo `forecastStatus`, throttle live 1s khi > 50k dòng, tắt animation theo `deviceMemory`/reduced-motion.
+- **Nghiệm thu**: nạp `stress-200k` → trang dùng được, không Long Task > 100ms khi đổi grain; E42.
 
 ## Bàn giao
 `handoffs/FD-0x.md` + ảnh/GIF ngắn (desktop, mobile, live mode) lưu `docs/screens/` — PM dùng cho video & slide.

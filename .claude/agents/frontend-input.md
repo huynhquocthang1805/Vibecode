@@ -29,7 +29,8 @@ Không viết logic validate/parse (gọi `validateEntry`, `parsePastedTable`, `
 - Ctrl/Cmd+V vào ô bất kỳ với nội dung nhiều dòng/tab → `parsePastedTable` → điền vào các dòng.
 - Bấm "Lưu n dòng" → `addEntries(inputs, 'ask')` → có `conflicts` → `DuplicateDialog` (Ghi đè / Cộng dồn / Bỏ qua, "áp dụng cho tất cả").
 - Thành công: toast "Đã lưu n dòng", reset form, focus dòng đầu.
-- **Nghiệm thu**: E2E validation.spec pass; thao tác bàn phím đầy đủ (Tab/Enter); 0 lỗi a11y nghiêm trọng (axe).
+- Trần `LIMITS.MAX_DRAFT_ROWS`; dán > `PASTE_INLINE_MAX_ROWS` dòng → mở `PasteImportDialog`; dialog trùng chỉ tóm tắt khi nhiều xung đột (docs/13 §1 G7, G11).
+- **Nghiệm thu**: E2E validation.spec pass; thao tác bàn phím đầy đủ (Tab/Enter); 0 lỗi a11y nghiêm trọng (axe); E41.
 
 ### FI-02 · EntryTable (P0) → FI-02b ảo hoá (P1)
 - Cột: Ngày, Chiến dịch, Reach, Click, Chi phí, Đơn, CTR, CPC, CPA (tính bằng `computeKpis`), thao tác.
@@ -49,6 +50,10 @@ Select chiến dịch (gồm "Tất cả"), tạo/đổi tên chiến dịch, m�
 
 ### FI-06 · Mobile (P1)
 < 640px: mỗi dòng là thẻ (Ngày trên cùng, 4 ô số dạng lưới 2×2), `inputMode="numeric"`, `enterKeyHint="next"`, nút ≥ 44px, sheet nhập mở từ FAB. Hiển thị số có dấu chấm nghìn khi gõ mà không nhảy con trỏ.
+
+### FI-07 · Chống phình dữ liệu ở khu nhập (P1)
+docs/13 §7: đồng hồ dung lượng (70% vàng/90% đỏ + hành động), luồng **Lưu trữ năm cũ** (tải file → xác nhận → xoá, có hoàn tác), "Hoàn tác import" (`undoLast`), hiển thị `ImportReport` có `rejectedTotal`/`mergedInFile`/`aborted`, mã hoá + phân cách trong preview, nút Huỷ khi import, bảng "Đi tới ngày" + đếm dòng.
+- **Nghiệm thu**: E38–E41 qua UI; import bị từ chối vì vượt sức chứa hiển thị đúng gợi ý.
 
 ## Bàn giao
 `handoffs/FI-0x.md` + ảnh chụp màn hình desktop & mobile (lưu `docs/screens/`).

@@ -13,7 +13,7 @@ model: sonnet
 Giành trọn 15 điểm "Tích hợp AI & kiểm soát đầu ra": dùng **AI thật**, đầu vào phù hợp (số đã tính, gọn), đầu ra bị kiểm soát chặt (schema + đối chiếu), và không bao giờ để người dùng thấy màn hình trống khi AI lỗi.
 
 ## Bạn sở hữu
-`src/app/api/insights/route.ts`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts`, `scripts/eval-ai.ts`, `docs/05_AI_SPEC.md` (trừ §4, §7 do BA), `docs/ai-eval-report.md`.
+`src/app/api/insights/route.ts`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts` (FC-07, FC-08), `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts`, `scripts/eval-ai.ts`, `docs/05_AI_SPEC.md` (trừ §4, §7 do BA), `docs/ai-eval-report.md`.
 
 ## Không được làm
 Không để key ở client; không gọi provider từ component; không gửi raw rows; không tự viết nội dung prompt (dùng `lib/ai/prompts` của BA — góp ý qua CHANGE_REQUESTS).
@@ -58,3 +58,6 @@ Không để key ở client; không gọi provider từ component; không gửi 
 
 ## Bàn giao
 `handoffs/AI-0x.md`: model dùng, chi phí/độ trễ đo được, các lỗi AI thật đã gặp và guardrail nào bắt được (gửi pm-release đưa vào AI usage log).
+
+## Nhận thêm từ forecast-engineer (cân tải đội 5 người)
+`FC-07` (bất thường) và `FC-08` (pacing) — đặc tả ở `.claude/agents/forecast-engineer.md` và `docs/04 §4–5`. Bạn sở hữu riêng `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts` (+ test); tuân thủ quy tắc pure của `.claude/rules/analytics.md`. Kết quả bất thường đi thẳng vào `InsightRequest.anomalies` mà bạn đã làm.

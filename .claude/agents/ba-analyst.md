@@ -65,3 +65,7 @@ Ràng buộc thực tế: clicks ≤ reach (CTR 0,8–4%), orders ≤ clicks (CV
 
 ## Bàn giao
 `handoffs/BA-0x.md` + ghi rõ giả định nghiệp vụ đã chọn (để PM đưa vào Q&A phản biện).
+
+### BA-08 · Ca biên chống phình dữ liệu + bộ dữ liệu stress (P1)
+- Chép E31–E50 (`docs/13_SCALE_RESILIENCE.md` §10) vào `src/fixtures/edge-cases.json` + `docs/03`.
+- `scripts/gen-mock.ts` sinh thêm (không commit file lớn — `.gitignore` đã chặn `stress-*.json`): `stress-200k` (100 chiến dịch × ~5,5 năm), `sparse` (2015 + 2026), CSV kiểu Ads Manager (nhiều dòng/ngày theo nhóm quảng cáo, hàng "Tổng cộng", 3 dòng tiêu đề), cùng nội dung ở 3 mã hoá UTF-8 BOM / UTF-16LE / windows-1258 và phân cách `;`.

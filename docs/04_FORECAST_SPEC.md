@@ -9,6 +9,8 @@ Owner: `forecast-engineer`. Toàn bộ là pure function TypeScript trong `src/l
 - Không đọc `Date.now()` trong hàm thuần — `today` truyền vào qua `AnalyticsQuery`.
 - Ngày thiếu dữ liệu giữa chuỗi: KHÔNG coi là 0 (có thể người dùng quên nhập). **Nội suy tuyến tính chỉ để fit mô hình**, không hiển thị như dữ liệu thật; `dataQuality.missingDays` báo số ngày thiếu, UI nhắc "Thiếu N ngày dữ liệu".
 
+Dữ liệu thưa / cũ / có ngày gõ nhầm, cache dự báo theo ngày đã kết thúc, `forecastStatus`: `docs/13_SCALE_RESILIENCE.md` §4–5 (FC-10).
+
 ## 2. Phân tích xu hướng (FC-01) — đầu vào chính của AI
 Cho grain đang chọn, lấy N kỳ gần nhất (ngày: 14, tuần: 8, tháng: 6, quý: 4):
 1. `changePct` = kỳ hiện tại vs kỳ trước (like-for-like từ `comparePeriods`).

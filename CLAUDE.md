@@ -9,7 +9,7 @@
 |---|---|---|
 | Thắng (chủ dự án) | Claude (+ ChatGPT review chéo) | `techlead` + `pm-release` — duy nhất được merge vào `main` |
 | Huy | Gemini · Argon | `data-engineer` + `forecast-engineer` |
-| Hoàng Anh | Gemini · Argon | `ai-engineer` |
+| Hoàng Anh | Gemini · Argon | `ai-engineer` (+ FC-07 bất thường, FC-08 pacing) |
 | Trường | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` |
 | Nhân | ChatGPT · Astral | `ba-analyst` + `qa-engineer` |
 Người giữ 2 role sở hữu hợp 2 phạm vi ở §4. Agent không phải Claude Code đọc thêm `AGENTS.md`.
@@ -74,7 +74,8 @@ src/
   lib/domain/**                   data-engineer   (kpi.ts, validation.ts, format.ts, dates.ts)
   lib/data/**                     data-engineer   (store, storage, aggregate, realtime, import)
   lib/workers/**                  data-engineer   (host worker; đăng ký hàm của forecast)
-  lib/analytics/**                forecast-engineer (trend, forecast, nowcast, anomaly, backtest)
+  lib/analytics/**                forecast-engineer (trend, forecast, nowcast, backtest)
+  lib/analytics/anomaly.ts, pacing.ts   ai-engineer (FC-07, FC-08 — cân tải đội)
   lib/ai/** (trừ prompts/)        ai-engineer
   lib/ai/prompts/**               ba-analyst
   lib/report/buildReport.ts, clipboard.ts   ai-engineer
@@ -85,7 +86,7 @@ scripts/gen-mock.ts               ba-analyst
 scripts/eval-ai.ts                ai-engineer
 tests/integration/** tests/e2e/** tests/perf/**   qa-engineer
 **/*.test.ts cạnh file nguồn      owner của file nguồn
-docs/00,01,10                     techlead
+docs/00,01,10,13                  techlead
 docs/03,05(phần prompt),07        ba-analyst
 docs/04                           forecast-engineer
 docs/06                           frontend-dashboard
@@ -108,6 +109,7 @@ handoffs/**                       mọi agent (mỗi agent ghi file của task m
 - Text giao diện: tiếng Việt. Comment code: tiếng Việt hoặc tiếng Anh ngắn gọn.
 - Component client nặng (ECharts) phải `dynamic(() => import(...), { ssr: false })`.
 - Không gọi AI trực tiếp từ client; client → `/api/insights` → provider.
+- Giới hạn dữ liệu chỉ lấy từ `LIMITS` (`domain.ts`). Lỗi runtime không được làm trắng trang: tầng dữ liệu trả trạng thái/phát `system/health`, UI bọc `ErrorBoundary` từng khu (docs/13).
 
 ## 6. Quy trình làm việc của agent
 1. Đọc: `CLAUDE.md` → `TEAM.md` → file role của mình `.claude/agents/<role>.md` → `TASKS.md` → docs liên quan → `handoffs/` của task phụ thuộc.
@@ -134,6 +136,6 @@ Nếu thiếu thời gian: cắt P2 trước, rồi P1. KHÔNG BAO GIỜ để P
 `03_KPI_RULES.md` công thức + ca biên · `04_FORECAST_SPEC.md` dự báo · `05_AI_SPEC.md` AI + prompt ·
 `06_UI_SPEC.md` giao diện · `07_REPORT_TEMPLATE.md` báo cáo · `08_TEST_PLAN.md` kiểm thử ·
 `09_TIMELINE.md` tiến độ · `10_CONTRACTS.md` hợp đồng module · `11_AI_USAGE_LOG.md` bằng chứng vibe coding ·
-`12_DEMO_SCRIPT.md` kịch bản demo.
+`12_DEMO_SCRIPT.md` kịch bản demo · **`13_SCALE_RESILIENCE.md` dữ liệu lớn, chống phình, xử lý lỗi (giới hạn = `LIMITS` trong domain.ts)**.
 
 @docs/10_CONTRACTS.md

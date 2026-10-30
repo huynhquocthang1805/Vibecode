@@ -20,6 +20,7 @@ Owner: `qa-engineer`. Unit test do owner module viết (cạnh file nguồn); QA
 4. `decodeState(encodeState(s))` ≡ s (roundtrip codec).
 5. Dự báo: mọi điểm ≥ 0, lo95 ≤ lo80 ≤ mean ≤ hi80 ≤ hi95.
 6. Nowcast.projected.mean ≥ actualToDate cho mọi chỉ số.
+7–10. Bất biến chống lệch rollup, codec phân vùng, ghi 2 pha, số nguyên an toàn: `docs/13_SCALE_RESILIENCE.md` §11 (QA-08).
 
 ## 3. Ma trận lỗi & ổn định
 | Nhóm | Kịch bản | Kỳ vọng |

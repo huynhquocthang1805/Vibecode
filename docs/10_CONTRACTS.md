@@ -1,6 +1,7 @@
 # 10 — Hợp đồng giữa các module (Contracts v1)
 
 Owner: `techlead`. Kiểu dữ liệu nằm ở `src/types/domain.ts`. File này quy định **chữ ký hàm public** của từng module để các agent làm song song mà không chờ nhau.
+Giới hạn & hành vi khi dữ liệu lớn/lỗi: `docs/13_SCALE_RESILIENCE.md` + `LIMITS` trong `domain.ts`.
 Quy tắc: trong Phase 0, techlead tạo stub cho mọi hàm dưới đây (`throw new Error('NOT_IMPLEMENTED: <TASK-ID>')`). Owner thay stub bằng code thật, **không đổi chữ ký**.
 
 ## A. `lib/domain` — owner: data-engineer
@@ -38,16 +39,21 @@ export function daysBetween(a: ISODate, b: ISODate): number;
 interface DataState {
   hydrated: boolean;
   campaigns: Campaign[]; entries: DailyEntry[]; settings: Settings; revision: number;
+  checksum: Checksum;                                   // cập nhật O(|delta|) — docs/13 §3
+  health: Record<HealthArea, HealthStatus>;             // từ sự kiện 'system/health'
+  storage: { kind: StorageAdapter['kind']; usedBytes: number; quotaBytes: number };
   addEntries(inputs: EntryInput[], policy?: DuplicatePolicy): { added: number; conflicts: EntryInput[] };
   updateEntry(id: string, patch: Partial<EntryInput>): ValidationResult;
   removeEntries(ids: string[]): DailyEntry[];   // trả về để undo
   restoreEntries(entries: DailyEntry[]): void;
+  undoLast(): boolean;                          // hoàn tác thao tác hàng loạt gần nhất (import/xoá/lưu trữ), hết hạn LIMITS.UNDO_TTL_MS
   importBatch(inputs: EntryInput[], source: EntrySource, policy: DuplicatePolicy): ImportReport;
   upsertCampaign(c: Pick<Campaign,'name'> & { id?: string }): Campaign;
   setSettings(patch: Partial<Settings>): void;
   loadMock(name: 'demo-30d' | 'campaign-2y' | 'edge-cases'): Promise<void>;
   clearAll(): Promise<void>;
-  exportBackup(): string; importBackup(json: string): ImportReport;
+  exportBackup(filter?: { years?: number[] }): string;   // years → file lưu trữ năm cũ
+  importBackup(json: string): ImportReport;
 }
 export const useDataStore: UseBoundStore<StoreApi<DataState>>;
 
@@ -70,7 +76,7 @@ export function startCrossTabSync(): () => void;           // BroadcastChannel +
 export function startLiveSimulator(opts: { speed: 1|10|60; campaignId: string; seed?: number }): () => void;
 
 // import/
-export function parseCsv(file: File, onProgress?: (p: number) => void): Promise<{ rows: Record<string,string>[]; headers: string[] }>;
+export function parseCsv(file: File, onProgress?: (p: number) => void, signal?: AbortSignal): Promise<{ rows: Record<string,string>[]; headers: string[]; encoding: string; delimiter: string }>;
 export function parsePastedTable(text: string): { rows: Record<string,string>[]; headers: string[] }; // dán TSV từ Excel/Sheets
 export function autoMapHeaders(headers: string[]): Partial<Record<keyof Totals | 'date' | 'campaign', string>>;
 ```
@@ -79,10 +85,10 @@ export function autoMapHeaders(headers: string[]): Partial<Record<keyof Totals |
 ```ts
 export interface AnalyticsWorkerApi {
   init(entries: DailyEntry[]): Promise<number>;                 // trả revision
-  applyDelta(delta: EntryDelta, revision: number): Promise<number>;
+  applyDelta(delta: EntryDelta, revision: number): Promise<number>;  // revision ≠ last+1 → reject Error('REVISION_GAP') → client init lại
   snapshot(q: AnalyticsQuery): Promise<AnalyticsSnapshot>;
 }
-export function getAnalyticsClient(): AnalyticsWorkerApi;     // Comlink; fallback chạy main thread nếu không có Worker
+export function getAnalyticsClient(): AnalyticsWorkerApi;     // Comlink; đóng gói cột typed array + transfer; supervisor restart/timeout; fallback main thread (docs/13 §4)
 export function useAnalytics(q: AnalyticsQuery): { data: AnalyticsSnapshot | null; loading: boolean; error: Error | null };
 ```
 

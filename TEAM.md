@@ -8,17 +8,19 @@
 | Người | Công cụ AI | Vai (role trong `.claude/agents/`) | Phạm vi một câu | Số task (P0) |
 |---|---|---|---|---|
 | **Thắng** (chủ dự án) | **Claude** (+ ChatGPT để review chéo) | `techlead` + `pm-release` | Khởi tạo repo, hợp đồng, stub, CI, **review & merge mọi PR**, gate G1–G3, TASKS/STATUS, README, deploy, log AI, demo | 15 (14) |
-| **Huy** | Gemini · Argon | `data-engineer` + `forecast-engineer` | "Động cơ": validation, KPI, lưu trữ, store, rollup, worker, CSV, realtime **và** xu hướng, dự báo, nowcast, bất thường | 18 (5) |
-| **Hoàng Anh** | Gemini · Argon | `ai-engineer` | Tích hợp AI thật (Gemini): `/api/insights`, adapter, guardrails, fallback, hook `useInsights`, `buildReport`, eval AI | 9 (8) |
-| **Trường** | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` | Toàn bộ giao diện: layout, thẻ KPI, biểu đồ ECharts, card AI, xuất báo cáo **và** form nhập, bảng, import CSV/dán Excel | 15 (8) |
-| **Nhân** | ChatGPT · Astral | `ba-analyst` + `qa-engineer` | Nghiệp vụ & chất lượng: công thức + ca biên, ngưỡng, prompt, mẫu báo cáo, mock data **và** test ca biên, E2E, perf, bảo mật | 14 (6 + 3 P0*) |
+| **Huy** | Gemini · Argon | `data-engineer` + `forecast-engineer` | "Động cơ": validation, KPI, lưu trữ, store, rollup, worker, CSV, realtime **và** xu hướng, dự báo, nowcast | 19 (5) |
+| **Hoàng Anh** | Gemini · Argon | `ai-engineer` (+ FC-07, FC-08) | Tích hợp AI thật (Gemini): `/api/insights`, adapter, guardrails, fallback, hook `useInsights`, `buildReport`, eval AI **và** phát hiện bất thường, pacing | 11 (8) |
+| **Trường** | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` | Toàn bộ giao diện: layout, thẻ KPI, biểu đồ ECharts, card AI, xuất báo cáo **và** form nhập, bảng, import CSV/dán Excel | 17 (8) |
+| **Nhân** | ChatGPT · Astral | `ba-analyst` + `qa-engineer` | Nghiệp vụ & chất lượng: công thức + ca biên, ngưỡng, prompt, mẫu báo cáo, mock data **và** test ca biên, E2E, perf, stress/chaos, bảo mật | 16 (6 + 3 P0*) |
+
+Dữ liệu lớn, chống phình và xử lý lỗi là yêu cầu chung của mọi người: đọc **`docs/13_SCALE_RESILIENCE.md`** trước khi làm task có chữ "docs/13"; giới hạn chỉ lấy từ `LIMITS` trong `src/types/domain.ts`.
 
 Lý do chia như vậy:
 - **Tải P0 cân bằng** (5–8 task/người) để kịp Gate G1; phần P1 nặng của Huy (dự báo) có thể cắt/chuyển nếu trễ (xem §7).
 - **Hoàng Anh dùng Gemini → làm phần gọi Gemini API**: tự thử structured output trên chính công cụ mình dùng.
 - **Trường giữ toàn bộ UI** → giao diện nhất quán, không 2 người cùng chỉnh style.
 - **Nhân viết quy tắc rồi tự viết test cho quy tắc đó** (BA-01 ca biên → QA-01 test) → không lệch giữa spec và test.
-- **Huy giữ toàn bộ `lib/`** (data + analytics) → worker host và hàm dự báo do cùng một người, ít change request.
+- **Huy giữ toàn bộ `lib/`** (data + analytics) → worker host và hàm dự báo do cùng một người, ít change request. Riêng `anomaly.ts`, `pacing.ts` (P2) chuyển cho Hoàng Anh để cân tải sau khi thêm DATA-10/11, FC-10.
 
 ## 2. Mỗi người được sửa file nào (ownership)
 
@@ -26,9 +28,9 @@ Chi tiết từng role: `.claude/agents/<role>.md` → mục "Bạn sở hữu".
 
 | Người | Được sửa | KHÔNG được sửa |
 |---|---|---|
-| Thắng + Claude | `CLAUDE.md`, `TEAM.md`, `AGENTS.md`, `GEMINI.md`, `TASKS.md`, `README.md`, `src/types/domain.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/**`, config gốc (`package.json`, `tsconfig.json`, eslint, vitest, playwright, next), `.github/**`, `.claude/**`, `docs/00,01,09,10,11,12`, `docs/STATUS.md`, `docs/QA_DEFENSE.md`, `handoffs/CHANGE_REQUESTS.md`, `handoffs/GATE-*.md` | — (nhưng không viết logic nghiệp vụ thay owner) |
-| Huy | `src/lib/domain/**`, `src/lib/data/**`, `src/lib/workers/**`, `src/lib/analytics/**`, `docs/02`, `docs/04`, `docs/forecast-validation.md` | UI, `lib/ai`, `config`, `fixtures`, `domain.ts` |
-| Hoàng Anh | `src/app/api/insights/**`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts`, `scripts/eval-ai.ts`, `docs/05` (trừ §4, §7), `docs/ai-eval-report.md` | `lib/ai/prompts/**`, `config/**` (của Nhân) |
+| Thắng + Claude | `CLAUDE.md`, `TEAM.md`, `AGENTS.md`, `GEMINI.md`, `TASKS.md`, `README.md`, `src/types/domain.ts`, `docs/13`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/**`, config gốc (`package.json`, `tsconfig.json`, eslint, vitest, playwright, next), `.github/**`, `.claude/**`, `docs/00,01,09,10,11,12`, `docs/STATUS.md`, `docs/QA_DEFENSE.md`, `handoffs/CHANGE_REQUESTS.md`, `handoffs/GATE-*.md` | — (nhưng không viết logic nghiệp vụ thay owner) |
+| Huy | `src/lib/domain/**`, `src/lib/data/**`, `src/lib/workers/**`, `src/lib/analytics/**` (trừ `anomaly.ts`, `pacing.ts`), `docs/02`, `docs/04`, `docs/forecast-validation.md` | UI, `lib/ai`, `config`, `fixtures`, `domain.ts` |
+| Hoàng Anh | `src/app/api/insights/**`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts`, `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts`, `scripts/eval-ai.ts`, `docs/05` (trừ §4, §7), `docs/ai-eval-report.md` | `lib/ai/prompts/**`, `config/**` (của Nhân) |
 | Trường | `src/components/dashboard/**`, `src/components/input/**`, `docs/06` | `components/ui/**` (shadcn — nhờ techlead generate), `app/page.tsx` |
 | Nhân | `src/config/**`, `src/lib/ai/prompts/**`, `src/lib/report/templates.ts`, `src/fixtures/**`, `scripts/gen-mock.ts`, `docs/03`, `docs/07`, `docs/05` §4 §7, `tests/integration/**`, `tests/e2e/**`, `tests/perf/**`, `docs/08`, `docs/test-report.md`, `docs/perf-report.md`, `docs/bugs.md` | code trong `src/lib/**` ngoài phần trên |
 
@@ -108,8 +110,8 @@ Rebase bị xung đột? Chỉ giải quyết trong file **của mình**. Xung �
 | **W0** khởi tạo | TL-01 → TL-02 → TL-03 → TL-04 | Đọc `docs/02,03,04,10` + skill `big-data-frontend`, `time-series-forecasting`; chờ TL-03 | Lấy Gemini API key (chỉ đưa cho Thắng đặt vào Vercel/`.env.local`); đọc `docs/05` + skill `llm-structured-output` | Đọc `docs/06`, phác layout 375px/desktop; chờ TL-03 | **BA-01** (ngay) → **BA-05** (sau TL-01) |
 | **W1** P0 | TL-05 review liên tục, PM-01 | DATA-01 → DATA-02 → DATA-03 → DATA-04 → FC-01 | AI-01 → AI-03 → AI-02 → AI-07 → AI-04 → AI-05 → AI-06 → AI-08 | FD-01 → FD-02 → FD-03 → FI-01 → FI-02 → FI-05 → FD-05 → FD-06 | BA-02 → BA-03 → BA-04 → QA-01 |
 | **W3** | **TL-06 tích hợp + Gate G1** | sửa bug G1 | sửa bug G1 | sửa bug G1 | test tay G1 |
-| **W4** P1 | TL-07 + **Gate G2**, PM-06 | DATA-05 → DATA-06 → DATA-07 → FC-02 → FC-03 → FC-04 → FC-05 → FC-06 → FC-09 | AI-09 (sau BA-06) | FI-02b → FI-03 → FI-04 → FI-06 → FD-04 | BA-06 → BA-07 → QA-02 → QA-03 → QA-05 |
-| **W5** P2 + release | TL-08 + **Gate G3**, PM-02..07 | DATA-08 → DATA-09 → FC-07 → FC-08 | hỗ trợ (§7) | FD-07 → FD-08 | QA-04 → QA-06 → QA-07 |
+| **W4** P1 | TL-07 + **Gate G2**, PM-06 | DATA-05 → DATA-06 → DATA-11 → DATA-07 → FC-02 → FC-03 → FC-04 → FC-10 → FC-05 → FC-06 → DATA-10 → FC-09 | AI-09 (sau BA-06) | FI-02b → FI-03 → FI-07 → FI-04 → FI-06 → FD-04 → FD-09 | BA-06 → BA-07 → BA-08 → QA-02 → QA-03 → QA-05 → QA-08 |
+| **W5** P2 + release | TL-08 + **Gate G3**, PM-02..07 | DATA-08 → DATA-09 | FC-07 → FC-08 | FD-07 → FD-08 | QA-04 → QA-06 → QA-07 |
 
 ## 6. Câu lệnh cho AI (copy–paste)
 
@@ -170,7 +172,7 @@ Cập nhật mục "Hạn chế / nợ kỹ thuật" trong handoff nếu có tha
 
 ### 6.6 Prompt mở đầu đã điền sẵn
 
-**Huy (Gemini Argon)** — `<TÊN>`=Huy, `<ROLE_1>`=`data-engineer`, `<ROLE_2>`=`forecast-engineer`. Task đầu: `DATA-01`. Đọc thêm skill `.claude/skills/big-data-frontend/SKILL.md`, `.claude/skills/kpi-metrics/SKILL.md`, `.claude/skills/time-series-forecasting/SKILL.md`, rule `.claude/rules/data-layer.md`, `.claude/rules/analytics.md`.
+**Huy (Gemini Argon)** — `<TÊN>`=Huy, `<ROLE_1>`=`data-engineer`, `<ROLE_2>`=`forecast-engineer`. Task đầu: `DATA-01`. Đọc kỹ `docs/13_SCALE_RESILIENCE.md` (phần lớn là của Huy). Đọc thêm skill `.claude/skills/big-data-frontend/SKILL.md`, `.claude/skills/kpi-metrics/SKILL.md`, `.claude/skills/time-series-forecasting/SKILL.md`, rule `.claude/rules/data-layer.md`, `.claude/rules/analytics.md`.
 
 **Hoàng Anh (Gemini Argon)** — `<ROLE_1>`=`ai-engineer`. Task đầu: `AI-01`. Đọc thêm `.claude/skills/llm-structured-output/SKILL.md`, `.claude/rules/ai-api.md`, `docs/05_AI_SPEC.md`. Prompt (`lib/ai/prompts/**`) là của Nhân — cần đổi thì change request.
 
@@ -185,7 +187,7 @@ Cập nhật mục "Hạn chế / nợ kỹ thuật" trong handoff nếu có tha
 3. Ngay sau merge, Claude (vai PM) cập nhật trên `main`: `TASKS.md` (`[x]`), dòng log trong `docs/11_AI_USAGE_LOG.md` (lấy từ handoff), `handoffs/CHANGE_REQUESTS.md` (nếu có), `docs/STATUS.md`.
 4. Nhắn nhóm: "đã merge <TASK-ID>, ai đang làm nhánh phụ thuộc thì `git fetch && git rebase origin/main`".
 5. **Thứ tự merge P0** (TL-06): TL-* → BA-01/BA-05 → DATA-01..04 → FI-01/02/05 → FC-01 → BA-02..04 → AI-* → FD-* → QA-01.
-6. Cân lại tải: task `[~]` quá 3 giờ không có PR → đánh `[!]`, hỏi lý do. Huy trễ ở P1 → cắt FC-08, DATA-09 trước; hoặc chuyển nhóm task P2 (cả thư mục, không chia đôi file) sang Hoàng Anh — techlead ghi rõ trong `TASKS.md` cột "Người".
+6. Cân lại tải: task `[~]` quá 3 giờ không có PR → đánh `[!]`, hỏi lý do. Huy trễ ở P1 → cắt DATA-09, rồi DATA-10 (giữ bản 1 key của DATA-03) trước; hoặc chuyển nhóm task P2 (cả thư mục, không chia đôi file) sang Hoàng Anh — techlead ghi rõ trong `TASKS.md` cột "Người".
 
 ## 8. Thiết lập GitHub (Thắng làm 1 lần)
 1. Settings → Collaborators: mời Huy, Hoàng Anh, Trường, Nhân (quyền **Write**).

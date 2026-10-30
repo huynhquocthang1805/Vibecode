@@ -13,3 +13,4 @@ paths:
 - ECharts và dialog nặng import động (`next/dynamic`, `ssr: false`).
 - Selector Zustand hẹp; `React.memo` cho thẻ nhận cập nhật realtime; tôn trọng `prefers-reduced-motion`.
 - Thêm `data-testid` cho phần tử E2E cần (QA đề xuất).
+- Mỗi khu bọc `ErrorBoundary`; sau lần tải đầu giữ dữ liệu cũ khi đang tính (không nháy skeleton); trần nhập liệu lấy từ `LIMITS` (docs/13 §7).

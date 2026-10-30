@@ -46,5 +46,11 @@ Gọi trực tiếp handler route với `provider/stub` ở 8 chế độ: OK, t
 ### QA-07 · Bảo mật nhanh (P0*)
 Theo docs/08 §5; thêm: request `/api/insights` body 1MB → 413; 20 request liên tiếp → 429.
 
+### QA-08 · Stress & chaos (P1)
+- Bất biến #7–#10 (docs/13 §11) bằng fast-check, gồm tiêm lỗi `QuotaExceededError` ngẫu nhiên vào `setItem`.
+- Chaos: xoá/hỏng 1 partition, xoá manifest, worker throw trong `snapshot`, không có `BroadcastChannel`, 2 tab ghi cùng lúc, live x60 10 phút (heap + ghi định kỳ).
+- Đo ngân sách docs/13 §9 ở mức 50k và 200k dòng → `docs/perf-report.md`.
+- **Nghiệm thu**: E40, E48–E50 tự động; không trạng thái nào làm trắng trang hoặc mất dữ liệu đã commit.
+
 ## Báo cáo cuối
 `docs/test-report.md`: số test theo tầng, coverage `lib/` (mục tiêu ≥ 85%), danh sách E2E xanh (local + deploy), bug đã sửa/còn lại. Đây là slide "Kiểm thử" trong bài thuyết trình.

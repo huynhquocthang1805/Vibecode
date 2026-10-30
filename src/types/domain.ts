@@ -15,6 +15,32 @@ export type RatioMetric = 'ctr' | 'cpc' | 'cpa' | 'cvr';
 export type Metric = BaseMetric | RatioMetric;
 export type EntrySource = 'manual' | 'paste' | 'csv' | 'live' | 'mock';
 export const ALL_CAMPAIGNS = 'all' as const;
+
+/**
+ * Giới hạn chống phình dữ liệu & mốc kỹ thuật — MỘT nguồn sự thật (docs/13_SCALE_RESILIENCE.md).
+ * MAX_VALUE.cost × MAX_ROWS_TOTAL < 2^53 → mọi tổng cộng dồn là số nguyên chính xác.
+ */
+export const LIMITS = {
+  MIN_DATE: '2015-01-01',
+  MAX_ROWS_TOTAL: 200_000,
+  LOCAL_STORAGE_SOFT_ROWS: 40_000, // vượt → cảnh báo / IndexedDB (P2)
+  MAX_CAMPAIGNS: 100,
+  MAX_CAMPAIGN_NAME: 80,
+  MAX_VALUE: { reach: 1_000_000_000, clicks: 1_000_000_000, cost: 40_000_000_000, orders: 10_000_000 },
+  MAX_IMPORT_FILE_BYTES: 20 * 1024 * 1024,
+  MAX_BACKUP_BYTES: 50 * 1024 * 1024,
+  MAX_REPORT_ISSUES: 1_000, // chi tiết dòng lỗi giữ lại trong ImportReport
+  MAX_DRAFT_ROWS: 100, // form nhập nhiều dòng
+  PASTE_INLINE_MAX_ROWS: 100, // dán nhiều hơn → mở PasteImportDialog
+  UNDO_TTL_MS: 10_000,
+  PERSIST_DEBOUNCE_MS: 300,
+  PERSIST_MAX_WAIT_MS: 2_000, // chống "đói ghi" khi live x60
+  SNAPSHOT_TIMEOUT_MS: 8_000,
+  WORKER_MAX_RESTARTS: 2,
+  FORECAST_WINDOW_DAYS: 365,
+  STALE_DATA_DAYS: 14, // dữ liệu cuối cũ hơn → không dự báo/nowcast
+  DEFAULT_RANGE_DAYS: 90, // khi dữ liệu trải > 180 ngày
+} as const;
 export type CampaignFilter = string | typeof ALL_CAMPAIGNS;
 
 export interface Totals {
@@ -34,7 +60,7 @@ export interface Kpis {
 
 /* ───────────────────────── Dữ liệu nhập ───────────────────────── */
 export interface DailyEntry extends Totals {
-  id: string; // nanoid
+  id: string; // khoá xác định `${campaignId}|${date}` — không lưu xuống storage, dựng lại khi decode
   date: ISODate;
   campaignId: string; // 'default' nếu người dùng không tạo chiến dịch
   source: EntrySource;
@@ -59,6 +85,7 @@ export type ValidationCode =
   | 'REQUIRED'
   | 'INVALID_DATE'
   | 'FUTURE_DATE'
+  | 'DATE_TOO_OLD' // < LIMITS.MIN_DATE
   | 'NOT_NUMBER'
   | 'NEGATIVE'
   | 'NOT_INTEGER'
@@ -66,7 +93,9 @@ export type ValidationCode =
   | 'CLICKS_GT_REACH'
   | 'ORDERS_GT_CLICKS'
   | 'COST_WITHOUT_ACTIVITY'
-  | 'DUPLICATE_DATE';
+  | 'DUPLICATE_DATE'
+  | 'SUMMARY_ROW' // hàng "Tổng cộng/Total" trong file import → bỏ qua
+  | 'LIMIT_EXCEEDED'; // vượt LIMITS (số dòng, số chiến dịch, kích thước file)
 
 export interface ValidationIssue {
   field: keyof EntryInput | 'row';
@@ -86,8 +115,14 @@ export type DuplicatePolicy = 'ask' | 'overwrite' | 'sum' | 'skip';
 export interface ImportReport {
   totalRows: number;
   accepted: number;
+  /** chỉ giữ tối đa LIMITS.MAX_REPORT_ISSUES chi tiết đầu tiên */
   rejected: { row: number; raw: Record<string, string>; issues: ValidationIssue[] }[];
   warnings: { row: number; issues: ValidationIssue[] }[];
+  rejectedTotal: number;
+  warningTotal: number;
+  mergedInFile: number; // dòng trùng ngày+chiến dịch trong cùng file đã gộp
+  detailsTruncated: boolean;
+  aborted: boolean; // người dùng huỷ hoặc vượt LIMITS → không ghi gì
   durationMs: number;
 }
 
@@ -194,9 +229,19 @@ export interface AnalyticsQuery {
   today: ISODate; // truyền vào để test được (không đọc đồng hồ trong pure fn)
 }
 
+/** Tổng kiểm tra để phát hiện rollup lệch (docs/13 §3) */
+export interface Checksum extends Totals {
+  rows: number;
+}
+
+export type ForecastStatus = 'ok' | 'insufficient' | 'stale' | 'disabled';
+
 export interface AnalyticsSnapshot {
   computedAt: number;
   revision: number; // tăng mỗi lần dữ liệu đổi — UI bỏ kết quả cũ
+  checksum: Checksum; // so với store; lệch → init lại worker
+  dataSpan: { first: ISODate | null; last: ISODate | null }; // của chiến dịch đang xem
+  forecastStatus: ForecastStatus;
   query: AnalyticsQuery;
   series: Series; // theo grain đang chọn
   daily: Series; // luôn có, cho biểu đồ ngày + forecast
@@ -241,12 +286,16 @@ export interface StorageAdapter {
   usage(): Promise<{ usedBytes: number; quotaBytes: number }>;
 }
 
-/* ───────────────────────── Realtime ───────────────────────── */
+/* ───────────────────────── Realtime & sức khoẻ hệ thống ───────────────────────── */
+export type HealthArea = 'storage' | 'worker' | 'sync' | 'rollup';
+export type HealthStatus = 'ok' | 'degraded' | 'recovered';
+
 export type DomainEvent =
   | { type: 'entries/changed'; delta: EntryDelta; origin: 'local' | 'remote' | 'live'; revision: number }
   | { type: 'settings/changed'; patch: Partial<Settings> }
   | { type: 'storage/warning'; usedBytes: number; quotaBytes: number }
-  | { type: 'anomaly/detected'; anomaly: Anomaly };
+  | { type: 'anomaly/detected'; anomaly: Anomaly }
+  | { type: 'system/health'; area: HealthArea; status: HealthStatus; message: string; detail?: string };
 
 /* ───────────────────────── AI ───────────────────────── */
 export interface InsightRequest {

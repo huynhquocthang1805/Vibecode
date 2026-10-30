@@ -14,3 +14,4 @@ paths:
 - Truy cập `localStorage`/`BroadcastChannel`/`Worker` luôn bọc try/catch và có fallback.
 - Hot path (rollup, codec): vòng `for`, tránh tạo object tạm trong vòng lặp lớn.
 - Mỗi hàm public có test, gồm ca biên trong `src/fixtures/edge-cases.json`.
+- Mọi giới hạn lấy từ `LIMITS` (`domain.ts`), không tự đặt số. Lỗi không throw lên UI: phát `system/health` / trả `ImportReport`. Xem `docs/13`.

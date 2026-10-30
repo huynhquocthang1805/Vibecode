@@ -5,6 +5,8 @@ description: Kỹ thuật xử lý dữ liệu lớn và thời gian thực tron
 
 # Big data & realtime ở phía client
 
+> Đặc tả bắt buộc (giới hạn `LIMITS`, lưu trữ phân vùng + ghi 2 pha, rollup mảng dày + checksum, worker supervisor, ma trận lỗi): `docs/13_SCALE_RESILIENCE.md`. Skill này là mẹo cài đặt.
+
 ## 1. Rollup tăng dần (không tính lại toàn bộ)
 ```ts
 const GRAINS: Grain[] = ['day', 'week', 'month', 'quarter'];

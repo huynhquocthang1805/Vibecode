@@ -27,7 +27,8 @@ Không sửa `domain.ts` (xin techlead). Không viết mô hình dự báo (fore
 - `entryInputSchema` (Zod) + `validateEntry(raw, ctx)` + `validateBatch(rows, ctx)`.
 - Parse số kiểu VN: bỏ `₫`, `đ`, `VND`, khoảng trắng; `1.234.567` / `1,234,567` → 1234567; `1,5` cho cost → 1.5 rồi làm tròn (quy tắc: nếu có ≥ 2 dấu phân cách cùng loại hoặc nhóm 3 chữ số sau dấu → là phân cách nghìn).
 - Phân biệt error/warning đúng bảng docs/03 §4. Message tiếng Việt lấy từ một map duy nhất.
-- **Nghiệm thu**: pass toàn bộ ca `kind: "validate"` trong edge-cases.json; `validateBatch` 50k dòng < 300ms.
+- Giới hạn lấy từ `LIMITS` (`domain.ts`): `DATE_TOO_OLD`, `TOO_LARGE` theo `MAX_VALUE`, nhận số dạng `1.2E+06` (docs/13 §6).
+- **Nghiệm thu**: pass toàn bộ ca `kind: "validate"` trong edge-cases.json + E31–E33 (docs/13 §10); `validateBatch` 50k dòng < 300ms.
 
 ### DATA-02 · KPI, format, ngày (P0)
 - `kpi.ts`: `safeDiv`, `computeKpis`, `sumTotals`, `pctChange`.
@@ -37,20 +38,22 @@ Không sửa `domain.ts` (xin techlead). Không viết mô hình dự báo (fore
 
 ### DATA-03 · Lưu trữ (P0)
 - `createLocalStorageAdapter`, `encodeState`/`decodeState` (codec cột docs/02 §2), `migrate`.
-- Ghi debounce 300ms; backup mỗi 5 lần lưu; bắt `QuotaExceededError`, localStorage bị chặn (Safari private / iframe) → adapter `memory` + event `storage/warning`.
-- **Nghiệm thu**: roundtrip property test; JSON hỏng không crash; 50k dòng ≤ 3,5MB chuỗi.
+- **Không lưu cột `id`/`t`** (id = `${campaignId}|${date}`); debounce `PERSIST_DEBOUNCE_MS` + `PERSIST_MAX_WAIT_MS`, ghi ngay khi `pagehide`; key backup chỉ khi < 1MB; bắt `QuotaExceededError`, localStorage bị chặn (Safari private / iframe) → adapter `memory` + `storage/warning` + `system/health` (docs/13 §2, §8).
+- **Nghiệm thu**: roundtrip property test; JSON hỏng không crash; 50k dòng ≤ 3,5MB chuỗi; E48 (live không đói ghi).
 
 ### DATA-04 · Store (P0)
 - Zustand + `subscribeWithSelector`. Hành động theo docs/10 §B. Mỗi thay đổi: tăng `revision`, tạo `EntryDelta`, `bus.emit('entries/changed')`.
 - Duplicate policy: `ask` trả `conflicts` cho UI xử lý; `sum`/`overwrite`/`skip`.
 - `removeEntries` trả về bản đã xoá để UI hoàn tác. `loadMock` import động fixture.
 - Hydrate từ storage khi mount; `hydrated=false` trước đó (UI hiện skeleton, tránh lỗi hydration Next.js).
+- Giữ `Map<key, index>` cho tra cứu O(1); `checksum` cập nhật O(|delta|); `undoLast` (1 thao tác, `UNDO_TTL_MS`); `MAX_CAMPAIGNS`, cắt tên `MAX_CAMPAIGN_NAME`; `updateEntry` đổi ngày trùng khoá → áp policy (E45–E47).
 - **Nghiệm thu**: test CRUD + policy + undo; không re-render toàn app khi thêm 1 dòng (selector).
 
 ### DATA-05 · Rollup tăng dần (P1) — trái tim của realtime
 - `buildRollups(entries)` O(n), `applyDelta(index, delta)` O(|delta|), `getSeries`, `comparePeriods` (like-for-like docs/03 §3).
 - Bucket cho từng campaign + 'all'; điền kỳ trống (0) trong range để biểu đồ liên tục, đánh dấu `daysWithData`.
-- **Nghiệm thu**: property test bất biến #1, #2 (docs/08 §2); 100k dòng build < 300ms; delta 1 dòng < 2ms.
+- Cài bằng mảng dày theo ngày + `daysWithData` chính xác cho `all`, gap-fill có giới hạn (docs/13 §3).
+- **Nghiệm thu**: property test bất biến #1, #2 (docs/08 §2) + #10; 100k dòng build < 300ms; delta 1 dòng < 2ms.
 
 ### DATA-06 · Analytics Worker (P1)
 - `analytics.worker.ts` giữ `RollupIndex` trong worker; API `init / applyDelta / snapshot` (Comlink).
@@ -62,7 +65,8 @@ Không sửa `domain.ts` (xin techlead). Không viết mô hình dự báo (fore
 ### DATA-07 · Import (P1)
 - `parseCsv` dùng Papaparse `worker: true, chunk` + progress; `parsePastedTable` (TSV từ Excel/Google Sheets, có/không header); `autoMapHeaders` theo bảng docs/02 §6 (bỏ dấu tiếng Việt khi so khớp).
 - `importBatch` trong store: validateBatch → áp policy → 1 delta duy nhất (không emit 50k lần).
-- **Nghiệm thu**: ca E29; CSV 50k dòng < 3s tổng, UI vẫn phản hồi.
+- Dữ liệu thực tế (docs/13 §6): nhận mã hoá (BOM, UTF-16, windows-1258), phân cách `,;\t`, header không ở dòng 1, bỏ hàng tổng, gộp trùng trong file, kiểm sức chứa **trước** khi ghi, `AbortSignal`, `ImportReport` có trần chi tiết.
+- **Nghiệm thu**: ca E29, E34–E40; CSV 50k dòng < 3s tổng, UI vẫn phản hồi.
 
 ### DATA-08 · Realtime (P2)
 - `bus` (typed emitter). `startCrossTabSync`: BroadcastChannel `kpi-dash`, gửi delta + `tabId`; nhận → apply với `origin:'remote'`, không persist lại, không phát lại (chống vòng lặp). Fallback sự kiện `storage`.
@@ -71,6 +75,14 @@ Không sửa `domain.ts` (xin techlead). Không viết mô hình dự báo (fore
 
 ### DATA-09 · IndexedDB (P2)
 `createIndexedDbAdapter` (API IndexedDB thuần, không thêm thư viện), tự chuyển khi > 40k dòng hoặc quota; settings vẫn ở localStorage; migration 2 chiều.
+
+### DATA-10 · Lưu trữ phân vùng + ghi 2 pha (P1)
+docs/13 §2: partition theo năm, manifest + thế hệ, chỉ ghi partition bẩn, checksum khi đọc, cách ly partition hỏng, dọn key mồ côi, Web Locks + hợp nhất khi 2 tab cùng ghi.
+- **Nghiệm thu**: bất biến #8, #9 (docs/13 §11); E49; ghi 1 delta < 30ms main thread ở 50k dòng.
+
+### DATA-11 · Worker supervisor + tự chữa lệch (P1)
+docs/13 §3–4: init bằng typed array transfer, latest-wins, cache theo phần (forecast theo `completedVersion`), supervisor restart/timeout → chế độ tương thích, checksum snapshot ↔ store → init lại, `REVISION_GAP`.
+- **Nghiệm thu**: bất biến #7; E50; giết worker giữa chừng → UI vẫn đúng; live x60 snapshot < 5ms ở 50k dòng.
 
 ## Mẹo hiệu năng
 - Vòng lặp `for` thường trên mảng số, tránh `reduce` lồng trong hot path; dùng `Map` với key chuỗi ghép.

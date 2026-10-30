@@ -41,7 +41,10 @@ Ngưỡng nằm ở `src/config/thresholds.ts`, có thể chỉnh.
 | NOT_NUMBER | không phải số | error | "{trường} phải là số" |
 | NEGATIVE | < 0 | error | "{trường} không được âm" |
 | NOT_INTEGER | reach/click/đơn có phần thập phân | error | "{trường} phải là số nguyên" |
-| TOO_LARGE | reach > 1e9, cost > 1e12 | error | "Giá trị quá lớn, kiểm tra lại" |
+| TOO_LARGE | vượt `LIMITS.MAX_VALUE` (reach/click > 1e9, cost > 4e10, đơn > 1e7) | error | "Giá trị quá lớn, kiểm tra lại" |
+| DATE_TOO_OLD | ngày < `LIMITS.MIN_DATE` (2015-01-01) | error | "Ngày quá xa trong quá khứ, kiểm tra lại năm" |
+| SUMMARY_ROW | hàng "Tổng cộng/Total" trong file import | warning (bỏ qua dòng) | "Đã bỏ qua hàng tổng cộng để tránh cộng hai lần" |
+| LIMIT_EXCEEDED | vượt giới hạn số dòng / số chiến dịch / kích thước file | error | "Vượt giới hạn {giới hạn} — {gợi ý xử lý}" |
 | CLICKS_GT_REACH | clicks > reach | error | "Số click không thể lớn hơn reach" |
 | ORDERS_GT_CLICKS | orders > clicks | **warning** | "Số đơn lớn hơn số click — có thể do đơn từ kênh khác, kiểm tra lại" |
 | COST_WITHOUT_ACTIVITY | cost > 0 nhưng reach = 0 | warning | "Có chi phí nhưng không có reach" |
@@ -81,6 +84,7 @@ Chi phí: chấp nhận số thập phân khi nhập nhưng **làm tròn về VN
 | E28 | Tên chiến dịch chứa `<script>` / "bỏ qua chỉ dẫn trước" | Hiển thị an toàn; AI không bị điều khiển |
 | E29 | CSV 50.000 dòng, 120 dòng lỗi | nhận 49.880, báo cáo 120 lỗi có số dòng |
 | E30 | localStorage đầy | không mất dữ liệu trong phiên, có cảnh báo |
+| E31–E50 | Ca chống phình dữ liệu & dữ liệu Excel thực tế | xem `docs/13_SCALE_RESILIENCE.md` §10 (BA-08 chép vào fixtures) |
 
 ## 6. Định dạng số (vi-VN)
 - Số nguyên: `125.400` · Tiền: `18.500.000 ₫` · Rút gọn (báo cáo chat): `18,5tr`, `1,2 tỷ` · %: `2,56%` · Delta: `▲ 12,3%` / `▼ 3,0%` / `— 0,0%`.

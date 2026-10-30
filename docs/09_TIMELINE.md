@@ -40,5 +40,5 @@ DATA-08 realtime ─► FC-07 anomaly ─► FD-07 live UI ─► G3
 
 ## Cổng chất lượng (techlead ký)
 **G1 – MVP**: [ ] nhập nhiều dòng + validation + reload còn dữ liệu · [ ] biểu đồ reach/chi phí/đơn · [ ] CTR/CPC/CPA đúng ca E01–E19 · [ ] AI thật trả đúng 3 gợi ý, có fallback · [ ] copy báo cáo · [ ] CI xanh · [ ] link Vercel preview.
-**G2 – Data & Forecast**: [ ] Ngày/Tuần/Tháng/Quý đúng (property test) · [ ] worker + incremental · [ ] import CSV 50k · [ ] dự báo + khoảng tin cậy + backtest · [ ] nowcast tháng/quý · [ ] perf đạt ngân sách.
+**G2 – Data & Forecast**: [ ] Ngày/Tuần/Tháng/Quý đúng (property test) · [ ] worker + incremental · [ ] import CSV 50k · [ ] dự báo + khoảng tin cậy + backtest · [ ] nowcast tháng/quý · [ ] perf đạt ngân sách · [ ] 200k dòng không crash, không mất dữ liệu; chaos test (quota, partition hỏng, worker chết) xanh — docs/13.
 **G3 – Freeze**: [ ] live mode + bất thường · [ ] 8 E2E xanh trên deploy · [ ] mobile 375px · [ ] không lỗi console.

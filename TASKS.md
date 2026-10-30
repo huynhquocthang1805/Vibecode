@@ -8,7 +8,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM sửa file này, trên
 |---|---|---|
 | Thắng (chủ dự án) | Claude (+ ChatGPT review chéo) | techlead + pm-release |
 | Huy | Gemini · Argon | data-engineer + forecast-engineer |
-| Hoàng Anh | Gemini · Argon | ai-engineer |
+| Hoàng Anh | Gemini · Argon | ai-engineer (+ FC-07, FC-08) |
 | Trường | ChatGPT · Astral | frontend-dashboard + frontend-input |
 | Nhân | ChatGPT · Astral | ba-analyst + qa-engineer |
 
@@ -76,6 +76,13 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM sửa file này, trên
 | [ ] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |
 | [ ] | QA-03 | Test API + guardrails với provider giả (8 lỗi) | qa-engineer | Nhân | P1 | AI-04 |
 | [ ] | QA-05 | Perf benchmark + `docs/perf-report.md` | qa-engineer | Nhân | P1 | DATA-06, FC-04 |
+| [ ] | DATA-10 | Lưu trữ phân vùng theo năm + ghi 2 pha + checksum + Web Locks (docs/13 §2) | data-engineer | Huy | P1 | DATA-03 |
+| [ ] | DATA-11 | Worker supervisor + cache theo phần + tự chữa lệch checksum (docs/13 §3–4) | data-engineer | Huy | P1 | DATA-06 |
+| [ ] | FC-10 | Dự báo bền vững: stale/thưa/winsorize/forecastStatus (docs/13 §5) | forecast-engineer | Huy | P1 | FC-04 |
+| [ ] | FI-07 | Chống phình ở khu nhập: đồng hồ dung lượng, lưu trữ năm cũ, hoàn tác import (docs/13 §7) | frontend-input | Trường | P1 | FI-03, DATA-04 |
+| [ ] | FD-09 | UI dữ liệu lớn & trạng thái suy giảm (docs/13 §7) | frontend-dashboard | Trường | P1 | FD-04, DATA-11 |
+| [ ] | BA-08 | Ca biên E31–E50 + bộ dữ liệu stress / CSV thực tế (docs/13 §10) | ba-analyst | Nhân | P1 | BA-05 |
+| [ ] | QA-08 | Stress & chaos test + bất biến #7–#10 (docs/13 §11) | qa-engineer | Nhân | P1 | DATA-10, DATA-11, BA-08 |
 | [ ] | TL-07 | Review hiệu năng/bảo mật/bundle + **Gate G2** | techlead | Thắng+Claude | P1 | P1 |
 
 ## Wave 5 — P2 (Realtime nâng cao) + Hardening + Release
@@ -83,8 +90,8 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM sửa file này, trên
 |---|---|---|---|---|---|---|
 | [ ] | DATA-08 | Event bus + BroadcastChannel + Live simulator | data-engineer | Huy | P2 | DATA-06 |
 | [ ] | DATA-09 | IndexedDB adapter + tự chuyển khi vượt ngưỡng | data-engineer | Huy | P2 | DATA-03 |
-| [ ] | FC-07 | detectAnomalies + detectLiveAnomaly | forecast-engineer | Huy | P2 | FC-05 |
-| [ ] | FC-08 | Target pacing | forecast-engineer | Huy | P2 | FC-06 |
+| [ ] | FC-07 | detectAnomalies + detectLiveAnomaly (`anomaly.ts`) | forecast-engineer | Hoàng Anh | P2 | FC-05 |
+| [ ] | FC-08 | Target pacing (`pacing.ts`) | forecast-engineer | Hoàng Anh | P2 | FC-06 |
 | [ ] | FD-07 | LiveModeToggle + AnomalyFeed + animation thẻ | frontend-dashboard | Trường | P2 | DATA-08, FC-07 |
 | [ ] | FD-08 | Rà soát trạng thái rỗng/lỗi, a11y, dark mode | frontend-dashboard | Trường | P2 | — |
 | [ ] | QA-04 | 8 E2E Playwright (cả mobile, cả trên deploy) | qa-engineer | Nhân | P0* | G1 |

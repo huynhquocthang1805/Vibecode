@@ -56,6 +56,7 @@ Owner: `techlead`.
 | Structured output + Zod | Kiểm soát đầu ra chặt (rubric 15đ) | Parse text tự do: dễ vỡ |
 
 ## 3. Cấu trúc dữ liệu tổng hợp (RollupIndex)
+> Khung dưới là minh hoạ logic. Triển khai thật dùng mảng dày theo ngày (typed array) + checksum tự chữa lệch — xem docs/13 §3.
 ```ts
 type RollupIndex = {
   // key: `${campaignId}|${grain}|${bucketKey}` và `all|${grain}|${bucketKey}`
@@ -75,6 +76,7 @@ type RollupIndex = {
 6. AI KHÔNG tự gọi mỗi tick: chỉ gọi khi người dùng bấm "Phân tích" hoặc dữ liệu đổi > 5% và đã 60s từ lần trước (debounce), có cache theo hash.
 
 ## 5. Ngân sách hiệu năng (QA đo, `npm run perf`)
+Bổ sung theo mức 50k / 200k dòng, lưu trữ phân vùng, worker supervisor, ma trận lỗi: **`docs/13_SCALE_RESILIENCE.md`**.
 | Kịch bản | Mục tiêu |
 |---|---|
 | buildRollups 100k dòng | < 300 ms (worker) |
