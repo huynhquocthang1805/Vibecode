@@ -1,0 +1,6 @@
+# CLAUDE.local.md (bản mẫu) — đổi tên thành CLAUDE.local.md, KHÔNG commit (đã có trong .gitignore)
+
+Ghi đè cá nhân cho máy của bạn, ví dụ:
+- Tôi đang chạy agent `data-engineer` trong worktree `../kpi-data` trên nhánh `feat/data-engineer/DATA-05`.
+- Cổng dev của tôi: 3001.
+- Trả lời ngắn gọn bằng output style `handoff-report`.
