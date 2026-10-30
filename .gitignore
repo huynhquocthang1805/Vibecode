@@ -7,12 +7,19 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+next-env.d.ts
+*.pem
+npm-debug.log*
+/test-results/
+/blob-report/
 
 # secrets — KHÔNG BAO GIỜ commit
 .env
 .env.local
 .env.*.local
 .env.production
+.env*
+!.env.example
 
 # claude cá nhân
 CLAUDE.local.md

@@ -1,6 +1,7 @@
 /**
  * HỢP ĐỒNG DỮ LIỆU v1 — Dashboard KPI Chiến dịch Mini
- * Owner: techlead. ĐÓNG BĂNG sau TL-02. Agent khác KHÔNG sửa file này.
+ * FROZEN v1 – 2026-10-30 (TL-02). Mọi thay đổi sau mốc này phải qua CHANGE_REQUESTS.
+ * Owner: techlead. Agent khác KHÔNG sửa file này.
  * Muốn thay đổi → ghi handoffs/CHANGE_REQUESTS.md, techlead duyệt và tăng CONTRACT_VERSION.
  */
 export const CONTRACT_VERSION = 1 as const;
@@ -350,7 +351,44 @@ export interface InsightError {
   fallback?: InsightResponse; // server luôn cố gửi kèm bản dự phòng
 }
 
+/* ───────────────────────── Cấu hình nghiệp vụ (giá trị ở src/config — ba-analyst) ───────────────────────── */
+/** docs/03 §3, docs/04 §2 */
+export interface TrendConfig {
+  periods: Record<Grain, number>; // số kỳ xét xu hướng: ngày 14, tuần 8, tháng 6, quý 4
+  flatPct: number; // |Δ%| dưới ngưỡng → 'flat' (5)
+  slopePct: number; // độ dốc chuẩn hoá %/kỳ để coi là xu hướng (2)
+  minR2: number; // (0.5)
+  volatileCv: number; // CV vượt ngưỡng → 'volatile' (0.5)
+  volatileMinPeriods: number; // (7)
+}
+
+/** docs/04 §5 */
+export interface AnomalyConfig {
+  windowDays: number; // 14
+  warnZ: number; // 2.5
+  criticalZ: number; // 3.5
+  metrics: Metric[];
+  minWeeksForWeekday: number; // 8 — đủ tuần thì tách theo thứ trong tuần
+}
+
+/** Nhãn, đơn vị, chiều tốt/xấu của chỉ số — UI, báo cáo, guardrail dùng chung */
+export interface MetricMeta {
+  label: string; // "Chi phí / đơn hàng"
+  short: string; // "CPA"
+  unit: 'count' | 'vnd' | 'ratio';
+  higherIsBetter: boolean | null; // null = trung tính (cost)
+  formula?: string; // tooltip: "Chi phí ÷ Số đơn"
+}
+
 /* ───────────────────────── Báo cáo ───────────────────────── */
+/** docs/07 — body chứa placeholder `{campaignName}`, `{reach}`, `{s1.title}`… do buildReport điền */
+export interface ReportTemplate {
+  id: 'short' | 'full';
+  label: string; // "Ngắn (Zalo/Messenger)"
+  maxChars?: number;
+  body: string;
+}
+
 export interface ReportInput {
   campaignName: string;
   snapshot: AnalyticsSnapshot;

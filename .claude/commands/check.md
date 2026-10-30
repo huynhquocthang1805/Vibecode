@@ -7,7 +7,7 @@ Chạy lần lượt và dừng ở bước lỗi đầu tiên:
 ```
 npm run lint
 npm run typecheck
-npm run test -- --run
+npm run test
 ```
 Nếu tham số là `build` thì chạy thêm `npm run build`.
 

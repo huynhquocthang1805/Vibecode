@@ -1,4 +1,4 @@
-# 10 — Hợp đồng giữa các module (Contracts v1)
+# 10 — Hợp đồng giữa các module (Contracts v1) — FROZEN v1 – 2026-10-30 (TL-02)
 
 Owner: `techlead`. Kiểu dữ liệu nằm ở `src/types/domain.ts`. File này quy định **chữ ký hàm public** của từng module để các agent làm song song mà không chờ nhau.
 Giới hạn & hành vi khi dữ liệu lớn/lỗi: `docs/13_SCALE_RESILIENCE.md` + `LIMITS` trong `domain.ts`.
@@ -67,6 +67,7 @@ export function migrate(raw: unknown): PersistedState;
 // aggregate/
 export function buildRollups(entries: DailyEntry[]): RollupIndex;            // O(n)
 export function applyDelta(index: RollupIndex, delta: EntryDelta): RollupIndex; // O(|delta|)
+// RollupIndex: kiểu nội bộ (opaque) export từ aggregate/rollup.ts — chỉ data-engineer đọc bên trong
 export function getSeries(index: RollupIndex, q: Pick<AnalyticsQuery,'campaignId'|'grain'|'range'|'today'>): Series;
 export function comparePeriods(series: Series, today: ISODate): PeriodComparison | null;
 
@@ -92,7 +93,8 @@ export function getAnalyticsClient(): AnalyticsWorkerApi;     // Comlink; đóng
 export function useAnalytics(q: AnalyticsQuery): { data: AnalyticsSnapshot | null; loading: boolean; error: Error | null };
 ```
 
-## D. `lib/analytics` — owner: forecast-engineer (pure, không I/O)
+## D. `lib/analytics` — owner: forecast-engineer (pure, không I/O) · `anomaly.ts`, `pacing.ts`: ai-engineer
+TrendConfig, AnomalyConfig: kiểu ở `domain.ts`, giá trị ở `src/config/thresholds.ts` (ba-analyst).
 ```ts
 export function analyzeTrend(series: Series, cmp: PeriodComparison | null, cfg: TrendConfig): TrendSummary;
 export function forecastMetric(daily: number[], dates: ISODate[], metric: BaseMetric, horizon: number): MetricForecast;
@@ -101,8 +103,11 @@ export function nowcast(daily: Series, forecasts: MetricForecast[], periodKey: s
 export function detectAnomalies(daily: Series, cfg: AnomalyConfig): Anomaly[];
 export function detectLiveAnomaly(todaySoFar: Totals, hourFraction: number, history: Series, cfg: AnomalyConfig): Anomaly | null;
 // models/
-export function holt(y: number[], alpha: number, beta: number, h: number): { fitted: number[]; forecast: number[] };
-export function holtWinters(y: number[], m: number, alpha: number, beta: number, gamma: number, h: number): {...};
+export function holt(y: number[], alpha: number, beta: number, h: number, phi?: number): { fitted: number[]; forecast: number[] }; // phi damped, mặc định 1
+export function holtWinters(y: number[], m: number, alpha: number, beta: number, gamma: number, h: number, phi?: number): { fitted: number[]; forecast: number[] };
+export function naive(y: number[], h: number): ModelOutput;  seasonalNaive(y, m, h); movingAverage(y, k, h);  // ModelOutput = { fitted, forecast, residualSd }
+// pacing.ts (ai-engineer, FC-08)
+export function computePacing(projected: Nowcast['projected'], target: Partial<Totals>): NonNullable<Nowcast['pacing']>;
 export function fitBest(y: number[], m: number): { model: ForecastModel; params: Record<string,number>; residualSd: number };
 export function backtest(y: number[], model: ForecastModel, horizon: number, folds: number): { smape: number; mae: number };
 ```
@@ -115,6 +120,7 @@ export function buildInsightRequest(snap: AnalyticsSnapshot, campaignName: strin
 export function enforceGuardrails(raw: unknown, req: InsightRequest): { ok: true; value: InsightResponse } | { ok: false; reason: string };
 export function fallbackInsight(req: InsightRequest): InsightResponse;   // rule-based, deterministic
 export interface LlmProvider { name: string; generateJson(system: string, user: string, jsonSchema: object, opts: { timeoutMs: number; temperature: number }): Promise<unknown> }
+export function getProvider(name?: 'gemini'|'openai'|'stub'): LlmProvider;   // provider/index.ts, server-only
 export function useInsights(snap: AnalyticsSnapshot | null): { data: InsightResponse | null; status: 'idle'|'loading'|'success'|'fallback'|'error'; error?: InsightError; refresh(): void };
 // POST /api/insights  body: InsightRequest → 200 InsightResponse | 4xx/5xx InsightError
 ```
@@ -135,11 +141,13 @@ export const TEMPLATES: Record<'short'|'full', ReportTemplate>;
 ```
 
 ## H. Component (UI) — props tối thiểu
+Hook gọi trong render (`useAnalytics`, `useInsights`) **không bao giờ throw** — trả `error`/`status` để UI hiển thị.
 ```ts
 // frontend-input
 <EntryForm onSubmitted?(n: number) />  <EntryTable />  <CsvImportDialog />  <PasteImportDialog />  <DataManager />
 // frontend-dashboard
-<DashboardShell />  <KpiCards snapshot />  <TrendChart snapshot showForecast />  <KpiRatioChart snapshot />
+<DashboardShell controls kpis chart forecast insight anomalies data />  // chỉ bố cục; app/DashboardPage.tsx (techlead) truyền nội dung
+<SectionBoundary name />  <KpiCards snapshot />  <TrendChart snapshot showForecast />  <KpiRatioChart snapshot />
 <GrainSwitcher />  <ForecastPanel nowcasts forecasts />  <AiInsightCard snapshot />  <ExportReportButton snapshot insight />
 <LiveModeToggle />  <AnomalyFeed anomalies />
 ```

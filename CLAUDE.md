@@ -66,9 +66,10 @@ Mỗi file chỉ có 1 owner (role). Người phụ trách role: §0 / `TEAM.md`
 ```
 src/
   types/domain.ts                 techlead   (HỢP ĐỒNG — đóng băng sau TL-02)
-  app/layout.tsx, page.tsx        techlead   (ghép trang)
+  app/layout.tsx, page.tsx, DashboardPage.tsx   techlead   (ghép trang, nối dữ liệu)
   app/api/insights/route.ts       ai-engineer
-  components/ui/**                techlead   (shadcn generate)
+  components/ui/**                techlead   (shadcn; cần thêm → nhờ techlead `npx shadcn add`)
+  lib/utils.ts, lib/notImplemented.ts   techlead
   components/input/**             frontend-input
   components/dashboard/**         frontend-dashboard
   lib/domain/**                   data-engineer   (kpi.ts, validation.ts, format.ts, dates.ts)
@@ -85,6 +86,7 @@ src/
 scripts/gen-mock.ts               ba-analyst
 scripts/eval-ai.ts                ai-engineer
 tests/integration/** tests/e2e/** tests/perf/**   qa-engineer
+package.json, tsconfig, eslint/prettier, next/vitest/playwright config, .github/**, .env.example   techlead
 **/*.test.ts cạnh file nguồn      owner của file nguồn
 docs/00,01,10,13                  techlead
 docs/03,05(phần prompt),07        ba-analyst

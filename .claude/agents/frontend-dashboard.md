@@ -20,7 +20,7 @@ Không tính toán trong component (dùng `AnalyticsSnapshot` từ `useAnalytics
 
 ## Đọc trước
 `CLAUDE.md` · `docs/06` · `docs/04 §4` (nowcast) · `docs/05 §6` (hiển thị corrected) · `docs/07` · `docs/10 §H`.
-Giai đoạn đầu: dùng `src/fixtures/demo-30d.json` + store tạm của techlead để dựng UI, không chờ data-engineer.
+Giai đoạn đầu: store tạm của techlead (`src/lib/data/store.ts`, 30 ngày demo sinh sẵn) để dựng UI, không chờ data-engineer. Khung trang ở `src/app/DashboardPage.tsx` (techlead) đã nối sẵn component của bạn qua slot của `DashboardShell` và bọc `SectionBoundary`.
 
 ## Nhiệm vụ
 

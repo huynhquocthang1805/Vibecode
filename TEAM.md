@@ -59,6 +59,24 @@ Quy tắc:
 5. Sau khi PR được merge: xoá nhánh, quay về `main`, `git pull`, tạo nhánh mới cho task tiếp theo.
 6. Commit message: `feat(DATA-01): validateEntry + Zod schema` · `fix(FD-02): ...` · `test(QA-01): ...` · `docs(BA-01): ...`.
 
+### Lần đầu (mỗi thành viên làm 1 lần)
+Cần Node 22 + Git. Repo đã có khung chạy được (TL-01..04 xong).
+```bash
+git clone https://github.com/huynhquocthang1805/Vibecode.git
+```
+```bash
+cd Vibecode
+```
+```bash
+npm ci
+```
+```bash
+npm run dev
+```
+Mở http://localhost:3000 → thấy trang "KPI Mini" với các khu tạm có mã task (FD-02, FI-01…). Khu nào mang mã task của bạn là chỗ bạn thay bằng code thật.
+Hàm chưa làm đều là stub ném `NOT_IMPLEMENTED: <TASK-ID>` — tìm việc của mình: `grep -rn "NOT_IMPLEMENTED: DATA-01" src` (đổi mã task).
+**Next.js 16 khác kiến thức cũ của AI** → luôn bảo AI đọc `AGENTS.md` và `node_modules/next/dist/docs/` trước khi viết code Next.
+
 ### Lệnh git cho thành viên (copy theo thứ tự)
 
 Bắt đầu task:
@@ -80,7 +98,7 @@ git fetch origin
 git rebase origin/main
 ```
 ```bash
-npm run lint && npm run typecheck && npm run test -- --run
+npm run check
 ```
 
 Gửi bài:
@@ -143,7 +161,7 @@ Làm task <TASK-ID> (role <ROLE>). Làm theo .claude/commands/kickoff.md:
    Phụ thuộc chưa xong → dùng stub/fixture, ghi rõ giả định.
 2. Cho tôi xem kế hoạch ≤ 10 gạch đầu dòng: file sẽ tạo/sửa (chỉ file của tôi), hàm/component, test sẽ viết, rủi ro. CHỜ tôi đồng ý.
 3. Sau khi tôi đồng ý: viết code + test cùng lúc (test phải có ca lỗi/ca biên, không chỉ happy path).
-4. Đưa tôi lệnh để chạy: npm run lint && npm run typecheck && npm run test -- --run
+4. Đưa tôi lệnh để chạy: npm run check
 ```
 
 ### 6.3 Khi lệnh kiểm tra báo lỗi

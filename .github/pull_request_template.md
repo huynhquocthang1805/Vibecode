@@ -8,7 +8,7 @@
 ## Kiểm thử
 - [ ] `npm run lint` xanh
 - [ ] `npm run typecheck` xanh
-- [ ] `npm run test -- --run` xanh (có ca lỗi/ca biên, không chỉ happy path)
+- [ ] `npm run test` xanh (có ca lỗi/ca biên, không chỉ happy path)
 - [ ] UI: thử ở màn 375px, có trạng thái rỗng/đang tải/lỗi _(bỏ nếu không phải UI)_
 
 ## Tự kiểm

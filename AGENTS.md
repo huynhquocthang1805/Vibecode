@@ -8,4 +8,14 @@ Dành cho agent không phải Claude Code — trong đội này: **Gemini (Argon
 4. Kỹ năng tham khảo: `.claude/skills/*/SKILL.md`. Quy tắc theo thư mục: `.claude/rules/*.md` (xem `paths` ở đầu file) — đọc rule của thư mục trước khi sửa file trong đó.
 5. Làm trên nhánh `feat/<role>/<TASK-ID>` tạo từ `main` mới nhất. Không merge, không push lên `main` — techlead (Thắng + Claude) review và merge.
 6. Không sửa `TASKS.md`, `docs/11_AI_USAGE_LOG.md`, `handoffs/CHANGE_REQUESTS.md`, `CLAUDE.md` — ghi thông tin tương ứng vào `handoffs/<TASK-ID>.md`, PM sẽ gom lúc merge.
-7. Trước khi báo xong: `npm run lint && npm run typecheck && npm run test -- --run` phải xanh. Rồi làm theo `.claude/commands/handoff.md`.
+7. Trước khi báo xong: `npm run check` phải xanh. Rồi làm theo `.claude/commands/handoff.md`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

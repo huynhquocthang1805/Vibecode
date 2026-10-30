@@ -10,5 +10,5 @@ Bạn đang đóng vai **$1** và nhận task **$2**.
 3. Báo nhận task: thành viên nhắn nhóm hoặc mở Draft PR (PM đánh `[~]` trong `TASKS.md` trên `main`); techlead/PM tự đánh trực tiếp. Tạo nhánh `feat/$1/$2` từ `main` mới nhất (`git switch main && git pull origin main && git switch -c feat/$1/$2`).
 4. Viết kế hoạch ngắn (≤ 10 gạch đầu dòng): file sẽ sửa (chỉ file bạn sở hữu), hàm/component, test sẽ viết, rủi ro. Chờ người điều khiển đồng ý.
 5. Thực hiện. Viết test song song với code. Không đổi chữ ký trong contracts.
-6. Chạy `/check` (hoặc `npm run lint && npm run typecheck && npm run test -- --run`) đến khi xanh.
+6. Chạy `/check` (hoặc `npm run check`) đến khi xanh.
 7. Chạy `/handoff $2`.
