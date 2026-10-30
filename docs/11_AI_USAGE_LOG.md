@@ -1,20 +1,21 @@
 # 11 — Nhật ký sử dụng AI (bằng chứng Vibe Coding)
 
-Owner tổng hợp: `pm-release`. Mọi agent ghi 1 dòng sau mỗi task (`/handoff` hoặc `/log-ai`).
+Owner tổng hợp: `pm-release` (Thắng + Claude). Thành viên ghi dòng log trong `handoffs/<TASK-ID>.md`; PM chép vào bảng dưới lúc merge PR (tránh xung đột khi 5 người cùng sửa một file).
 
 ## 1. Đội AI agent & cách điều phối
-| Role | File định nghĩa | Model | Phạm vi |
+| Role | File định nghĩa | Người · công cụ AI | Phạm vi |
 |---|---|---|---|
-| techlead | `.claude/agents/techlead.md` | opus | kiến trúc, contracts, review, gate |
-| ba-analyst | `.claude/agents/ba-analyst.md` | sonnet | nghiệp vụ, prompt, mock data |
-| data-engineer | `.claude/agents/data-engineer.md` | sonnet | validation, storage, rollup, worker, realtime |
-| forecast-engineer | `.claude/agents/forecast-engineer.md` | opus | xu hướng, dự báo, nowcast, bất thường |
-| ai-engineer | `.claude/agents/ai-engineer.md` | sonnet | API AI, guardrail, fallback, báo cáo |
-| frontend-input | `.claude/agents/frontend-input.md` | sonnet | form, import, bảng |
-| frontend-dashboard | `.claude/agents/frontend-dashboard.md` | sonnet | dashboard, biểu đồ, AI card |
-| qa-engineer | `.claude/agents/qa-engineer.md` | sonnet | test, perf, bảo mật |
-| pm-release | `.claude/agents/pm-release.md` | sonnet | tiến độ, README, deploy, pitching |
-Cơ chế chống xung đột: hợp đồng đóng băng (`src/types/domain.ts`), quyền sở hữu file (CLAUDE.md §4), stub trước, handoff sau mỗi task, cổng chất lượng G1–G3, hook chặn lệnh nguy hiểm, CI.
+| techlead | `.claude/agents/techlead.md` | Thắng · Claude | kiến trúc, contracts, review, merge, gate |
+| pm-release | `.claude/agents/pm-release.md` | Thắng · Claude | tiến độ, README, deploy, pitching, tổng hợp log |
+| data-engineer | `.claude/agents/data-engineer.md` | Huy · Gemini (Argon) | validation, storage, rollup, worker, realtime |
+| forecast-engineer | `.claude/agents/forecast-engineer.md` | Huy · Gemini (Argon) | xu hướng, dự báo, nowcast, bất thường |
+| ai-engineer | `.claude/agents/ai-engineer.md` | Hoàng Anh · Gemini (Argon) | API AI, guardrail, fallback, báo cáo |
+| frontend-dashboard | `.claude/agents/frontend-dashboard.md` | Trường · ChatGPT (Astral) | dashboard, biểu đồ, AI card |
+| frontend-input | `.claude/agents/frontend-input.md` | Trường · ChatGPT (Astral) | form, import, bảng |
+| ba-analyst | `.claude/agents/ba-analyst.md` | Nhân · ChatGPT (Astral) | nghiệp vụ, prompt, mock data |
+| qa-engineer | `.claude/agents/qa-engineer.md` | Nhân · ChatGPT (Astral) | test, perf, bảo mật |
+Đội dùng **3 hệ AI khác nhau** (Claude, Gemini, ChatGPT) trên cùng một bộ luật (`CLAUDE.md` + `AGENTS.md` + `.claude/`), code của mỗi người được AI khác review trước khi merge (Claude review mọi PR; ChatGPT review chéo PR của Claude).
+Cơ chế chống xung đột: hợp đồng đóng băng (`src/types/domain.ts`), quyền sở hữu file (CLAUDE.md §4), stub trước, 1 task = 1 nhánh = 1 PR, chỉ techlead merge `main`, file dùng chung (`TASKS.md`, log) chỉ PM sửa, handoff sau mỗi task, cổng chất lượng G1–G3, hook chặn lệnh nguy hiểm, CI.
 
 ## 2. Nhật ký
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |

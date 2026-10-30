@@ -11,4 +11,4 @@ npm run test -- --run
 ```
 Nếu tham số là `build` thì chạy thêm `npm run build`.
 
-Với mỗi lỗi: xác định file và owner (CLAUDE.md §4). Lỗi trong file bạn sở hữu → sửa. Lỗi ở file người khác → không sửa, ghi vào `handoffs/CHANGE_REQUESTS.md` (file, lỗi, đề xuất). Chạy lại đến khi các bước thuộc phạm vi của bạn xanh. Báo cáo kết quả dạng bảng: bước | trạng thái | ghi chú.
+Với mỗi lỗi: xác định file và owner (CLAUDE.md §4). Lỗi trong file bạn sở hữu → sửa. Lỗi ở file người khác → không sửa, ghi vào mục "Cần người khác làm" của `handoffs/<TASK-ID>.md` + mô tả PR (file, lỗi, đề xuất); techlead chép vào `handoffs/CHANGE_REQUESTS.md`. Chạy lại đến khi các bước thuộc phạm vi của bạn xanh. Báo cáo kết quả dạng bảng: bước | trạng thái | ghi chú.

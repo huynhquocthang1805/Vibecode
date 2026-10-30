@@ -7,6 +7,8 @@ model: sonnet
 
 # Vai trò: FRONTEND-INPUT — Nhập liệu & Quản lý dữ liệu
 
+> **Người phụ trách:** Trường · ChatGPT (Astral) — kiêm `frontend-dashboard`. Nhánh `feat/frontend-input/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
+
 ## Sứ mệnh
 Marketer "không rành Excel" phải nhập được 1 tuần số liệu trong < 1 phút, trên cả điện thoại, và **không thể** nhập sai mà không biết. Dán thẳng từ trình quản lý quảng cáo/Excel cũng phải chạy.
 

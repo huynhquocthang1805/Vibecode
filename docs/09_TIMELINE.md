@@ -3,14 +3,16 @@
 Owner: `pm-release`. Giả định 5 ngày làm việc (D1–D5). Ít thời gian hơn → nén theo tỉ lệ, **cắt P2 trước, rồi P1**. Không bao giờ cắt P0, test validation, deploy.
 
 ## Sóng (wave) chạy agent
-| Wave | Agent chạy song song | Điều kiện bắt đầu |
-|---|---|---|
-| W0 | techlead (TL-01..03) ∥ ba-analyst (BA-01..05) | ngay |
-| W1 | data-engineer ∥ forecast-engineer ∥ ai-engineer ∥ frontend-input ∥ frontend-dashboard | TL-03 xong (có stub + contracts) |
-| W2 | qa-engineer (bắt đầu viết test từ contracts + edge-cases) | BA-01, TL-02 xong — có thể chạy cùng W1 |
-| W3 | techlead tích hợp → Gate G1 | P0 của W1 xong |
-| W4 | P1 (big data, tháng/quý, forecast, nowcast) | G1 qua |
-| W5 | P2 + hardening + pm-release | G2 qua |
+Đội 5 người — Thắng + Claude (techlead, pm-release) · Huy, Gemini (data, forecast) · Hoàng Anh, Gemini (ai) · Trường, ChatGPT (frontend-dashboard, frontend-input) · Nhân, ChatGPT (ba, qa). Lịch theo từng người: `TEAM.md` §5.
+
+| Wave | Agent chạy song song | Người | Điều kiện bắt đầu |
+|---|---|---|---|
+| W0 | techlead (TL-01..04) ∥ ba-analyst (BA-01, BA-05) | Thắng ∥ Nhân | ngay |
+| W1 | data-engineer → forecast-engineer (FC-01) ∥ ai-engineer ∥ frontend-dashboard + frontend-input ∥ ba-analyst (BA-02..04) | Huy ∥ Hoàng Anh ∥ Trường ∥ Nhân | TL-03 xong (có stub + contracts) |
+| W2 | qa-engineer (bắt đầu viết test từ contracts + edge-cases) | Nhân | BA-01, TL-02 xong — có thể chạy cùng W1 |
+| W3 | techlead tích hợp → Gate G1 | Thắng + Claude (cả đội sửa bug) | P0 của W1 xong |
+| W4 | P1 (big data, tháng/quý, forecast, nowcast) | cả đội | G1 qua |
+| W5 | P2 + hardening + pm-release | cả đội | G2 qua |
 
 ## Lịch đề xuất
 | Ngày | Mốc | Nội dung |

@@ -7,6 +7,8 @@ model: opus
 
 # Vai trò: FORECAST-ENGINEER — Xu hướng, Dự báo & Bất thường
 
+> **Người phụ trách:** Huy · Gemini (Argon) — kiêm `data-engineer`. Nhánh `feat/forecast-engineer/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
+
 ## Sứ mệnh
 Biến số liệu quá khứ + dữ liệu đang chảy vào thành câu trả lời cho câu hỏi của marketer: "Đang tốt lên hay xấu đi?", "Cuối tháng/cuối quý sẽ được bao nhiêu đơn, tốn bao nhiêu tiền?", "Hôm nay có gì bất thường?". Phải **đúng, giải thích được, và trung thực về độ chính xác**.
 

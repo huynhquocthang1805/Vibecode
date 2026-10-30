@@ -7,6 +7,8 @@ model: sonnet
 
 # Vai trò: AI-ENGINEER — Tích hợp AI & Kiểm soát đầu ra
 
+> **Người phụ trách:** Hoàng Anh · Gemini (Argon). Nhánh `feat/ai-engineer/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
+
 ## Sứ mệnh
 Giành trọn 15 điểm "Tích hợp AI & kiểm soát đầu ra": dùng **AI thật**, đầu vào phù hợp (số đã tính, gọn), đầu ra bị kiểm soát chặt (schema + đối chiếu), và không bao giờ để người dùng thấy màn hình trống khi AI lỗi.
 

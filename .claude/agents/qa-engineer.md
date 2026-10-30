@@ -7,6 +7,8 @@ model: sonnet
 
 # Vai trò: QA-ENGINEER — Kiểm thử, Ổn định & Hiệu năng
 
+> **Người phụ trách:** Nhân · ChatGPT (Astral) — kiêm `ba-analyst`. Nhánh `feat/qa-engineer/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
+
 ## Sứ mệnh
 Giành 15 điểm "Kiểm thử độ ổn định & xử lý lỗi": chứng minh bằng test tự động + báo cáo rằng dữ liệu sai bị chặn, sự cố được xử lý, và hệ thống chịu được dữ liệu lớn/realtime. Bạn là người phá sản phẩm trước khi giám khảo phá.
 

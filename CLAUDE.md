@@ -2,6 +2,17 @@
 
 > File này là "hiến pháp" của dự án. MỌI agent phải đọc file này trước khi làm bất kỳ việc gì.
 > Owner: `techlead`. Agent khác KHÔNG được sửa file này — muốn đổi thì ghi vào `handoffs/CHANGE_REQUESTS.md`.
+> Đội 5 người — ai giữ role nào, nhánh nào, prompt mẫu cho Gemini/ChatGPT: **`TEAM.md`**.
+
+## 0. Đội
+| Người | Công cụ AI | Role |
+|---|---|---|
+| Thắng (chủ dự án) | Claude (+ ChatGPT review chéo) | `techlead` + `pm-release` — duy nhất được merge vào `main` |
+| Huy | Gemini · Argon | `data-engineer` + `forecast-engineer` |
+| Hoàng Anh | Gemini · Argon | `ai-engineer` |
+| Trường | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` |
+| Nhân | ChatGPT · Astral | `ba-analyst` + `qa-engineer` |
+Người giữ 2 role sở hữu hợp 2 phạm vi ở §4. Agent không phải Claude Code đọc thêm `AGENTS.md`.
 
 ## 1. Sản phẩm là gì
 Web app một trang giúp Marketer (không rành Excel) nhập số liệu quảng cáo theo ngày và đọc chỉ số tự động.
@@ -50,7 +61,7 @@ npm run build        # build production
 Biến môi trường: xem `.env.example`. KHÔNG BAO GIỜ đọc/in/commit `.env.local`. Key AI chỉ dùng ở server (`process.env.AI_API_KEY`), tuyệt đối không có tiền tố `NEXT_PUBLIC_`.
 
 ## 4. Cấu trúc thư mục & QUYỀN SỞ HỮU (ownership)
-Mỗi file chỉ có 1 owner. Agent chỉ được sửa file mình sở hữu + test của mình. Cần sửa file người khác → ghi `handoffs/CHANGE_REQUESTS.md`.
+Mỗi file chỉ có 1 owner (role). Người phụ trách role: §0 / `TEAM.md` §2. Agent chỉ được sửa file mình sở hữu + test của mình. Cần sửa file người khác → ghi vào handoff + PR, techlead chuyển vào `handoffs/CHANGE_REQUESTS.md`.
 
 ```
 src/
@@ -79,7 +90,7 @@ docs/03,05(phần prompt),07        ba-analyst
 docs/04                           forecast-engineer
 docs/06                           frontend-dashboard
 docs/08                           qa-engineer
-docs/09,11,12, STATUS, QA_DEFENSE, SUBMISSION_CHECKLIST, README.md, TASKS.md, CHANGELOG.md  pm-release
+docs/09,11,12, STATUS, QA_DEFENSE, SUBMISSION_CHECKLIST, README.md, TASKS.md, TEAM.md, CHANGELOG.md  pm-release
 docs/forecast-validation.md      forecast-engineer
 docs/ai-eval-report.md           ai-engineer
 docs/test-report, perf-report, bugs   qa-engineer
@@ -99,12 +110,12 @@ handoffs/**                       mọi agent (mỗi agent ghi file của task m
 - Không gọi AI trực tiếp từ client; client → `/api/insights` → provider.
 
 ## 6. Quy trình làm việc của agent
-1. Đọc: `CLAUDE.md` → file role của mình `.claude/agents/<role>.md` → `TASKS.md` → docs liên quan → `handoffs/` của task phụ thuộc.
-2. Nhận task: đổi `[ ]` thành `[~]` + tên agent trong `TASKS.md`.
-3. Làm trên nhánh `feat/<role>/<TASK-ID>` (nếu chạy song song trên cùng máy: dùng `git worktree`).
+1. Đọc: `CLAUDE.md` → `TEAM.md` → file role của mình `.claude/agents/<role>.md` → `TASKS.md` → docs liên quan → `handoffs/` của task phụ thuộc.
+2. Nhận task: báo nhóm hoặc mở Draft PR; PM (Claude) đổi `[ ]` → `[~]` trong `TASKS.md` trên `main`.
+3. Làm trên nhánh `feat/<role>/<TASK-ID>` tạo từ `main` mới nhất (nếu chạy song song trên cùng máy: dùng `git worktree`). 1 task = 1 nhánh = 1 PR.
 4. Viết test cùng lúc với code. Chạy `/check` (lint + typecheck + test) phải xanh.
-5. Ghi `handoffs/<TASK-ID>.md` theo `handoffs/_TEMPLATE.md`, đổi `[~]` → `[x]`, ghi 1 dòng vào `docs/11_AI_USAGE_LOG.md`.
-6. Mở PR → techlead `/review` → merge.
+5. Ghi `handoffs/<TASK-ID>.md` theo `handoffs/_TEMPLATE.md` (gồm dòng log AI + change request nếu có). Thành viên **không** sửa `TASKS.md`, `docs/11_AI_USAGE_LOG.md`, `handoffs/CHANGE_REQUESTS.md` trên nhánh task.
+6. Rebase lên `origin/main`, push nhánh, mở PR vào `main` → techlead `/review` → techlead squash merge → PM đánh `[x]` + chép log AI. Không ai khác merge hoặc push lên `main`.
 
 ## 7. Definition of Done (mọi task)
 - [ ] Đúng hợp đồng trong `src/types/domain.ts` (không tự đổi kiểu).

@@ -1,5 +1,5 @@
 # Handoff — <TASK-ID> · <tên task>
-- **Role:** <role>   **Nhánh:** feat/<role>/<TASK-ID>   **Thời gian:** <YYYY-MM-DD HH:mm>
+- **Role:** <role>   **Người:** <tên> · <công cụ AI>   **Nhánh:** feat/<role>/<TASK-ID>   **Thời gian:** <YYYY-MM-DD HH:mm>
 - **Contracts:** đã đọc `domain.ts` v<n> — không đổi chữ ký ✅
 
 ## Đã làm
@@ -29,3 +29,8 @@
 
 ## Ghi chú dùng AI
 - Prompt chính / chỗ AI sai và cách phát hiện: …
+- Dòng log (PM chép vào `docs/11_AI_USAGE_LOG.md` lúc merge):
+
+| Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
+|---|---|---|---|---|---|---|
+| | | | | | | |

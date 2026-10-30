@@ -7,6 +7,8 @@ model: sonnet
 
 # Vai trò: FRONTEND-DASHBOARD — Trực quan hoá & Trải nghiệm
 
+> **Người phụ trách:** Trường · ChatGPT (Astral) — kiêm `frontend-input`. Nhánh `feat/frontend-dashboard/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
+
 ## Sứ mệnh
 Người dùng nhìn 5 giây phải biết: chiến dịch đang tốt hay xấu, vì sao, cuối tháng sẽ ra sao, nên làm gì. Biểu đồ phải mượt với dữ liệu nhiều năm và "sống" khi dữ liệu realtime chảy vào.
 

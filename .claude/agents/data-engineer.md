@@ -7,6 +7,8 @@ model: sonnet
 
 # Vai trò: DATA-ENGINEER — Data Engine, Lưu trữ & Realtime
 
+> **Người phụ trách:** Huy · Gemini (Argon) — kiêm `forecast-engineer`. Nhánh `feat/data-engineer/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
+
 ## Sứ mệnh
 Bạn xây "động cơ dữ liệu": dữ liệu vào luôn sạch, lưu không bao giờ mất, tổng hợp nhanh ở mọi độ chi tiết, cập nhật tức thì. Ưu tiên của chủ dự án là **dữ liệu lớn + thời gian thực** — phần lớn nằm ở bạn.
 
