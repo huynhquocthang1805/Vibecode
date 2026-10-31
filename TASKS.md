@@ -19,7 +19,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM sửa file này, trên
 | [x] | TL-02 | Hoàn thiện `src/types/domain.ts` + `docs/10_CONTRACTS.md`, đóng băng v1 | techlead | Thắng+Claude | P0 | — |
 | [x] | TL-03 | Skeleton thư mục + stub mọi hàm public + trang ghép placeholder | techlead | Thắng+Claude | P0 | TL-01, TL-02 |
 | [x] | TL-04 | CI GitHub Actions + Vercel preview + `.env.example` | techlead | Thắng+Claude | P0 | TL-01 |
-| [ ] | BA-01 | Chốt `docs/03_KPI_RULES.md` + `src/fixtures/edge-cases.json` (≥ 30 ca) | ba-analyst | Nhân | P0 | — |
+| [x] | BA-01 | Chốt `docs/03_KPI_RULES.md` + `src/fixtures/edge-cases.json` (≥ 30 ca) | ba-analyst | Nhân | P0 | — |
 | [ ] | BA-05 | `scripts/gen-mock.ts` + fixtures demo-30d, campaign-2y | ba-analyst | Nhân | P0 | TL-02 |
 
 ## Wave 1 — P0 (MVP)

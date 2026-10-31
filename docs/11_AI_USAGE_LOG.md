@@ -25,6 +25,8 @@ Cơ chế chống xung đột: hợp đồng đóng băng (`src/types/domain.ts`
 | 2026-10-30 | techlead (Claude) | TL-01 | Khởi tạo Next.js 16.4 + stack + scripts | Sinh code | AI suýt dùng kiến thức Next cũ → đọc `node_modules/next/dist/docs` (Cache Components, `LayoutProps` cần `next typegen` trước `tsc`) | `package.json`, config |
 | 2026-10-30 | techlead (Claude) | TL-02 | Bổ sung kiểu còn thiếu (TrendConfig, AnomalyConfig, MetricMeta, ReportTemplate), đóng băng v1 | Sinh code | docs/10 nhắc kiểu chưa định nghĩa → bổ sung trước khi đóng băng | `domain.ts`, `docs/10` |
 | 2026-10-30 | techlead (Claude) | TL-03 | Stub mọi hàm public, store tạm, trang ghép, shadcn viết tay | Sinh code | Ảnh chụp 375px lộ tab bị cắt chữ đầu (justify-center + overflow) → sửa `tabs.tsx` | `src/**` |
+| 2026-11-01 | ba-analyst (Nhân · ChatGPT) | BA-01 | Đặc tả KPI + 81 ca biên (`edge-cases.json`), hướng dẫn adapter QA | Sinh code | AI tự ghi rõ phần chưa xác minh thay vì tuyên bố pass; techlead kiểm lại bằng oracle độc lập: 71/71 ca khớp | `docs/03`, `src/fixtures/edge-cases.json` |
+| 2026-11-01 | techlead (Claude) | TL-05 | Review BA-01: oracle Python tính lại kỳ vọng từ docs/03 + LIMITS, không dùng đáp án của fixture | Review | Không tìm thấy sai; chốt 2 điểm BA nêu (CVR > 1, dữ liệu ngày cho like-for-like) → CR-002, CR-003 | `handoffs/CHANGE_REQUESTS.md` |
 | 2026-10-30 | techlead (Claude) | TL-04 | CI GitHub Actions (check + e2e trên PR) | Sinh code | — | `.github/workflows/ci.yml` |
 
 Loại: Sinh code · Review · AI sai → sửa · Quyết định không theo AI · Prompt.

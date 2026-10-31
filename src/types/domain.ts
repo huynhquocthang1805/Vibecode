@@ -56,7 +56,7 @@ export interface Kpis {
   ctr: number | null; // 0..1
   cpc: number | null; // VND
   cpa: number | null; // VND
-  cvr: number | null; // 0..1
+  cvr: number | null; // thường 0..1; có thể > 1 khi orders > clicks (cảnh báo ORDERS_GT_CLICKS) — không kẹp (CR-002)
 }
 
 /* ───────────────────────── Dữ liệu nhập ───────────────────────── */

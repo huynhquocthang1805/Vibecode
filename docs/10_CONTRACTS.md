@@ -69,7 +69,7 @@ export function buildRollups(entries: DailyEntry[]): RollupIndex;            // 
 export function applyDelta(index: RollupIndex, delta: EntryDelta): RollupIndex; // O(|delta|)
 // RollupIndex: kiểu nội bộ (opaque) export từ aggregate/rollup.ts — chỉ data-engineer đọc bên trong
 export function getSeries(index: RollupIndex, q: Pick<AnalyticsQuery,'campaignId'|'grain'|'range'|'today'>): Series;
-export function comparePeriods(series: Series, today: ISODate): PeriodComparison | null;
+export function comparePeriods(series: Series, today: ISODate, daily?: Series): PeriodComparison | null; // CR-003: daily để cắt like-for-like khi grain ≠ day; thiếu → likeForLike=false
 
 // realtime/
 export const bus: { emit(e: DomainEvent): void; on<T extends DomainEvent['type']>(t: T, fn: (e: Extract<DomainEvent,{type:T}>) => void): () => void };
