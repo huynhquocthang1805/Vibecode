@@ -133,6 +133,18 @@ describe('dates · property', () => {
     }
   });
 
+  // Đối chiếu Python datetime.isocalendar (techlead đã kiểm 7.670/7.670 ngày 2015–2035 khi review DATA-FIX-01)
+  it.each([
+    ['2020-12-31', '2020-W53'],
+    ['2021-01-03', '2020-W53'],
+    ['2024-12-30', '2025-W01'],
+    ['2026-01-04', '2026-W01'],
+    ['2026-12-28', '2026-W53'],
+    ['2027-01-03', '2026-W53'],
+  ])('tuần ISO ranh giới năm: %s → %s', (d, w) => {
+    expect(bucketKey(d, 'week')).toBe(w);
+  });
+
   it('addDays / daysBetween nghịch đảo nhau', () => {
     fc.assert(
       fc.property(dateArb, fc.integer({ min: -4000, max: 4000 }), (d, n) => {
@@ -381,5 +393,111 @@ describe('FC-01 · analyzeTrend', () => {
     // Ghi chú cho BA-02: CPA tăng ~3 lần trong 14 ngày nhưng overall = 'flat' vì quy tắc "CPA up > 10%" dùng
     // changePct kỳ-trước-kỳ (ngày) chỉ ~6%. Đúng đặc tả docs/04 §2 hiện tại, nhưng nên xét thêm slope.
     expect(['flat', 'down']).toContain(w.overall);
+  });
+});
+
+/* ───────────── 6. DATA-FIX-01: mọi policy khi sửa khoá + hoàn tác chính xác ───────────── */
+describe('store · updateEntry đổi khoá theo policy + undo', () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    await useDataStore.getState().clearAll();
+  });
+
+  const strip2 = (es: DailyEntry[]) =>
+    JSON.stringify(es.map(({ createdAt: _c, updatedAt: _u, ...r }) => r).sort((a, b) => a.id.localeCompare(b.id)));
+
+  it('sum: cộng vào dòng trùng khoá, tổng chi phí giữ nguyên; undo về đúng trạng thái trước; chỉ undo 1 lần', () => {
+    const s = useDataStore.getState();
+    s.addEntries(
+      [
+        { date: '2026-10-01', campaignId: 'a', reach: 100, clicks: 10, cost: 1000, orders: 1 },
+        { date: '2026-10-02', campaignId: 'a', reach: 200, clicks: 20, cost: 2000, orders: 2 },
+      ],
+      'overwrite',
+    );
+    const before = strip2(useDataStore.getState().entries);
+    s.setSettings({ duplicatePolicy: 'sum' });
+    expect(useDataStore.getState().updateEntry('a|2026-10-01', { date: '2026-10-02' }).ok).toBe(true);
+    expect(useDataStore.getState().entries).toHaveLength(1);
+    expect(useDataStore.getState().entries[0]!.cost).toBe(3000);
+    expect(useDataStore.getState().undoLast()).toBe(true);
+    expect(strip2(useDataStore.getState().entries)).toBe(before);
+    expect(useDataStore.getState().undoLast()).toBe(false);
+  });
+
+  it('ask/skip: trả DUPLICATE_DATE và không đổi dữ liệu; overwrite: dòng xung đột bị thay', () => {
+    const s = useDataStore.getState();
+    s.addEntries(
+      [
+        { date: '2026-10-01', campaignId: 'a', reach: 100, clicks: 10, cost: 1000, orders: 1 },
+        { date: '2026-10-02', campaignId: 'a', reach: 200, clicks: 20, cost: 2000, orders: 2 },
+      ],
+      'overwrite',
+    );
+    for (const p of ['ask', 'skip'] as const) {
+      s.setSettings({ duplicatePolicy: p });
+      const before = useDataStore.getState().entries;
+      const r = useDataStore.getState().updateEntry('a|2026-10-01', { date: '2026-10-02' });
+      expect(r.ok).toBe(false);
+      expect(r.issues.map((i) => i.code)).toContain('DUPLICATE_DATE');
+      expect(useDataStore.getState().entries).toBe(before);
+    }
+    s.setSettings({ duplicatePolicy: 'overwrite' });
+    useDataStore.getState().updateEntry('a|2026-10-01', { date: '2026-10-02' });
+    const after = useDataStore.getState().entries;
+    expect(after).toHaveLength(1);
+    expect(after[0]).toMatchObject({ id: 'a|2026-10-02', cost: 1000 });
+  });
+
+  it('property: 4 policy + đổi chiến dịch + undo + xoá hết — checksum đúng, khoá duy nhất', async () => {
+    const row = fc.record({
+      date: fc.integer({ min: 0, max: 5 }).map((n) => addDays('2026-10-01', n)),
+      campaignId: fc.constantFrom('a', 'b'),
+      reach: fc.integer({ min: 100, max: 1000 }),
+      clicks: fc.integer({ min: 0, max: 100 }),
+      cost: fc.integer({ min: 0, max: 99999 }),
+      orders: fc.integer({ min: 0, max: 10 }),
+    });
+    const pol = fc.constantFrom('ask', 'overwrite', 'sum', 'skip') as fc.Arbitrary<
+      'ask' | 'overwrite' | 'sum' | 'skip'
+    >;
+    const op = fc.oneof(
+      fc.record({ t: fc.constant('add' as const), rows: fc.array(row, { maxLength: 4 }), p: pol }),
+      fc.record({ t: fc.constant('remove' as const), pick: fc.nat() }),
+      fc.record({
+        t: fc.constant('upd' as const),
+        pick: fc.nat(),
+        day: fc.integer({ min: 0, max: 5 }),
+        camp: fc.constantFrom('a', 'b'),
+        p: pol,
+      }),
+      fc.record({ t: fc.constant('undo' as const) }),
+      fc.record({ t: fc.constant('clear' as const) }),
+    );
+    await fc.assert(
+      fc.asyncProperty(fc.array(op, { minLength: 1, maxLength: 30 }), async (ops) => {
+        localStorage.clear();
+        await useDataStore.getState().clearAll();
+        for (const o of ops) {
+          const s = useDataStore.getState();
+          if (o.t === 'add') s.addEntries(o.rows, o.p);
+          else if (o.t === 'remove' && s.entries.length) s.removeEntries([s.entries[o.pick % s.entries.length]!.id]);
+          else if (o.t === 'upd' && s.entries.length) {
+            s.setSettings({ duplicatePolicy: o.p });
+            const t = useDataStore.getState().entries;
+            useDataStore
+              .getState()
+              .updateEntry(t[o.pick % t.length]!.id, { date: addDays('2026-10-01', o.day), campaignId: o.camp });
+          } else if (o.t === 'undo') s.undoLast();
+          else if (o.t === 'clear') await s.clearAll();
+        }
+        const st = useDataStore.getState();
+        expect(st.checksum).toEqual(recompute(st.entries));
+        const ids = st.entries.map((e) => e.id);
+        expect(new Set(ids).size).toBe(ids.length);
+        for (const e of st.entries) expect(e.id).toBe(`${e.campaignId}|${e.date}`);
+      }),
+      { numRuns: 300, seed: 99 },
+    );
   });
 });

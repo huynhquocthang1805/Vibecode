@@ -20,7 +20,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM sửa file này, trên
 | [x] | TL-03 | Skeleton thư mục + stub mọi hàm public + trang ghép placeholder | techlead | Thắng+Claude | P0 | TL-01, TL-02 |
 | [x] | TL-04 | CI GitHub Actions + Vercel preview + `.env.example` | techlead | Thắng+Claude | P0 | TL-01 |
 | [x] | BA-01 | Chốt `docs/03_KPI_RULES.md` + `src/fixtures/edge-cases.json` (≥ 30 ca) | ba-analyst | Nhân | P0 | — |
-| [ ] | BA-05 | `scripts/gen-mock.ts` + fixtures demo-30d, campaign-2y | ba-analyst | Nhân | P0 | TL-02 |
+| [x] | BA-05 | `scripts/gen-mock.ts` + fixtures demo-30d, campaign-2y | ba-analyst | Nhân | P0 | TL-02 |
 
 ## Wave 1 — P0 (MVP)
 | | ID | Task | Owner | Người | P | Phụ thuộc |
@@ -29,7 +29,9 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM sửa file này, trên
 | [x] | DATA-02 | kpi.ts, format.ts, dates.ts | data-engineer | Huy | P0 | TL-03 |
 | [x] | DATA-03 | StorageAdapter localStorage + codec cột + migrate + quota/corrupt | data-engineer | Huy | P0 | DATA-01 |
 | [x] | DATA-04 | Zustand store CRUD + duplicate policy + undo + loadMock | data-engineer | Huy | P0 | DATA-03 |
-| [ ] | DATA-FIX-01 | Sửa R-01..R-05 + hydrate tăng revision (`handoffs/REVIEW-DATA-01-04-FC-01.md`) | data-engineer | Huy | P0 | DATA-04 |
+| [x] | DATA-FIX-01 | Sửa R-01..R-05 + hydrate tăng revision (`handoffs/REVIEW-DATA-01-04-FC-01.md`) | data-engineer | Huy | P0 | DATA-04 |
+| [ ] | DATA-04b | `loadMock` dùng fixture thật của BA-05 (`demo-30d`, `campaign-2y`) + đăng ký 3 chiến dịch mẫu; bỏ dữ liệu tạm dùng `toISOString` | data-engineer | Huy | P0 | BA-05 |
+| [ ] | DATA-05-lite | Snapshot P0 trên main thread: `buildRollups`/`getSeries` (không incremental) + `comparePeriods` + `useAnalytics` thật (không Worker) → mở khoá KPI/biểu đồ/AI cho G1 | data-engineer | Huy | P0 | DATA-FIX-01 |
 | [x] | FC-01 | analyzeTrend + comparePeriods consumer (TrendSummary) | forecast-engineer | Huy | P0 | TL-03 |
 | [ ] | BA-02 | `config/thresholds.ts`, `bannedPhrases.ts`, `ruleSuggestions.ts`, `glossary.ts` | ba-analyst | Nhân | P0 | BA-01 |
 | [ ] | BA-03 | System prompt v1 + user template + few-shot | ba-analyst | Nhân | P0 | TL-02 |
