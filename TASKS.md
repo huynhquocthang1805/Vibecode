@@ -25,11 +25,12 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM sửa file này, trên
 ## Wave 1 — P0 (MVP)
 | | ID | Task | Owner | Người | P | Phụ thuộc |
 |---|---|---|---|---|---|---|
-| [ ] | DATA-01 | Zod schema + validateEntry/validateBatch | data-engineer | Huy | P0 | TL-03, BA-01 |
-| [ ] | DATA-02 | kpi.ts, format.ts, dates.ts | data-engineer | Huy | P0 | TL-03 |
-| [ ] | DATA-03 | StorageAdapter localStorage + codec cột + migrate + quota/corrupt | data-engineer | Huy | P0 | DATA-01 |
-| [ ] | DATA-04 | Zustand store CRUD + duplicate policy + undo + loadMock | data-engineer | Huy | P0 | DATA-03 |
-| [ ] | FC-01 | analyzeTrend + comparePeriods consumer (TrendSummary) | forecast-engineer | Huy | P0 | TL-03 |
+| [x] | DATA-01 | Zod schema + validateEntry/validateBatch | data-engineer | Huy | P0 | TL-03, BA-01 |
+| [x] | DATA-02 | kpi.ts, format.ts, dates.ts | data-engineer | Huy | P0 | TL-03 |
+| [x] | DATA-03 | StorageAdapter localStorage + codec cột + migrate + quota/corrupt | data-engineer | Huy | P0 | DATA-01 |
+| [x] | DATA-04 | Zustand store CRUD + duplicate policy + undo + loadMock | data-engineer | Huy | P0 | DATA-03 |
+| [ ] | DATA-FIX-01 | Sửa R-01..R-05 + hydrate tăng revision (`handoffs/REVIEW-DATA-01-04-FC-01.md`) | data-engineer | Huy | P0 | DATA-04 |
+| [x] | FC-01 | analyzeTrend + comparePeriods consumer (TrendSummary) | forecast-engineer | Huy | P0 | TL-03 |
 | [ ] | BA-02 | `config/thresholds.ts`, `bannedPhrases.ts`, `ruleSuggestions.ts`, `glossary.ts` | ba-analyst | Nhân | P0 | BA-01 |
 | [ ] | BA-03 | System prompt v1 + user template + few-shot | ba-analyst | Nhân | P0 | TL-02 |
 | [ ] | BA-04 | `lib/report/templates.ts` (ngắn + đầy đủ) | ba-analyst | Nhân | P0 | TL-02 |
