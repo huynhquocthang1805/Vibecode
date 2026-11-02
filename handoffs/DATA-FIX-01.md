@@ -26,3 +26,4 @@
 
 ## Ghi chú dùng AI
 - AI phát hiện vấn đề timezone offset khi dùng `date-fns` tại múi giờ UTC+14 và đã thay bằng thuật toán toán học UTC thuần.
+
