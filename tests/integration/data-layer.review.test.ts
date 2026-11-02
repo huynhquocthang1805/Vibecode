@@ -122,7 +122,7 @@ describe('dates · property', () => {
 
   // R-05: bucketKey dùng date-fns (đọc giờ máy) tại 12:00 UTC → máy ở UTC+13/+14 (NZ mùa hè, Tonga, Kiribati)
   // xếp Chủ nhật sang tuần sau, 31/03 sang Q2. Sửa: tính ISO week/quarter bằng toán UTC thuần.
-  it.fails('R-05 bucketKey không phụ thuộc múi giờ máy (UTC+14)', () => {
+  it('R-05 bucketKey không phụ thuộc múi giờ máy (UTC+14)', () => {
     const saved = process.env.TZ;
     process.env.TZ = 'Pacific/Kiritimati';
     try {
@@ -205,7 +205,7 @@ describe('store · bất biến sau chuỗi thao tác ngẫu nhiên', () => {
   );
 
   // R-01: undoStack toàn cục không bị xoá khi clearAll/loadMock → hoàn tác áp delta cũ, checksum âm, dòng ma
-  it.fails('R-01 checksum = tính lại; id duy nhất = campaignId|date; không NaN', async () => {
+  it('R-01 checksum = tính lại; id duy nhất = campaignId|date; không NaN', async () => {
     await fc.assert(
       fc.asyncProperty(fc.array(opArb, { minLength: 1, maxLength: 25 }), async (ops) => {
         localStorage.clear();
@@ -240,7 +240,7 @@ describe('store · nghi vấn từ review', () => {
   });
 
   // R-02: updateEntry đổi khoá trùng dòng khác khi policy ≠ ask → 2 dòng cùng khoá
-  it.fails('R-02 E47: sửa ngày sang ngày đã có (policy overwrite) không tạo 2 dòng cùng khoá', () => {
+  it('R-02 E47: sửa ngày sang ngày đã có (policy overwrite) không tạo 2 dòng cùng khoá', () => {
     const s = useDataStore.getState();
     s.setSettings({ duplicatePolicy: 'overwrite' });
     s.addEntries(
@@ -256,7 +256,7 @@ describe('store · nghi vấn từ review', () => {
   });
 
   // R-03: source được ép kiểu, không kiểm enum
-  it.fails('R-03 validateEntry: source ngoài enum không lọt vào value', () => {
+  it('R-03 validateEntry: source ngoài enum không lọt vào value', () => {
     const r = validateEntry(
       { date: '2026-10-01', campaignId: 'default', reach: 10, clicks: 1, cost: 1, orders: 0, source: 'hacker' },
       { today: '2026-10-20' },
@@ -265,7 +265,7 @@ describe('store · nghi vấn từ review', () => {
   });
 
   // R-04: regex xoá ký tự ₫/đ/V/N/D ở MỌI vị trí → parse một phần (docs/03 §4.1 #4 cấm)
-  it.fails('R-04 validateEntry: chuỗi có chữ "d"/"v" giữa số không bị parse một phần ("1d2" ≠ 12)', () => {
+  it('R-04 validateEntry: chuỗi có chữ "d"/"v" giữa số không bị parse một phần ("1d2" ≠ 12)', () => {
     const r = validateEntry(
       { date: '2026-10-01', campaignId: 'default', reach: '1d2', clicks: 1, cost: 1, orders: 0 },
       { today: '2026-10-20' },

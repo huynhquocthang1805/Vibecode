@@ -1,5 +1,3 @@
-import { getISOWeek, getISOWeekYear, getQuarter } from 'date-fns';
-
 import type { Grain, ISODate } from '@/types/domain';
 
 const vnDateFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -62,27 +60,41 @@ export function parseISODate(s: string): ISODate | null {
   return null;
 }
 
-/** '2026-10-29' | '2026-W44' | '2026-10' | '2026-Q4' */
+/** Tính tuần và năm ISO bằng toán UTC thuần túy, không phụ thuộc múi giờ máy (R-05) */
+function getISOWeekAndYearUTC(year: number, month: number, day: number): { isoYear: number; week: number } {
+  const target = new Date(Date.UTC(year, month - 1, day));
+  const dayNr = (target.getUTCDay() + 6) % 7; // 0 = Thứ Hai, 6 = Chủ Nhật
+  target.setUTCDate(target.getUTCDate() - dayNr + 3); // Thứ Năm của tuần
+  const isoYear = target.getUTCFullYear();
+
+  const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
+  const firstDayNr = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNr + 3);
+
+  const diffMs = target.getTime() - firstThursday.getTime();
+  const week = 1 + Math.round(diffMs / (7 * 86400000));
+  return { isoYear, week };
+}
+
+/** '2026-10-29' | '2026-W44' | '2026-10' | '2026-Q4' — thuần UTC (R-05) */
 export function bucketKey(d: ISODate, g: Grain): string {
   const [yStr = '2026', mStr = '01', dayStr = '01'] = d.split('-');
   const y = Number(yStr);
   const m = Number(mStr);
   const day = Number(dayStr);
-  const date = new Date(Date.UTC(y, m - 1, day, 12, 0, 0));
 
   switch (g) {
     case 'day':
       return d;
     case 'week': {
-      const isoYear = getISOWeekYear(date);
-      const week = getISOWeek(date);
+      const { isoYear, week } = getISOWeekAndYearUTC(y, m, day);
       return `${isoYear}-W${String(week).padStart(2, '0')}`;
     }
     case 'month': {
       return `${y}-${String(m).padStart(2, '0')}`;
     }
     case 'quarter': {
-      const quarter = getQuarter(date);
+      const quarter = Math.ceil(m / 3);
       return `${y}-Q${quarter}`;
     }
     default:
