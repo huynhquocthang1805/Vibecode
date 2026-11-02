@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { LIMITS } from '@/types/domain';
 import type {
   EntryInput,
+  EntrySource,
   ImportReport,
   ISODate,
   IssueLevel,
@@ -33,6 +34,8 @@ export const VALIDATION_MESSAGES: Record<ValidationCode, (field?: string) => str
   SUMMARY_ROW: () => 'Đã bỏ qua hàng tổng cộng để tránh cộng hai lần',
   LIMIT_EXCEEDED: () => 'Vượt quá giới hạn nhập liệu',
 };
+
+const VALID_SOURCES = new Set<EntrySource>(['manual', 'paste', 'csv', 'live', 'mock']);
 
 function createIssue(
   field: keyof EntryInput | 'row',
@@ -96,7 +99,7 @@ type ParsedFieldResult =
   | { success: true; value: number }
   | { success: false; issueCode: ValidationCode };
 
-/** Parse và chuẩn hoá số kiểu Việt Nam & khoa học */
+/** Parse và chuẩn hoá số kiểu Việt Nam & khoa học (R-04: chỉ bỏ hậu tố tiền tệ, cấm parse một phần) */
 function parseNumberField(
   raw: unknown,
   isCost: boolean,
@@ -142,8 +145,9 @@ function parseNumberField(
     return { success: true, value: isCost ? Math.round(num) : num };
   }
 
-  // Loại bỏ khoảng trắng và ký hiệu tiền tệ
-  const cleaned = trimmed.replace(/\s+/g, '').replace(/[₫đVNDvnd]/g, '');
+  // R-04: Chỉ loại bỏ hậu tố tiền tệ ở cuối chuỗi (/ \s*(₫|đ|vnd)$/i), không xoá ký tự đ/v ở giữa số
+  const withoutCurrency = trimmed.replace(/\s*(₫|đ|vnd)$/i, '');
+  const cleaned = withoutCurrency.replace(/\s+/g, '');
   if (cleaned === '') {
     return { success: false, issueCode: 'NOT_NUMBER' };
   }
@@ -188,7 +192,6 @@ function parseNumberField(
       normalizedStr = cleaned.replace(/\./g, '');
     } else {
       // 1 dấu chấm: nếu phần sau dài 3 và isCost không phải thập phân có thể là nghìn
-      // Nếu phần sau dài !== 3 thì chắc chắn là thập phân
       const frac = parts[1] ?? '';
       if (frac.length === 3) {
         normalizedStr = cleaned.replace(/\./g, '');
@@ -356,6 +359,12 @@ export function validateEntry(raw: unknown, ctx: ValidationContext): ValidationR
   const ok = !hasError;
 
   if (ok && validDate !== undefined && reach !== undefined && clicks !== undefined && cost !== undefined && orders !== undefined) {
+    // R-03: Kiểm tra source theo enum, không để chuỗi bất kỳ lọt vào
+    let source: EntrySource | undefined;
+    if (typeof row.source === 'string' && VALID_SOURCES.has(row.source as EntrySource)) {
+      source = row.source as EntrySource;
+    }
+
     const value: EntryInput = {
       date: validDate,
       campaignId,
@@ -363,7 +372,7 @@ export function validateEntry(raw: unknown, ctx: ValidationContext): ValidationR
       clicks,
       cost,
       orders,
-      source: row.source ? (String(row.source) as EntryInput['source']) : undefined,
+      source,
     };
     return { ok: true, value, issues };
   }

@@ -76,35 +76,21 @@ function computeChecksum(entries: DailyEntry[]): Checksum {
   return c;
 }
 
-function updateChecksumWithDelta(c: Checksum, delta: EntryDelta): Checksum {
-  const next: Checksum = {
-    rows: c.rows + delta.added.length - delta.removed.length,
-    reach: c.reach,
-    clicks: c.clicks,
-    cost: c.cost,
-    orders: c.orders,
-  };
-  for (const a of delta.added) {
-    next.reach += a.reach;
-    next.clicks += a.clicks;
-    next.cost += a.cost;
-    next.orders += a.orders;
-  }
-  for (const r of delta.removed) {
-    next.reach -= r.reach;
-    next.clicks -= r.clicks;
-    next.cost -= r.cost;
-    next.orders -= r.orders;
-  }
-  return next;
-}
-
 interface UndoOperation {
   timestamp: number;
-  delta: EntryDelta; // delta đã xảy ra: undo sẽ làm ngược lại
+  delta: EntryDelta;
 }
 
-const undoStack: UndoOperation[] = [];
+// R-01: Chỉ giữ 1 thao tác gần nhất (docs/13 G12)
+let lastUndoOp: UndoOperation | null = null;
+
+function pushUndo(op: UndoOperation): void {
+  lastUndoOp = op;
+}
+
+function clearUndo(): void {
+  lastUndoOp = null;
+}
 
 // Storage Adapter & Debounced persistence
 const storageAdapter = createLocalStorageAdapter();
@@ -259,9 +245,9 @@ export const useDataStore = create<DataState>()(
       if (addedList.length > 0 || removedList.length > 0) {
         const delta: EntryDelta = { added: addedList, removed: removedList };
         const nextRevision = state.revision + 1;
-        const nextChecksum = updateChecksumWithDelta(state.checksum, delta);
+        const nextChecksum = computeChecksum(nextEntries);
 
-        undoStack.push({ timestamp: now, delta });
+        pushUndo({ timestamp: now, delta });
 
         set({
           entries: nextEntries,
@@ -319,20 +305,111 @@ export const useDataStore = create<DataState>()(
       const nextId = `${validVal.campaignId}|${validVal.date}`;
       const now = Date.now();
 
-      // Nếu đổi ngày/chiến dịch trùng khoá với một dòng khác
+      let nextEntries = [...state.entries];
+      const deltaAdded: DailyEntry[] = [];
+      const deltaRemoved: DailyEntry[] = [oldEntry];
+
+      // R-02: Đổi ngày/chiến dịch trùng khoá với dòng khác
       if (nextId !== id) {
         const conflictIdx = state.entries.findIndex((e) => e.id === nextId);
         if (conflictIdx !== -1) {
-          // Trùng khoá khi sửa -> áp duplicate policy
-          if (state.settings.duplicatePolicy === 'ask') {
+          const conflictEntry = state.entries[conflictIdx]!;
+          const policy = state.settings.duplicatePolicy;
+          if (policy === 'ask' || policy === 'skip') {
             return {
               ok: false,
               issues: [{ field: 'date', code: 'DUPLICATE_DATE', level: 'error', message: 'Ngày này đã có số liệu' }],
             };
           }
+          if (policy === 'sum') {
+            // Cộng dồn vào conflictEntry và xoá oldEntry
+            const updatedConflict: DailyEntry = {
+              ...conflictEntry,
+              reach: conflictEntry.reach + validVal.reach,
+              clicks: conflictEntry.clicks + validVal.clicks,
+              cost: conflictEntry.cost + validVal.cost,
+              orders: conflictEntry.orders + validVal.orders,
+              updatedAt: now,
+            };
+            nextEntries = nextEntries.filter((e) => e.id !== id);
+            const targetIdx = nextEntries.findIndex((e) => e.id === nextId);
+            if (targetIdx !== -1) {
+              nextEntries[targetIdx] = updatedConflict;
+            }
+            deltaAdded.push(updatedConflict);
+            deltaRemoved.push(conflictEntry);
+
+            const delta: EntryDelta = { added: deltaAdded, removed: deltaRemoved };
+            const nextRevision = state.revision + 1;
+            const nextChecksum = computeChecksum(nextEntries);
+
+            pushUndo({ timestamp: now, delta });
+
+            set({
+              entries: nextEntries,
+              revision: nextRevision,
+              checksum: nextChecksum,
+            });
+
+            bus.emit({
+              type: 'entries/changed',
+              delta,
+              origin: 'local',
+              revision: nextRevision,
+            });
+
+            schedulePersist(get);
+            return validation;
+          }
+          if (policy === 'overwrite') {
+            // Xoá conflictEntry, oldEntry đổi id thành nextId
+            deltaRemoved.push(conflictEntry);
+            nextEntries = nextEntries.filter((e, idx) => idx !== conflictIdx);
+            const targetIdx = nextEntries.findIndex((e) => e.id === id);
+            const updatedEntry: DailyEntry = {
+              ...oldEntry,
+              id: nextId,
+              date: validVal.date,
+              campaignId: validVal.campaignId,
+              reach: validVal.reach,
+              clicks: validVal.clicks,
+              cost: validVal.cost,
+              orders: validVal.orders,
+              updatedAt: now,
+            };
+            if (targetIdx !== -1) {
+              nextEntries[targetIdx] = updatedEntry;
+            } else {
+              nextEntries.push(updatedEntry);
+            }
+            deltaAdded.push(updatedEntry);
+
+            const delta: EntryDelta = { added: deltaAdded, removed: deltaRemoved };
+            const nextRevision = state.revision + 1;
+            const nextChecksum = computeChecksum(nextEntries);
+
+            pushUndo({ timestamp: now, delta });
+
+            set({
+              entries: nextEntries,
+              revision: nextRevision,
+              checksum: nextChecksum,
+            });
+
+            bus.emit({
+              type: 'entries/changed',
+              delta,
+              origin: 'local',
+              revision: nextRevision,
+            });
+
+            schedulePersist(get);
+            return validation;
+          }
         }
       }
 
+      // Bình thường khi không trùng khoá với dòng khác
       const updatedEntry: DailyEntry = {
         ...oldEntry,
         id: nextId,
@@ -344,15 +421,14 @@ export const useDataStore = create<DataState>()(
         orders: validVal.orders,
         updatedAt: now,
       };
-
-      const nextEntries = [...state.entries];
       nextEntries[existingIdx] = updatedEntry;
+      deltaAdded.push(updatedEntry);
 
-      const delta: EntryDelta = { added: [updatedEntry], removed: [oldEntry] };
+      const delta: EntryDelta = { added: deltaAdded, removed: deltaRemoved };
       const nextRevision = state.revision + 1;
-      const nextChecksum = updateChecksumWithDelta(state.checksum, delta);
+      const nextChecksum = computeChecksum(nextEntries);
 
-      undoStack.push({ timestamp: now, delta });
+      pushUndo({ timestamp: now, delta });
 
       set({
         entries: nextEntries,
@@ -389,9 +465,9 @@ export const useDataStore = create<DataState>()(
       if (removed.length > 0) {
         const delta: EntryDelta = { added: [], removed };
         const nextRevision = state.revision + 1;
-        const nextChecksum = updateChecksumWithDelta(state.checksum, delta);
+        const nextChecksum = computeChecksum(remaining);
 
-        undoStack.push({ timestamp: Date.now(), delta });
+        pushUndo({ timestamp: Date.now(), delta });
 
         set({
           entries: remaining,
@@ -417,8 +493,9 @@ export const useDataStore = create<DataState>()(
     },
 
     undoLast(): boolean {
-      const op = undoStack.pop();
-      if (!op) return false;
+      if (!lastUndoOp) return false;
+      const op = lastUndoOp;
+      lastUndoOp = null; // R-01: Chỉ hoàn tác 1 lần
 
       const now = Date.now();
       if (now - op.timestamp > LIMITS.UNDO_TTL_MS) {
@@ -426,18 +503,29 @@ export const useDataStore = create<DataState>()(
       }
 
       const state = get();
-      // Đảo ngược delta: thêm lại những gì đã remove, xoá những gì đã add
+      // Đảo ngược delta:
+      // Xoá những gì đã add (chỉ xoá những entry thực sự còn tồn tại trong store)
       const idToRemoved = new Set(op.delta.added.map((e) => e.id));
       const kept = state.entries.filter((e) => !idToRemoved.has(e.id));
-      const nextEntries = kept.concat(op.delta.removed);
+
+      // Khôi phục những gì đã remove (tránh duplicate nếu dòng đã có)
+      const keptIdSet = new Set(kept.map((e) => e.id));
+      const restored: DailyEntry[] = [];
+      for (const r of op.delta.removed) {
+        if (!keptIdSet.has(r.id)) {
+          restored.push(r);
+          keptIdSet.add(r.id);
+        }
+      }
+
+      const nextEntries = kept.concat(restored);
+      const nextChecksum = computeChecksum(nextEntries);
+      const nextRevision = state.revision + 1;
 
       const reverseDelta: EntryDelta = {
-        added: op.delta.removed,
-        removed: op.delta.added,
+        added: restored,
+        removed: state.entries.filter((e) => idToRemoved.has(e.id)),
       };
-
-      const nextRevision = state.revision + 1;
-      const nextChecksum = updateChecksumWithDelta(state.checksum, reverseDelta);
 
       set({
         entries: nextEntries,
@@ -516,6 +604,8 @@ export const useDataStore = create<DataState>()(
     },
 
     async loadMock(name: 'demo-30d' | 'campaign-2y' | 'edge-cases'): Promise<void> {
+      clearUndo(); // R-01: Xoá undo khi loadMock
+
       const entries: DailyEntry[] = [];
       const now = Date.now();
 
@@ -583,6 +673,8 @@ export const useDataStore = create<DataState>()(
     },
 
     async clearAll(): Promise<void> {
+      clearUndo(); // R-01: Xoá undo khi clearAll
+
       const oldEntries = get().entries;
       const delta: EntryDelta = { added: [], removed: oldEntries };
       const nextRevision = get().revision + 1;
@@ -666,13 +758,23 @@ export const useDataStore = create<DataState>()(
 // Tự động nạp dữ liệu từ storage (hydration) khi khởi tạo
 if (typeof window !== 'undefined') {
   void storageAdapter.load().then((loaded) => {
+    clearUndo(); // R-01: Xoá undo khi hydrate
     if (loaded) {
+      const entries = loaded.entries ?? [];
+      const rev = useDataStore.getState().revision + 1;
       useDataStore.setState({
         hydrated: true,
         campaigns: loaded.campaigns?.length > 0 ? loaded.campaigns : [DEFAULT_CAMPAIGN],
-        entries: loaded.entries ?? [],
+        entries,
         settings: loaded.settings ?? DEFAULT_SETTINGS,
-        checksum: computeChecksum(loaded.entries ?? []),
+        revision: rev,
+        checksum: computeChecksum(entries),
+      });
+      bus.emit({
+        type: 'entries/changed',
+        delta: { added: entries, removed: [] },
+        origin: 'local',
+        revision: rev,
       });
     } else {
       useDataStore.setState({ hydrated: true });
