@@ -1,6 +1,22 @@
 /**
  * BA-05 — Nhân. Giả định demo, KHÔNG phải số liệu thị trường:
  * CTR 0.8–4%, CVR 1–6%, CPC 1,500–12,000 VND; cuối tuần reach ×1.25.
+ * Mulberry32 + log-normal; trước Tết đơn xấp xỉ ×2.5, sau Tết giảm.
+ * Lịch Tết 2024–2026 (ngoài khoảng này báo lỗi, không đoán ngày âm lịch):
+ * https://en.baochinhphu.vn/pm-decides-seven-days-off-for-2024-lunar-new-year-holiday-111231104085606548.htm
+ * https://vietnam.travel/things-to-do/festival-event/t%E1%BA%BFt-nguy%C3%AAn-%C4%91%C3%A1n
+ * https://www.mps.gov.vn/bai-viet/tinh-hinh-trat-tu-an-toan-giao-thong-ngay-mung-1-tet-nguyen-dan-binh-ngo-1771323466
+ * Black Friday = thứ Sáu sau thứ Năm thứ tư tháng 11.
+ * PowerShell tại root repo, Node >=22; tsx đã có, không thêm dependency:
+ * npm.cmd run gen:mock -- --help
+ * npm.cmd run gen:mock
+ * npm.cmd run gen:mock -- --seed 20261101 --today 2026-11-01 --end-date 2026-10-31
+ * npm.cmd run gen:mock -- --dataset stress --rows 100000 --days 1000 --campaigns 100
+ * npm.cmd run test -- tests/integration/gen-mock.test.ts
+ * npm.cmd run check
+ * Tái lập cần CÙNG seed, today, khoảng ngày, cấu hình và phiên bản script.
+ * Mặc định kết thúc hôm qua giờ VN. Metadata = 0 cố định như adapter BA-01.
+ * Stress không mô phỏng Tết, không thuộc BA-08; không commit stress-*.json.
  * Chỉ ghi sau kiểm tra bằng helper thật DATA-01/02; không bỏ qua stub.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -9,7 +25,7 @@ import { parseArgs } from 'node:util';
 
 import { z } from 'zod';
 
-import { addDays, bucketKey, bucketRange, daysBetween, parseISODate, todayVN } from '@/lib/domain/dates';
+import { addDays, daysBetween, parseISODate, todayVN } from '@/lib/domain/dates';
 import { computeKpis, safeDiv, sumTotals } from '@/lib/domain/kpi';
 import { validateEntry } from '@/lib/domain/validation';
 import { LIMITS } from '@/types/domain';
@@ -63,9 +79,9 @@ function iso(value: string): ISODate {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || parseISODate(value) !== value) throw new Error(`INVALID_DATE: ${value}`);
   return value;
 }
-/** Thứ 2 = 0; chỉ xử lý ngày bằng helper dự án. */
+/** Thứ 2 = 0; neo tại 2024-01-01 (thứ Hai), tránh lỗi TZ của DATA-02 R-05. */
 function weekday(date: ISODate): number {
-  return daysBetween(bucketRange(bucketKey(date, 'week'), 'week').start, date);
+  return ((daysBetween('2024-01-01', date) % 7) + 7) % 7;
 }
 export function eventFactors(date: ISODate): { reach: number; conversion: number; event: string } {
   const year = date.slice(0, 4);
