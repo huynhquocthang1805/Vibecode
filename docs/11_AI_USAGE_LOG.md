@@ -27,6 +27,8 @@ Cơ chế chống xung đột: hợp đồng đóng băng (`src/types/domain.ts`
 | 2026-10-30 | techlead (Claude) | TL-03 | Stub mọi hàm public, store tạm, trang ghép, shadcn viết tay | Sinh code | Ảnh chụp 375px lộ tab bị cắt chữ đầu (justify-center + overflow) → sửa `tabs.tsx` | `src/**` |
 | 2026-11-01 | ba-analyst (Nhân · ChatGPT) | BA-01 | Đặc tả KPI + 81 ca biên (`edge-cases.json`), hướng dẫn adapter QA | Sinh code | AI tự ghi rõ phần chưa xác minh thay vì tuyên bố pass; techlead kiểm lại bằng oracle độc lập: 71/71 ca khớp | `docs/03`, `src/fixtures/edge-cases.json` |
 | 2026-11-01 | techlead (Claude) | TL-05 | Review BA-01: oracle Python tính lại kỳ vọng từ docs/03 + LIMITS, không dùng đáp án của fixture | Review | Không tìm thấy sai; chốt 2 điểm BA nêu (CVR > 1, dữ liệu ngày cho like-for-like) → CR-002, CR-003 | `handoffs/CHANGE_REQUESTS.md` |
+| 2026-11-02 | data-engineer + forecast-engineer (Huy · Gemini) | DATA-01..04, FC-01 | Validation, KPI/format/dates, codec, store, analyzeTrend + 45 test | Sinh code | AI dùng date-fns (giờ máy) → test CI lệch múi giờ; Huy sửa `bucketRange` sang UTC thuần (commit fix). `bucketKey` còn sót (R-05) | `src/lib/domain`, `src/lib/data`, `trend.ts` |
+| 2026-11-02 | techlead (Claude) | TL-05 | Review Huy: fixture 71/71, property test fast-check (store/codec/dates/trend), chạy 4 múi giờ | AI sai → sửa | Fast-check tìm 2 lỗi toàn vẹn dữ liệu test viết tay bỏ sót: undo áp delta cũ sau "Xoá hết" (R-01), sửa ngày tạo 2 dòng cùng khoá (R-02); + R-03..R-05 → DATA-FIX-01 | `tests/integration/data-layer.review.test.ts` |
 | 2026-10-30 | techlead (Claude) | TL-04 | CI GitHub Actions (check + e2e trên PR) | Sinh code | — | `.github/workflows/ci.yml` |
 
 Loại: Sinh code · Review · AI sai → sửa · Quyết định không theo AI · Prompt.
