@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    "No horizontal overflow: 375px",
+    "No horizontal overflow: 768px",
+    "No horizontal overflow: 1280px",
+    "No horizontal overflow: 1440px",
+    "Date range selection and reset",
+    "Save validated row to store",
+    "Invalid edit blocked; Escape preserves data",
+    "Delete and undo",
+    "Persistence after reload",
+    "Backup download",
+    "Destructive action requires typed confirmation",
+    "Backup restores saved row after confirmed clear",
+    "Unavailable import dependency handled without crash",
+    "Unavailable report dependency handled without fabricated report",
+    "No page errors or hydration mismatches"
+  ],
+  "errors": []
+}
