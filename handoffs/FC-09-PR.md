@@ -32,4 +32,3 @@
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-04 | forecast-engineer | FC-02–06, FC-09 | Thuật toán, test, đo thực tế, handoff | Code/test/docs | AI tự sửa test harness/precision/union; tối ưu SSE sau đo vượt ngân sách, kết quả sai số giữ nguyên | src/lib/analytics/**, docs/forecast-validation.md, handoffs/FC-*.md |
-

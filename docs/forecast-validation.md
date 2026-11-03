@@ -114,4 +114,3 @@ node --require tsx/cjs -e "const {validateForecasts}=require('./src/lib/analytic
 - Worker hiện truyền horizon mặc định 30 và bắt chung lỗi nowcast tháng/quý. Cần DATA-06/techlead yêu cầu đủ ngày từ ngày hoàn tất cuối tới cuối quý và bắt lỗi từng kỳ riêng; tránh mất cả nowcast tháng vì thiếu ngày quý. `nowcast` cố ý báo `NOWCAST_INCOMPLETE_FORECAST` khi thiếu bất cứ ngày cần dự báo, thay vì xuất tổng quý thiếu.
 - `hourFraction` chưa nằm trong contract; dùng `max(actualToday, forecastToday)`, không thay chữ ký. `target` được giữ lại, `pacing` chờ FC-08 của Hoàng Anh.
 - Cấu hình forecast tạm trong `src/lib/analytics/forecastConfig.ts` theo kế hoạch được duyệt; BA/techlead chuyển sang cấu hình chung khi tích hợp.
-
