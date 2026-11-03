@@ -1,4 +1,4 @@
-# STATUS — 2026-11-02 (chiều)
+# STATUS — 2026-11-03
 
 Owner: pm-release (Thắng + Claude). Mục tiêu duy nhất hiện tại: **Gate G1 — 5 tính năng P0 chạy xuyên suốt**. P1/P2 tạm dừng.
 
@@ -7,11 +7,14 @@ Owner: pm-release (Thắng + Claude). Mục tiêu duy nhất hiện tại: **Gat
 |---|---|---|---|
 | Thắng + Claude | TL-01..04 | TL-05 (review liên tục), TL-06 (ghép + G1), PM-01 | 🟢 |
 | Huy · Gemini | DATA-01..04, DATA-FIX-01, FC-01 | **DATA-05-lite**, DATA-04b | 🟢 nhanh, chất lượng tốt |
-| Nhân · ChatGPT | BA-01, BA-05 | **BA-03** (prompt — AI cần), BA-02, BA-04, QA-01 | 🟢 |
+| Nhân · ChatGPT | BA-01, BA-05; BA-03 *đặc tả* | **BA-03 code** (đã có 9 test chờ sẵn), BA-02, BA-04, QA-01 | 🟡 đặc tả rất kỹ nhưng chưa ra code — cần chuyển sang viết code |
 | Hoàng Anh · Gemini | — | AI-01..08 (8 task) | 🔴 **chưa có nhánh nào** |
 | Trường · ChatGPT | — | FD-01/02/03/05/06, FI-01/02/05 (8 task) | 🔴 **chưa có nhánh nào** |
 
-## Đã merge hôm nay
+## Đã merge 2026-11-03
+- **BA-03 đặc tả** (Nhân) — `docs/BA-03.md`; techlead tạo 9 test nghiệm thu (`ba03-prompt.review.test.ts`), chốt RISK-01..06, CR-004 thêm `InsightRequest.forecastConfidence?`.
+
+## Đã merge 2026-11-02
 - **DATA-01..04 + FC-01** (Huy) — 71/71 ca fixture BA-01; review tìm 5 lỗi R-01..R-05.
 - **DATA-FIX-01** (Huy) — sửa đủ R-01..R-05 + hydrate tăng revision. Kiểm: 5 múi giờ, tuần ISO khớp Python 7.670/7.670 ngày, 1.000 chuỗi thao tác store ngẫu nhiên.
 - **BA-05** (Nhân) — `gen:mock` tái lập fixture trùng từng byte; `demo-30d` có diễn biến rõ cho AI (CTR 2,78% → 1,59%, CPA ×2 cuối kỳ).

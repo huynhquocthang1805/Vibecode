@@ -32,6 +32,8 @@ Cơ chế chống xung đột: hợp đồng đóng băng (`src/types/domain.ts`
 | 2026-11-02 | data-engineer (Huy · Gemini) | DATA-FIX-01 | Sửa R-01..R-05 theo biên bản review, tự gỡ `it.fails` | Sinh code | Tự viết lại tuần ISO bằng toán UTC (thay date-fns) → techlead đối chiếu Python 7.670 ngày khớp hết | `store.ts`, `dates.ts`, `validation.ts` |
 | 2026-11-02 | ba-analyst + qa (Nhân · ChatGPT) | BA-05 | `gen:mock` seed cố định, fixture 2 bộ, 3.000+ test ma trận | Sinh code | Techlead chạy lại theo ví dụ ở comment đầu file → ra file khác; đúng lệnh trong handoff thì trùng từng byte → góp ý ghi lệnh chuẩn ở cả comment | `scripts/gen-mock.ts`, `src/fixtures/*` |
 | 2026-11-02 | techlead (Claude) | TL-05 | Review DATA-FIX-01 + BA-05; bổ sung test policy/undo/tuần ISO vào test review | Review | — | `tests/integration/data-layer.review.test.ts` |
+| 2026-11-03 | ba-analyst (Nhân · ChatGPT/Codex) | BA-03 | Đặc tả Prompt v1: BR/FR/NFR, prompt đề xuất, serialize, few-shot, AC, eval, 6 rủi ro | Prompt | AI tự phát hiện request thiếu confidence (→ CR-004) và lệch tham chiếu §7/§8 trong docs/05; bản nháp prompt bỏ ví dụ cụm cấm cụ thể — techlead yêu cầu giữ vì model không thấy danh sách | `docs/BA-03.md` |
+| 2026-11-03 | techlead (Claude) | TL-05 | Review BA-03; chuyển AC thành 9 test chạy được, kiểm khả thi bằng bản cài đặt mẫu theo spec (9/9 xanh, không commit); chốt RISK-01..06 | Review | — | `tests/integration/ba03-prompt.review.test.ts`, `handoffs/REVIEW-BA-03.md` |
 | 2026-10-30 | techlead (Claude) | TL-04 | CI GitHub Actions (check + e2e trên PR) | Sinh code | — | `.github/workflows/ci.yml` |
 
 Loại: Sinh code · Review · AI sai → sửa · Quyết định không theo AI · Prompt.
