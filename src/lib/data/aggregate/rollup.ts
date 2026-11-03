@@ -51,6 +51,19 @@ function growCampaignData(data: CampaignData, newCap: number): CampaignData {
   };
 }
 
+function recalculateBounds(data: CampaignData, capacity: number): void {
+  let first = Infinity;
+  let last = -1;
+  for (let i = 0; i < capacity; i++) {
+    if ((data.entryCount[i] ?? 0) > 0) {
+      if (first === Infinity) first = i;
+      last = i;
+    }
+  }
+  data.firstDay = first;
+  data.lastDay = last;
+}
+
 function isoToDay(iso: string): number {
   return daysBetween(BASE_DATE, iso);
 }
@@ -103,7 +116,7 @@ export function buildRollups(entries: DailyEntry[]): RollupIndex {
   const campaignData = new Map<string, CampaignData>();
   const allData = createCampaignData(capacity);
   const checksum: Checksum = {
-    rows: entries.length,
+    rows: 0,
     reach: 0,
     clicks: 0,
     cost: 0,
@@ -114,6 +127,8 @@ export function buildRollups(entries: DailyEntry[]): RollupIndex {
     const e = entries[i]!;
     const d = isoToDay(e.date);
     if (d < 0) continue;
+
+    checksum.rows++;
 
     let camp = campaignData.get(e.campaignId);
     if (!camp) {
@@ -206,6 +221,18 @@ export function applyDelta(index: RollupIndex, delta: EntryDelta): RollupIndex {
     checksum.clicks = Math.max(0, checksum.clicks - e.clicks);
     checksum.cost = Math.max(0, checksum.cost - e.cost);
     checksum.orders = Math.max(0, checksum.orders - e.orders);
+  }
+
+  if (delta.removed.length > 0) {
+    const touchedCampaigns = new Set<string>();
+    for (let i = 0; i < delta.removed.length; i++) {
+      touchedCampaigns.add(delta.removed[i]!.campaignId);
+    }
+    for (const cid of touchedCampaigns) {
+      const camp = campaignData.get(cid);
+      if (camp) recalculateBounds(camp, index.capacity);
+    }
+    recalculateBounds(allData, index.capacity);
   }
 
   // Process additions

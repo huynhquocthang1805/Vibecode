@@ -129,6 +129,22 @@ describe('DATA-07 · store importBatch', () => {
     expect(useDataStore.getState().entries).toHaveLength(1);
   });
 
+  it('R-03: không bỏ nhầm chiến dịch có chứa từ sum/total như Summer Sale hay Consumer', async () => {
+    const store = useDataStore.getState();
+    await store.clearAll();
+
+    const inputs = [
+      { date: '2026-10-15', campaignId: 'Summer Sale', reach: 500, clicks: 25, cost: 50000, orders: 2 },
+      { date: '2026-10-15', campaignId: 'Consumer Goods', reach: 300, clicks: 15, cost: 30000, orders: 1 },
+    ];
+
+    const report = store.importBatch(inputs, 'csv', 'overwrite');
+
+    expect(report.accepted).toBe(2);
+    expect(report.warnings.some((w) => w.issues.some((i) => i.code === 'SUMMARY_ROW'))).toBe(false);
+    expect(useDataStore.getState().entries).toHaveLength(2);
+  });
+
   it('E39: 3 dòng cùng ngày + chiến dịch trong 1 file gộp sum thành 1, mergedInFile = 2', async () => {
     const store = useDataStore.getState();
     await store.clearAll();

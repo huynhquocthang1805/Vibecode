@@ -549,21 +549,14 @@ export const useDataStore = create<DataState>()(
       const state = get();
 
       // Kiểm tra và bỏ qua hàng tổng cộng (E38, docs/13 §6)
+      const SUMMARY_REGEX = /^(tổng|tong|total|sum|grand total)(\s+(cộng|cong))?$/i;
       const filteredInputs: EntryInput[] = [];
       const summaryRowWarnings: ImportReport['warnings'] = [];
       for (let i = 0; i < inputs.length; i++) {
         const item = inputs[i]!;
-        const rawDate = String(item.date ?? '').toLowerCase();
-        const rawCamp = String(item.campaignId ?? '').toLowerCase();
-        const isSummary =
-          rawDate.includes('tổng') ||
-          rawDate.includes('tong') ||
-          rawDate.includes('total') ||
-          rawDate.includes('sum') ||
-          rawCamp.includes('tổng') ||
-          rawCamp.includes('tong') ||
-          rawCamp.includes('total') ||
-          rawCamp.includes('sum');
+        const rawDate = String(item.date ?? '').trim().toLowerCase();
+        const rawCamp = String(item.campaignId ?? '').trim().toLowerCase();
+        const isSummary = SUMMARY_REGEX.test(rawDate) || SUMMARY_REGEX.test(rawCamp);
 
         if (isSummary) {
           summaryRowWarnings.push({
