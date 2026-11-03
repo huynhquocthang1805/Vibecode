@@ -2,6 +2,8 @@
 
 Web app một trang giúp Marketer nhập số liệu quảng cáo theo ngày, tự tính CTR / CPC / CPA, xem biểu đồ, nhận AI nhận xét xu hướng + 3 gợi ý, và xuất báo cáo text gửi sếp/khách hàng.
 
+**🔗 Bản online:** https://vibecode-three-xi.vercel.app/ — Vercel tự deploy mỗi lần merge vào `main`; mỗi PR có link preview riêng (xem mục Checks của PR).
+
 > Trạng thái: **khung dự án (Wave 0)** — trang hiển thị các khu tạm, các hàm là stub `NOT_IMPLEMENTED: <TASK-ID>`. Tiến độ: `TASKS.md`. Bản đầy đủ README ở PM-02.
 
 ## Chạy local

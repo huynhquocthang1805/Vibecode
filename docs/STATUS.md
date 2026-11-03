@@ -25,12 +25,12 @@ Owner: pm-release (Thắng + Claude). Mục tiêu: **Gate G1 — 5 tính năng P
 2. **PR #3 AI-01..07** (Hoàng Anh) — sau khi sửa R-01..R-03 + rebase.
 3. **UI của Trường** (FD + FI) — nối với store/useAnalytics thật.
 4. **BA-04 → AI-08** (mẫu báo cáo → buildReport) → FD-06 dùng được.
-5. **TL-06** ghép + Gate G1 (cần link Vercel).
+5. **TL-06** ghép + Gate G1 trên https://vibecode-three-xi.vercel.app/ (desktop + điện thoại).
 
 ## Rủi ro
 1. 🔴 UI P0 (8 task) chỉ nằm trên máy Trường — mất máy/quên push là mất.
 2. 🟡 Nhân dành nhiều thời gian viết đặc tả (BA-03, BA-06 > 600 dòng) trong khi BA-02/BA-04 (P0, AI cần) chưa bắt đầu.
 3. 🟡 Nowcast rỗng (R-07) — không chặn G1 nhưng chặn FD-04 (P1).
-4. 🟡 Chưa có link Vercel preview.
+4. ✅ Link online: https://vibecode-three-xi.vercel.app/ — production deploy `main` thành công (Vercel). Preview PR #3 build đỏ đúng lỗi R-01 bot đã chỉ.
 
 Chi tiết review: `handoffs/REVIEW-INTEGRATION-2026-11-04.md`.
