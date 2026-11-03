@@ -49,3 +49,4 @@ const report = store.importBatch(mappedInputs, 'csv', 'overwrite');
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-03 20:35 | data-engineer | DATA-07 | Csv/Paste parser + autoMapHeaders + importBatch atomic | Code + Test | Khắc phục kiểu error callback của Papa.parse | `src/lib/data/import/**`, `src/lib/data/store.ts` |
+

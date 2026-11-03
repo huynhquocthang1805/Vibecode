@@ -50,3 +50,4 @@ const cmp = comparePeriods(series, todayVN(), daily);
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-03 20:35 | data-engineer | DATA-05 | Triển khai RollupIndex mảng dày + getSeries + comparePeriods like-for-like | Code + Test | Khắc phục noUncheckedIndexedAccess TypedArray | `src/lib/data/aggregate/**` |
+
