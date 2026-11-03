@@ -63,12 +63,12 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | DATA-05 | RollupIndex day/week/month/quarter + applyDelta + like-for-like | data-engineer | Huy | P1 | DATA-02 |
 | [ ] | DATA-06 | Analytics Worker (Comlink) + useAnalytics + fallback main thread | data-engineer | Huy | P1 | DATA-05 |
 | [x] | DATA-07 | parseCsv (worker, chunk) + parsePastedTable + autoMapHeaders | data-engineer | Huy | P1 | DATA-01 |
-| [ ] | FC-02 | Baselines naive / seasonal naive / moving avg | forecast-engineer | Thắng 2 | P1 | FC-01 |
-| [ ] | FC-03 | Holt + Holt-Winters (damped) + grid fit | forecast-engineer | Thắng 2 | P1 | FC-02 |
-| [ ] | FC-04 | Backtest rolling-origin + chọn mô hình + confidence | forecast-engineer | Thắng 2 | P1 | FC-03 |
-| [ ] | FC-05 | Khoảng dự báo 80/95 | forecast-engineer | Thắng 2 | P1 | FC-03 |
-| [ ] | FC-06 | Nowcast tháng/quý + projectedKpis | forecast-engineer | Thắng 2 | P1 | FC-05, DATA-05 |
-| [ ] | FC-09 | `docs/forecast-validation.md` (sMAPE từng mô hình trên campaign-2y) | forecast-engineer | Thắng 2 | P1 | FC-04, BA-05 |
+| [x] | FC-02 | Baselines naive / seasonal naive / moving avg | forecast-engineer | Thắng 2 | P1 | FC-01 |
+| [x] | FC-03 | Holt + Holt-Winters (damped) + grid fit | forecast-engineer | Thắng 2 | P1 | FC-02 |
+| [x] | FC-04 | Backtest rolling-origin + chọn mô hình + confidence | forecast-engineer | Thắng 2 | P1 | FC-03 |
+| [x] | FC-05 | Khoảng dự báo 80/95 | forecast-engineer | Thắng 2 | P1 | FC-03 |
+| [x] | FC-06 | Nowcast tháng/quý + projectedKpis | forecast-engineer | Thắng 2 | P1 | FC-05, DATA-05 |
+| [x] | FC-09 | `docs/forecast-validation.md` (sMAPE từng mô hình trên campaign-2y) | forecast-engineer | Thắng 2 | P1 | FC-04, BA-05 |
 | [ ] | FI-02b | Ảo hoá bảng (100k dòng) + lọc/sort | frontend-input | Trường | P1 | FI-02 |
 | [ ] | FI-03 | CsvImportDialog + PasteImportDialog (preview, mapping, tiến độ, báo lỗi) | frontend-input | Trường | P1 | DATA-07 |
 | [ ] | FI-04 | Quản lý chiến dịch + bộ chọn chiến dịch | frontend-input | Trường | P1 | DATA-04 |
