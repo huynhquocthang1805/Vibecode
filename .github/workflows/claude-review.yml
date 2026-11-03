@@ -117,6 +117,8 @@ jobs:
                Cấu trúc: tiêu đề + verdict · bảng kiểm tra (hạng mục | kết quả) · lỗi phải sửa đánh mã R-xx
                (mức Cao/Trung bình/Thấp, file, cách sửa) · lưu ý không chặn · điểm tốt.
             5. Nếu verdict = APPROVE: trong `TASKS.md` đổi trạng thái các task của PR thành `[x]` (chỉ dòng đó).
+               Danh sách task lấy từ dòng "Task:" trong /tmp/guard.md (đã mở rộng dải, VD DATA-05-DATA-07 gồm DATA-06),
+               đối chiếu thêm các `handoffs/<TASK-ID>.md` có trong PR.
             6. KHÔNG sửa file nào khác, KHÔNG commit, KHÔNG push, KHÔNG merge — workflow làm phần đó.
 
             Quy tắc verdict: APPROVE chỉ khi PR guard không có lỗi, check + build xanh, đúng hợp đồng, có test
