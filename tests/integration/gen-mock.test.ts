@@ -200,6 +200,7 @@ describe('BA-05 — fixture bàn giao thật', () => {
       endDate,
       profile: name === 'demo-30d' ? 'demo' : 'campaign',
     });
-    expect(text).toBe(`${JSON.stringify(regenerated, null, 2)}\n`);
+    // Git trên Windows có thể đổi LF thành CRLF; dữ liệu và thứ tự vẫn phải khớp.
+    expect(text.replace(/\r\n/g, '\n')).toBe(`${JSON.stringify(regenerated, null, 2)}\n`);
   });
 });
