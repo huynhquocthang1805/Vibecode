@@ -1,4 +1,4 @@
-# TEAM — Phân công 5 người, quy trình nhánh & câu lệnh cho AI
+# TEAM — Phân công 6 tài khoản (5 người), quy trình PR tự động & câu lệnh cho AI
 
 > Owner: `techlead` + `pm-release` (Thắng + Claude). Thành viên đọc file này **trước** khi ra lệnh cho AI.
 > Luật kỹ thuật chung vẫn ở `CLAUDE.md`. File này trả lời: *ai làm gì, làm trên nhánh nào, gõ lệnh gì cho AI, nộp bài cho techlead ra sao.*
@@ -9,8 +9,9 @@
 |---|---|---|---|---|
 | **Thắng** (chủ dự án) | **Claude** (+ ChatGPT để review chéo) | `techlead` + `pm-release` | Khởi tạo repo, hợp đồng, stub, CI, **review & merge mọi PR**, gate G1–G3, TASKS/STATUS, README, deploy, log AI, demo | 15 (14) |
 | **Huy** | Gemini · Argon | `data-engineer` + `forecast-engineer` | "Động cơ": validation, KPI, lưu trữ, store, rollup, worker, CSV, realtime **và** xu hướng, dự báo, nowcast | 19 (5) |
-| **Hoàng Anh** | Gemini · Argon | `ai-engineer` (+ FC-07, FC-08) | Tích hợp AI thật (Gemini): `/api/insights`, adapter, guardrails, fallback, hook `useInsights`, `buildReport`, eval AI **và** phát hiện bất thường, pacing | 11 (8) |
-| **Trường** | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` | Toàn bộ giao diện: layout, thẻ KPI, biểu đồ ECharts, card AI, xuất báo cáo **và** form nhập, bảng, import CSV/dán Excel | 17 (8) |
+| **Hoàng Anh** | Gemini · Argon | `ai-engineer` (+ FC-07, FC-08) | Tích hợp AI thật (Gemini): `/api/insights`, adapter, guardrails, fallback, hook `useInsights`, eval AI **và** phát hiện bất thường, pacing | 10 (7) |
+| **Trường** | ChatGPT · Astral | `frontend-dashboard` | Giao diện dashboard: layout, thẻ KPI, biểu đồ ECharts, dự báo, card AI, nút xuất báo cáo, live mode | 9 (5) |
+| **Thắng 2** (tài khoản thứ 2 của Thắng) | Claude (tài khoản 2) | `frontend-input` (+ AI-08) | Khu nhập liệu: form nhiều dòng, bảng dữ liệu, import CSV/dán Excel, quản lý dữ liệu **và** `buildReport` + `copyText` (xuất báo cáo text) | 9 (4) |
 | **Nhân** | ChatGPT · Astral | `ba-analyst` + `qa-engineer` | Nghiệp vụ & chất lượng: công thức + ca biên, ngưỡng, prompt, mẫu báo cáo, mock data **và** test ca biên, E2E, perf, stress/chaos, bảo mật | 16 (6 + 3 P0*) |
 
 Dữ liệu lớn, chống phình và xử lý lỗi là yêu cầu chung của mọi người: đọc **`docs/13_SCALE_RESILIENCE.md`** trước khi làm task có chữ "docs/13"; giới hạn chỉ lấy từ `LIMITS` trong `src/types/domain.ts`.
@@ -18,7 +19,8 @@ Dữ liệu lớn, chống phình và xử lý lỗi là yêu cầu chung của 
 Lý do chia như vậy:
 - **Tải P0 cân bằng** (5–8 task/người) để kịp Gate G1; phần P1 nặng của Huy (dự báo) có thể cắt/chuyển nếu trễ (xem §7).
 - **Hoàng Anh dùng Gemini → làm phần gọi Gemini API**: tự thử structured output trên chính công cụ mình dùng.
-- **Trường giữ toàn bộ UI** → giao diện nhất quán, không 2 người cùng chỉnh style.
+- **Thắng 2 (thêm 2026-11-03) nhận khu nhập liệu + AI-08** từ 2 người đang nghẽn nhất (Trường, Hoàng Anh chưa có nhánh): `components/input/**` tách hẳn thư mục với `components/dashboard/**` nên không đụng file nhau; style chung vẫn ở `components/ui/**` (techlead). Trường tập trung dashboard, Hoàng Anh tập trung luồng Gemini.
+- PR của Thắng 2 vẫn qua Claude review tự động + CI như mọi người; nên nhờ ChatGPT review chéo vì cùng một người với techlead.
 - **Nhân viết quy tắc rồi tự viết test cho quy tắc đó** (BA-01 ca biên → QA-01 test) → không lệch giữa spec và test.
 - **Huy giữ toàn bộ `lib/`** (data + analytics) → worker host và hàm dự báo do cùng một người, ít change request. Riêng `anomaly.ts`, `pacing.ts` (P2) chuyển cho Hoàng Anh để cân tải sau khi thêm DATA-10/11, FC-10.
 
@@ -30,8 +32,9 @@ Chi tiết từng role: `.claude/agents/<role>.md` → mục "Bạn sở hữu".
 |---|---|---|
 | Thắng + Claude | `CLAUDE.md`, `TEAM.md`, `AGENTS.md`, `GEMINI.md`, `TASKS.md`, `README.md`, `src/types/domain.ts`, `docs/13`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/**`, config gốc (`package.json`, `tsconfig.json`, eslint, vitest, playwright, next), `.github/**`, `.claude/**`, `docs/00,01,09,10,11,12`, `docs/STATUS.md`, `docs/QA_DEFENSE.md`, `handoffs/CHANGE_REQUESTS.md`, `handoffs/GATE-*.md` | — (nhưng không viết logic nghiệp vụ thay owner) |
 | Huy | `src/lib/domain/**`, `src/lib/data/**`, `src/lib/workers/**`, `src/lib/analytics/**` (trừ `anomaly.ts`, `pacing.ts`), `docs/02`, `docs/04`, `docs/forecast-validation.md` | UI, `lib/ai`, `config`, `fixtures`, `domain.ts` |
-| Hoàng Anh | `src/app/api/insights/**`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts`, `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts`, `scripts/eval-ai.ts`, `docs/05` (trừ §4, §7), `docs/ai-eval-report.md` | `lib/ai/prompts/**`, `config/**` (của Nhân) |
-| Trường | `src/components/dashboard/**`, `src/components/input/**`, `docs/06` | `components/ui/**` (shadcn — nhờ techlead generate), `app/page.tsx` |
+| Hoàng Anh | `src/app/api/insights/**`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts`, `scripts/eval-ai.ts`, `docs/05` (trừ §4, §7), `docs/ai-eval-report.md` | `lib/ai/prompts/**`, `config/**` (của Nhân), `lib/report/**` |
+| Trường | `src/components/dashboard/**`, `docs/06` | `components/input/**` (Thắng 2), `components/ui/**` (shadcn — nhờ techlead generate), `app/page.tsx` |
+| Thắng 2 | `src/components/input/**`, `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts` (+ test cạnh file) | `components/dashboard/**`, `lib/report/templates.ts` (của Nhân), `components/ui/**` |
 | Nhân | `src/config/**`, `src/lib/ai/prompts/**`, `src/lib/report/templates.ts`, `src/fixtures/**`, `scripts/gen-mock.ts`, `docs/03`, `docs/07`, `docs/05` §4 §7, `tests/integration/**`, `tests/e2e/**`, `tests/perf/**`, `docs/08`, `docs/test-report.md`, `docs/perf-report.md`, `docs/bugs.md` | code trong `src/lib/**` ngoài phần trên |
 
 Mọi người: được tạo **`handoffs/<TASK-ID>.md` của task mình** và test `*.test.ts(x)` cạnh file mình sở hữu.
@@ -45,7 +48,8 @@ main  ←──── chỉ techlead (Thắng + Claude) merge, qua Pull Request,
  ├── feat/forecast-engineer/FC-01      (Huy)
  ├── feat/ai-engineer/AI-01            (Hoàng Anh)
  ├── feat/frontend-dashboard/FD-01     (Trường)
- ├── feat/frontend-input/FI-01         (Trường)
+ ├── feat/frontend-input/FI-01         (Thắng 2)
+ ├── feat/frontend-input/AI-08         (Thắng 2)
  ├── feat/ba-analyst/BA-01             (Nhân)
  ├── feat/qa-engineer/QA-01            (Nhân)
  └── feat/techlead/TL-01 …             (Thắng + Claude)
@@ -105,7 +109,20 @@ Gửi bài:
 ```bash
 git push -u origin feat/<role>/<TASK-ID>
 ```
-Rồi mở Pull Request **vào `main`** trên GitHub, điền theo mẫu (tự hiện từ `.github/pull_request_template.md`), gán reviewer là Thắng.
+Rồi mở Pull Request **vào `main`** trên GitHub, điền theo mẫu (tự hiện từ `.github/pull_request_template.md`).
+- Đang làm dở → mở **Draft PR** (= báo nhận task; Claude chưa review).
+- Xong → bấm **Ready for review** → tự động chạy §3.1.
+
+### 3.1 Điều gì xảy ra sau khi mở PR (tự động)
+| Bước | Ai/Cái gì | Kết quả |
+|---|---|---|
+| 1 | **CI** (`ci.yml`) | `PR guard` (tên nhánh, quyền sở hữu file, có handoff, không sửa file dùng chung) + `lint · typecheck · test · build` + e2e |
+| 2 | **Claude review** (`claude-review.yml`) | Đọc diff theo `.claude/commands/review.md`, chạy `npm run check` + `build`, ghi **`handoffs/REVIEW-<TASK-ID>.md`** vào nhánh PR, đăng biên bản lên PR (bình luận ghim, sửa lại mỗi vòng) |
+| 3a | Verdict **APPROVE** | Nhãn `claude-approved`, `TASKS.md` đánh `[x]` (trong chính PR), bật **auto-merge squash** → GitHub merge khi check xanh + Thắng bấm Approve → **nhánh tự xoá** |
+| 3b | Verdict **REQUEST_CHANGES** | Nhãn `changes-requested` + danh sách việc đánh số (R-01…). Bạn sửa trên **cùng nhánh** rồi push → Claude review lại, thêm "Vòng 2" vào biên bản |
+| — | Muốn hỏi/nhờ Claude | Bình luận trong PR có `@claude …` (VD `@claude vì sao R-02 sai?`) |
+
+Sau khi PR đã merge: `git switch main && git pull origin main`, xoá nhánh local (`git branch -d feat/<role>/<TASK-ID>`), tạo nhánh mới cho task sau.
 
 Rebase bị xung đột? Chỉ giải quyết trong file **của mình**. Xung đột ở file người khác → `git rebase --abort` và nhắn techlead.
 
@@ -113,8 +130,9 @@ Rebase bị xung đột? Chỉ giải quyết trong file **của mình**. Xung �
 
 | Việc | Ai làm | Ở đâu |
 |---|---|---|
-| Nhận task (`[ ]` → `[~]`) | Thành viên **nhắn nhóm** hoặc mở **Draft PR** sớm; PM (Claude) cập nhật | `TASKS.md` trên `main` |
-| Đánh xong (`[~]` → `[x]`) | PM (Claude), **lúc merge** | `TASKS.md` |
+| Nhận task (`[ ]` → `[~]`) | Thành viên mở **Draft PR** sớm (hoặc nhắn nhóm); PM (Claude) cập nhật | `TASKS.md` trên `main` |
+| Đánh xong (`[~]` → `[x]`) | **Claude review bot** khi APPROVE (đi cùng PR) | `TASKS.md` |
+| Biên bản review | **Claude review bot** | `handoffs/REVIEW-<TASK-ID>.md` (đi cùng PR) |
 | Ghi nhật ký dùng AI | Thành viên ghi trong **handoff** (mục "Ghi chú dùng AI"); PM gom vào log lúc merge | `docs/11_AI_USAGE_LOG.md` |
 | Change request | Thành viên ghi trong handoff + PR; techlead chép vào | `handoffs/CHANGE_REQUESTS.md` |
 | Bàn giao | Thành viên | `handoffs/<TASK-ID>.md` (file riêng, không bao giờ xung đột) |
@@ -122,6 +140,8 @@ Rebase bị xung đột? Chỉ giải quyết trong file **của mình**. Xung �
 → Thành viên **KHÔNG sửa** `TASKS.md`, `docs/11_AI_USAGE_LOG.md`, `handoffs/CHANGE_REQUESTS.md`, `CLAUDE.md` trên nhánh của mình. Đây là 3–4 file ai cũng muốn sửa → nguồn xung đột số 1.
 
 ## 5. Lịch theo người (chi tiết mốc: `docs/09_TIMELINE.md`)
+
+> **Từ 2026-11-03:** cột Trường bỏ FI-*, cột Hoàng Anh bỏ AI-08 → chuyển sang **Thắng 2: FI-01 → FI-02 → AI-08 → FI-05 (P0) → FI-02b → FI-03 → FI-07 → FI-04 → FI-06 (P1)**.
 
 | Wave | Thắng + Claude | Huy (Gemini) | Hoàng Anh (Gemini) | Trường (ChatGPT) | Nhân (ChatGPT) |
 |---|---|---|---|---|---|
@@ -194,21 +214,29 @@ Cập nhật mục "Hạn chế / nợ kỹ thuật" trong handoff nếu có tha
 
 **Hoàng Anh (Gemini Argon)** — `<ROLE_1>`=`ai-engineer`. Task đầu: `AI-01`. Đọc thêm `.claude/skills/llm-structured-output/SKILL.md`, `.claude/rules/ai-api.md`, `docs/05_AI_SPEC.md`. Prompt (`lib/ai/prompts/**`) là của Nhân — cần đổi thì change request.
 
-**Trường (ChatGPT Astral)** — `<ROLE_1>`=`frontend-dashboard`, `<ROLE_2>`=`frontend-input`. Task đầu: `FD-01`. Đọc thêm `.claude/rules/ui.md`, `docs/06_UI_SPEC.md`, `.claude/skills/big-data-frontend/SKILL.md`. Cần component shadcn mới → nhờ techlead thêm vào `components/ui/`.
+**Trường (ChatGPT Astral)** — `<ROLE_1>`=`frontend-dashboard`. Task đầu: `FD-01`. Đọc thêm `.claude/rules/ui.md`, `docs/06_UI_SPEC.md`, `.claude/skills/big-data-frontend/SKILL.md`. Cần component shadcn mới → nhờ techlead thêm vào `components/ui/`.
+
+**Thắng 2 (Claude, tài khoản 2)** — Claude Code đọc `CLAUDE.md` tự động và có sẵn subagent + slash command. Gõ: `/kickoff frontend-input FI-01` (sau đó FI-02, rồi `/kickoff frontend-input AI-08` — đặc tả AI-08 ở `.claude/agents/ai-engineer.md`). Nhánh `feat/frontend-input/<TASK-ID>`. Store thật của Huy đã sẵn (`useDataStore`: `addEntries`, `updateEntry`, `removeEntries`, `undoLast`), validation `validateEntry` đã xong → làm được ngay, không chờ ai. Đọc thêm `.claude/rules/ui.md`, `docs/06_UI_SPEC.md` §3–4, `docs/13` §7.
 
 **Nhân (ChatGPT Astral)** — `<ROLE_1>`=`ba-analyst`, `<ROLE_2>`=`qa-engineer`. Task đầu: `BA-01` (làm được ngay, không chờ ai). Đọc thêm `.claude/skills/kpi-metrics/SKILL.md`, `.claude/rules/tests.md`, `docs/03_KPI_RULES.md`, `docs/08_TEST_PLAN.md`.
 
 ## 7. Quy trình merge của techlead (Thắng + Claude)
 
-1. Thành viên mở PR → Claude chạy `/review <nhánh>` (checklist ở `.claude/commands/review.md`). Có thể nhờ ChatGPT review chéo những PR do Claude viết (ghi vào log AI — điểm "phản biện").
-2. **REQUEST CHANGES** → dán nhận xét đánh số vào PR. **APPROVE** → `/check build` trên nhánh → **Squash merge** vào `main`, xoá nhánh.
-3. Ngay sau merge, Claude (vai PM) cập nhật trên `main`: `TASKS.md` (`[x]`), dòng log trong `docs/11_AI_USAGE_LOG.md` (lấy từ handoff), `handoffs/CHANGE_REQUESTS.md` (nếu có), `docs/STATUS.md`.
+1. Thành viên mở PR (Ready for review) → **Claude review bot tự chạy** (§3.1). Thắng chỉ cần đọc biên bản trên PR.
+2. Bot **APPROVE** → Thắng bấm **Approve** trên GitHub → auto-merge squash khi check xanh → nhánh tự xoá (`pr-cleanup.yml` dự phòng). Thắng không đồng ý bot → bình luận lý do + `@claude` hoặc tắt auto-merge.
+3. Bot **REQUEST_CHANGES** → người làm sửa và push; bot review lại. Thắng có thể ghi đè bằng cách approve + merge tay (ghi lý do trong PR).
+4. Định kỳ (mỗi buổi), Claude (vai PM, phiên Claude Code) gom dòng log AI từ handoff vào `docs/11_AI_USAGE_LOG.md`, xử lý change request, cập nhật `docs/STATUS.md`. Có thể nhờ ChatGPT review chéo PR do Claude/Thắng 2 viết (điểm "phản biện").
 4. Nhắn nhóm: "đã merge <TASK-ID>, ai đang làm nhánh phụ thuộc thì `git fetch && git rebase origin/main`".
 5. **Thứ tự merge P0** (TL-06): TL-* → BA-01/BA-05 → DATA-01..04 → FI-01/02/05 → FC-01 → BA-02..04 → AI-* → FD-* → QA-01.
 6. Cân lại tải: task `[~]` quá 3 giờ không có PR → đánh `[!]`, hỏi lý do. Huy trễ ở P1 → cắt DATA-09, rồi DATA-10 (giữ bản 1 key của DATA-03) trước; hoặc chuyển nhóm task P2 (cả thư mục, không chia đôi file) sang Hoàng Anh — techlead ghi rõ trong `TASKS.md` cột "Người".
 
 ## 8. Thiết lập GitHub (Thắng làm 1 lần)
-1. Settings → Collaborators: mời Huy, Hoàng Anh, Trường, Nhân (quyền **Write**).
-2. Settings → Branches → Branch protection cho `main`: *Require a pull request before merging* (1 approval), *Require status checks to pass* (job CI của TL-04), *Do not allow bypassing*. Chỉ Thắng bấm merge.
-3. Settings → General → Pull Requests: bật *Allow squash merging*, *Automatically delete head branches*.
-4. API key AI: chỉ Thắng giữ, đặt ở Vercel Environment Variables. Thành viên test local dùng provider `stub` hoặc key cá nhân trong `.env.local` (không commit).
+1. Settings → Collaborators: mời Huy, Hoàng Anh, Trường, Nhân **và tài khoản Thắng 2** (quyền **Write**).
+2. Settings → Branches → Branch protection cho `main`:
+   - *Require a pull request before merging* → *Require approvals: 1* (Thắng bấm Approve).
+   - *Require status checks to pass*: chọn **`lint · typecheck · test · build`** và **`PR guard`** (hiện sau lần CI đầu tiên trên PR). **Bắt buộc** — thiếu bước này thì auto-merge sẽ merge ngay khi bot APPROVE mà không chờ CI.
+   - *Allow specified actors to bypass*: chỉ tài khoản Thắng (để phiên Claude techlead đẩy cập nhật PM/docs). Không cho bypass Thắng 2.
+3. Settings → General → Pull Requests: bật *Allow squash merging*, **Allow auto-merge**, *Automatically delete head branches*.
+4. Settings → Actions → General → Workflow permissions: **Read and write permissions** (bot commit biên bản review vào nhánh PR + gắn nhãn).
+5. Settings → Secrets and variables → Actions → New repository secret: **`CLAUDE_CODE_OAUTH_TOKEN`** (trên máy có Claude Code chạy `claude setup-token`, dán token) — hoặc **`ANTHROPIC_API_KEY`**. Không có secret này thì job Claude review báo lỗi, CI vẫn chạy bình thường.
+6. API key AI: chỉ Thắng giữ, đặt ở Vercel Environment Variables. Thành viên test local dùng provider `stub` hoặc key cá nhân trong `.env.local` (không commit).
