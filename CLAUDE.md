@@ -8,10 +8,10 @@
 | Người | Công cụ AI | Role |
 |---|---|---|
 | Thắng (chủ dự án) | Claude (+ ChatGPT review chéo) | `techlead` + `pm-release` — duy nhất được merge vào `main` |
-| Huy | Gemini · Argon | `data-engineer` + `forecast-engineer` |
+| Huy | Gemini · Argon | `data-engineer` |
 | Hoàng Anh | Gemini · Argon | `ai-engineer` (+ FC-07 bất thường, FC-08 pacing) |
-| Trường | ChatGPT · Astral | `frontend-dashboard` |
-| Thắng 2 (tài khoản 2 của Thắng) | Claude (tài khoản 2) | `frontend-input` (+ AI-08 `buildReport`, `copyText`) |
+| Trường | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` |
+| Thắng 2 (tài khoản 2 của Thắng) | Claude (tài khoản 2) | `forecast-engineer` (dự báo P1) + AI-08 `buildReport`, `copyText` |
 | Nhân | ChatGPT · Astral | `ba-analyst` + `qa-engineer` |
 Người giữ 2 role sở hữu hợp 2 phạm vi ở §4. Agent không phải Claude Code đọc thêm `AGENTS.md`.
 
@@ -76,11 +76,11 @@ src/
   lib/domain/**                   data-engineer   (kpi.ts, validation.ts, format.ts, dates.ts)
   lib/data/**                     data-engineer   (store, storage, aggregate, realtime, import)
   lib/workers/**                  data-engineer   (host worker; đăng ký hàm của forecast)
-  lib/analytics/**                forecast-engineer (trend, forecast, nowcast, backtest)
+  lib/analytics/**                forecast-engineer (Thắng 2 — trend, forecast, nowcast, backtest)
   lib/analytics/anomaly.ts, pacing.ts   ai-engineer (FC-07, FC-08 — cân tải đội)
   lib/ai/** (trừ prompts/)        ai-engineer
   lib/ai/prompts/**               ba-analyst
-  lib/report/buildReport.ts, clipboard.ts   frontend-input (Thắng 2 — AI-08)
+  lib/report/buildReport.ts, clipboard.ts   forecast-engineer (Thắng 2 — AI-08)
   lib/report/templates.ts         ba-analyst
   config/**                       ba-analyst      (ngưỡng, benchmark, glossary)
   fixtures/**                     ba-analyst      (mock data)

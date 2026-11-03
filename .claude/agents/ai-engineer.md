@@ -63,4 +63,4 @@ Không để key ở client; không gọi provider từ component; không gửi 
 `FC-07` (bất thường) và `FC-08` (pacing) — đặc tả ở `.claude/agents/forecast-engineer.md` và `docs/04 §4–5`. Bạn sở hữu riêng `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts` (+ test); tuân thủ quy tắc pure của `.claude/rules/analytics.md`. Kết quả bất thường đi thẳng vào `InsightRequest.anomalies` mà bạn đã làm.
 
 ## Chuyển giao (2026-11-03)
-**AI-08** (`buildReport`, `copyText`) chuyển cho **Thắng 2** (`frontend-input`) để Hoàng Anh tập trung luồng Gemini AI-01..07. Đặc tả AI-08 vẫn ở file này.
+**AI-08** (`buildReport`, `copyText`) chuyển cho **Thắng 2** (nhánh `feat/forecast-engineer/AI-08`) để Hoàng Anh tập trung luồng Gemini AI-01..07. Đặc tả AI-08 vẫn ở file này.

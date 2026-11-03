@@ -8,10 +8,10 @@
 | Người | Công cụ AI | Vai (role trong `.claude/agents/`) | Phạm vi một câu | Số task (P0) |
 |---|---|---|---|---|
 | **Thắng** (chủ dự án) | **Claude** (+ ChatGPT để review chéo) | `techlead` + `pm-release` | Khởi tạo repo, hợp đồng, stub, CI, **review & merge mọi PR**, gate G1–G3, TASKS/STATUS, README, deploy, log AI, demo | 15 (14) |
-| **Huy** | Gemini · Argon | `data-engineer` + `forecast-engineer` | "Động cơ": validation, KPI, lưu trữ, store, rollup, worker, CSV, realtime **và** xu hướng, dự báo, nowcast | 19 (5) |
+| **Huy** | Gemini · Argon | `data-engineer` | "Động cơ dữ liệu": validation, KPI, lưu trữ, store, rollup, worker, CSV, realtime (FC-01 xu hướng đã xong) | 12 (6) |
 | **Hoàng Anh** | Gemini · Argon | `ai-engineer` (+ FC-07, FC-08) | Tích hợp AI thật (Gemini): `/api/insights`, adapter, guardrails, fallback, hook `useInsights`, eval AI **và** phát hiện bất thường, pacing | 10 (7) |
-| **Trường** | ChatGPT · Astral | `frontend-dashboard` | Giao diện dashboard: layout, thẻ KPI, biểu đồ ECharts, dự báo, card AI, nút xuất báo cáo, live mode | 9 (5) |
-| **Thắng 2** (tài khoản thứ 2 của Thắng) | Claude (tài khoản 2) | `frontend-input` (+ AI-08) | Khu nhập liệu: form nhiều dòng, bảng dữ liệu, import CSV/dán Excel, quản lý dữ liệu **và** `buildReport` + `copyText` (xuất báo cáo text) | 9 (4) |
+| **Trường** | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` | Toàn bộ giao diện: dashboard, thẻ KPI, biểu đồ, card AI, nút xuất **và** form nhập, bảng, import (UI đã làm local — cần push ngay) | 17 (8) |
+| **Thắng 2** (tài khoản thứ 2 của Thắng) | Claude (tài khoản 2) | `forecast-engineer` (+ AI-08) | Phần phía sau: mô hình dự báo baseline/Holt/Holt-Winters, backtest, khoảng tin cậy, nowcast tháng/quý, dự báo bền vững **và** `buildReport` + `copyText` | 9 (1) |
 | **Nhân** | ChatGPT · Astral | `ba-analyst` + `qa-engineer` | Nghiệp vụ & chất lượng: công thức + ca biên, ngưỡng, prompt, mẫu báo cáo, mock data **và** test ca biên, E2E, perf, stress/chaos, bảo mật | 16 (6 + 3 P0*) |
 
 Dữ liệu lớn, chống phình và xử lý lỗi là yêu cầu chung của mọi người: đọc **`docs/13_SCALE_RESILIENCE.md`** trước khi làm task có chữ "docs/13"; giới hạn chỉ lấy từ `LIMITS` trong `src/types/domain.ts`.
@@ -19,7 +19,7 @@ Dữ liệu lớn, chống phình và xử lý lỗi là yêu cầu chung của 
 Lý do chia như vậy:
 - **Tải P0 cân bằng** (5–8 task/người) để kịp Gate G1; phần P1 nặng của Huy (dự báo) có thể cắt/chuyển nếu trễ (xem §7).
 - **Hoàng Anh dùng Gemini → làm phần gọi Gemini API**: tự thử structured output trên chính công cụ mình dùng.
-- **Thắng 2 (thêm 2026-11-03) nhận khu nhập liệu + AI-08** từ 2 người đang nghẽn nhất (Trường, Hoàng Anh chưa có nhánh): `components/input/**` tách hẳn thư mục với `components/dashboard/**` nên không đụng file nhau; style chung vẫn ở `components/ui/**` (techlead). Trường tập trung dashboard, Hoàng Anh tập trung luồng Gemini.
+- **Thắng 2 (thêm 2026-11-03) làm phần phía sau:** UI/UX (dashboard + nhập liệu) Trường đã làm xong ở máy, chỉ chưa push → giữ nguyên cho Trường. Thắng 2 nhận **toàn bộ dự báo P1** từ Huy (Huy đang nặng nhất, giờ tập trung DATA-05-lite đang chặn G1 rồi big data) + **AI-08** từ Hoàng Anh (để Hoàng Anh tập trung luồng Gemini). Thư mục `lib/analytics/models/**`, `forecast.ts`, `nowcast.ts` chưa ai đụng → không xung đột.
 - PR của Thắng 2 vẫn qua Claude review tự động + CI như mọi người; nên nhờ ChatGPT review chéo vì cùng một người với techlead.
 - **Nhân viết quy tắc rồi tự viết test cho quy tắc đó** (BA-01 ca biên → QA-01 test) → không lệch giữa spec và test.
 - **Huy giữ toàn bộ `lib/`** (data + analytics) → worker host và hàm dự báo do cùng một người, ít change request. Riêng `anomaly.ts`, `pacing.ts` (P2) chuyển cho Hoàng Anh để cân tải sau khi thêm DATA-10/11, FC-10.
@@ -31,10 +31,10 @@ Chi tiết từng role: `.claude/agents/<role>.md` → mục "Bạn sở hữu".
 | Người | Được sửa | KHÔNG được sửa |
 |---|---|---|
 | Thắng + Claude | `CLAUDE.md`, `TEAM.md`, `AGENTS.md`, `GEMINI.md`, `TASKS.md`, `README.md`, `src/types/domain.ts`, `docs/13`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/**`, config gốc (`package.json`, `tsconfig.json`, eslint, vitest, playwright, next), `.github/**`, `.claude/**`, `docs/00,01,09,10,11,12`, `docs/STATUS.md`, `docs/QA_DEFENSE.md`, `handoffs/CHANGE_REQUESTS.md`, `handoffs/GATE-*.md` | — (nhưng không viết logic nghiệp vụ thay owner) |
-| Huy | `src/lib/domain/**`, `src/lib/data/**`, `src/lib/workers/**`, `src/lib/analytics/**` (trừ `anomaly.ts`, `pacing.ts`), `docs/02`, `docs/04`, `docs/forecast-validation.md` | UI, `lib/ai`, `config`, `fixtures`, `domain.ts` |
+| Huy | `src/lib/domain/**`, `src/lib/data/**`, `src/lib/workers/**`, `docs/02` | UI, `lib/analytics/**` (Thắng 2, Hoàng Anh), `lib/ai`, `config`, `fixtures`, `domain.ts` |
 | Hoàng Anh | `src/app/api/insights/**`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts`, `scripts/eval-ai.ts`, `docs/05` (trừ §4, §7), `docs/ai-eval-report.md` | `lib/ai/prompts/**`, `config/**` (của Nhân), `lib/report/**` |
-| Trường | `src/components/dashboard/**`, `docs/06` | `components/input/**` (Thắng 2), `components/ui/**` (shadcn — nhờ techlead generate), `app/page.tsx` |
-| Thắng 2 | `src/components/input/**`, `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts` (+ test cạnh file) | `components/dashboard/**`, `lib/report/templates.ts` (của Nhân), `components/ui/**` |
+| Trường | `src/components/dashboard/**`, `src/components/input/**`, `docs/06` | `components/ui/**` (shadcn — nhờ techlead generate), `app/page.tsx` |
+| Thắng 2 | `src/lib/analytics/**` (trừ `anomaly.ts`, `pacing.ts` của Hoàng Anh), `docs/04`, `docs/forecast-validation.md`, `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts` (+ test cạnh file) | UI, `lib/data/**` (Huy), `lib/report/templates.ts` (Nhân) |
 | Nhân | `src/config/**`, `src/lib/ai/prompts/**`, `src/lib/report/templates.ts`, `src/fixtures/**`, `scripts/gen-mock.ts`, `docs/03`, `docs/07`, `docs/05` §4 §7, `tests/integration/**`, `tests/e2e/**`, `tests/perf/**`, `docs/08`, `docs/test-report.md`, `docs/perf-report.md`, `docs/bugs.md` | code trong `src/lib/**` ngoài phần trên |
 
 Mọi người: được tạo **`handoffs/<TASK-ID>.md` của task mình** và test `*.test.ts(x)` cạnh file mình sở hữu.
@@ -45,11 +45,11 @@ Cần đổi file người khác → ghi ở mục "Cần người khác làm" t
 ```
 main  ←──── chỉ techlead (Thắng + Claude) merge, qua Pull Request, squash merge
  ├── feat/data-engineer/DATA-01        (Huy)
- ├── feat/forecast-engineer/FC-01      (Huy)
  ├── feat/ai-engineer/AI-01            (Hoàng Anh)
  ├── feat/frontend-dashboard/FD-01     (Trường)
- ├── feat/frontend-input/FI-01         (Thắng 2)
- ├── feat/frontend-input/AI-08         (Thắng 2)
+ ├── feat/frontend-input/FI-01         (Trường)
+ ├── feat/forecast-engineer/FC-02      (Thắng 2)
+ ├── feat/forecast-engineer/AI-08      (Thắng 2 — AI-08 đi nhánh role forecast-engineer)
  ├── feat/ba-analyst/BA-01             (Nhân)
  ├── feat/qa-engineer/QA-01            (Nhân)
  └── feat/techlead/TL-01 …             (Thắng + Claude)
@@ -141,7 +141,7 @@ Rebase bị xung đột? Chỉ giải quyết trong file **của mình**. Xung �
 
 ## 5. Lịch theo người (chi tiết mốc: `docs/09_TIMELINE.md`)
 
-> **Từ 2026-11-03:** cột Trường bỏ FI-*, cột Hoàng Anh bỏ AI-08 → chuyển sang **Thắng 2: FI-01 → FI-02 → AI-08 → FI-05 (P0) → FI-02b → FI-03 → FI-07 → FI-04 → FI-06 (P1)**.
+> **Từ 2026-11-03:** Hoàng Anh bỏ AI-08; Huy bỏ FC-02..06, FC-09, FC-10 → chuyển sang **Thắng 2: AI-08 (P0, làm ngay) → FC-02 → FC-03 → FC-04 → FC-10 → FC-05 → FC-06 → FC-09 (P1)**. Trường giữ toàn bộ FD-* + FI-* (đã làm local, push ngay).
 
 | Wave | Thắng + Claude | Huy (Gemini) | Hoàng Anh (Gemini) | Trường (ChatGPT) | Nhân (ChatGPT) |
 |---|---|---|---|---|---|
@@ -210,13 +210,13 @@ Cập nhật mục "Hạn chế / nợ kỹ thuật" trong handoff nếu có tha
 
 ### 6.6 Prompt mở đầu đã điền sẵn
 
-**Huy (Gemini Argon)** — `<TÊN>`=Huy, `<ROLE_1>`=`data-engineer`, `<ROLE_2>`=`forecast-engineer`. Task đầu: `DATA-01`. Đọc kỹ `docs/13_SCALE_RESILIENCE.md` (phần lớn là của Huy). Đọc thêm skill `.claude/skills/big-data-frontend/SKILL.md`, `.claude/skills/kpi-metrics/SKILL.md`, `.claude/skills/time-series-forecasting/SKILL.md`, rule `.claude/rules/data-layer.md`, `.claude/rules/analytics.md`.
+**Huy (Gemini Argon)** — `<TÊN>`=Huy, `<ROLE_1>`=`data-engineer` (từ 2026-11-03 không giữ forecast nữa). Task đầu: `DATA-01`. Đọc kỹ `docs/13_SCALE_RESILIENCE.md` (phần lớn là của Huy). Đọc thêm skill `.claude/skills/big-data-frontend/SKILL.md`, `.claude/skills/kpi-metrics/SKILL.md`, `.claude/skills/time-series-forecasting/SKILL.md`, rule `.claude/rules/data-layer.md`, `.claude/rules/analytics.md`.
 
 **Hoàng Anh (Gemini Argon)** — `<ROLE_1>`=`ai-engineer`. Task đầu: `AI-01`. Đọc thêm `.claude/skills/llm-structured-output/SKILL.md`, `.claude/rules/ai-api.md`, `docs/05_AI_SPEC.md`. Prompt (`lib/ai/prompts/**`) là của Nhân — cần đổi thì change request.
 
-**Trường (ChatGPT Astral)** — `<ROLE_1>`=`frontend-dashboard`. Task đầu: `FD-01`. Đọc thêm `.claude/rules/ui.md`, `docs/06_UI_SPEC.md`, `.claude/skills/big-data-frontend/SKILL.md`. Cần component shadcn mới → nhờ techlead thêm vào `components/ui/`.
+**Trường (ChatGPT Astral)** — `<ROLE_1>`=`frontend-dashboard`, `<ROLE_2>`=`frontend-input`. UI đã làm ở máy → **push ngay** theo task: `feat/frontend-dashboard/FD-01…` và `feat/frontend-input/FI-01…` (mỗi task 1 PR, hoặc gộp task cùng role: `feat/frontend-input/FI-01-FI-02-FI-05`). Đọc thêm `.claude/rules/ui.md`, `docs/06_UI_SPEC.md`, `.claude/skills/big-data-frontend/SKILL.md`. Cần component shadcn mới → nhờ techlead thêm vào `components/ui/`.
 
-**Thắng 2 (Claude, tài khoản 2)** — Claude Code đọc `CLAUDE.md` tự động và có sẵn subagent + slash command. Gõ: `/kickoff frontend-input FI-01` (sau đó FI-02, rồi `/kickoff frontend-input AI-08` — đặc tả AI-08 ở `.claude/agents/ai-engineer.md`). Nhánh `feat/frontend-input/<TASK-ID>`. Store thật của Huy đã sẵn (`useDataStore`: `addEntries`, `updateEntry`, `removeEntries`, `undoLast`), validation `validateEntry` đã xong → làm được ngay, không chờ ai. Đọc thêm `.claude/rules/ui.md`, `docs/06_UI_SPEC.md` §3–4, `docs/13` §7.
+**Thắng 2 (Claude, tài khoản 2)** — Claude Code đọc `CLAUDE.md` tự động và có sẵn subagent + slash command. Thứ tự: `/kickoff forecast-engineer AI-08` (đặc tả AI-08 ở `.claude/agents/ai-engineer.md`, cần `TEMPLATES` của BA-04 — chưa có thì viết với template tạm trong test) → `/kickoff forecast-engineer FC-02` → FC-03 → FC-04 → FC-10 → FC-05 → FC-06 → FC-09. Nhánh `feat/forecast-engineer/<TASK-ID>`. Đọc thêm `docs/04_FORECAST_SPEC.md`, `docs/13` §5, skill `.claude/skills/time-series-forecasting/SKILL.md`, rule `.claude/rules/analytics.md`. Dữ liệu thử: `src/fixtures/campaign-2y.json` (BA-05). FC-01 (`trend.ts`) Huy đã làm — góp ý slope ở REVIEW-BA-03 RISK-05 giờ thuộc Thắng 2.
 
 **Nhân (ChatGPT Astral)** — `<ROLE_1>`=`ba-analyst`, `<ROLE_2>`=`qa-engineer`. Task đầu: `BA-01` (làm được ngay, không chờ ai). Đọc thêm `.claude/skills/kpi-metrics/SKILL.md`, `.claude/rules/tests.md`, `docs/03_KPI_RULES.md`, `docs/08_TEST_PLAN.md`.
 

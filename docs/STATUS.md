@@ -6,15 +6,15 @@ Owner: pm-release (Thắng + Claude). Mục tiêu duy nhất hiện tại: **Gat
 | Người | Xong | Còn lại (P0) | Trạng thái |
 |---|---|---|---|
 | Thắng + Claude | TL-01..04 | TL-05 (review liên tục), TL-06 (ghép + G1), PM-01 | 🟢 |
-| Huy · Gemini | DATA-01..04, DATA-FIX-01, FC-01 | **DATA-05-lite**, DATA-04b | 🟢 nhanh, chất lượng tốt |
+| Huy · Gemini | DATA-01..04, DATA-FIX-01, FC-01 | **DATA-05-lite**, DATA-04b (dự báo P1 đã chuyển Thắng 2) | 🟢 nhanh, chất lượng tốt |
 | Nhân · ChatGPT | BA-01, BA-05; BA-03 *đặc tả* | **BA-03 code** (đã có 9 test chờ sẵn), BA-02, BA-04, QA-01 | 🟡 đặc tả rất kỹ nhưng chưa ra code — cần chuyển sang viết code |
-| Hoàng Anh · Gemini | — | AI-01..07 (7 task) — AI-08 đã chuyển Thắng 2 | 🔴 **chưa có nhánh nào** |
-| Trường · ChatGPT | — | FD-01/02/03/05/06 (5 task) | 🔴 **chưa có nhánh nào** |
-| **Thắng 2** · Claude (tk 2) — mới | — | FI-01, FI-02, AI-08, FI-05 (4 task) | 🆕 bắt đầu ngay — store + validation đã sẵn |
+| Hoàng Anh · Gemini | — | AI-01..07 (7 task) — AI-08 đã chuyển Thắng 2 | 🔴 **chưa có nhánh nào** — hỏi xem có làm local chưa push không |
+| Trường · ChatGPT | UI (FD + FI) **làm xong ở máy** | FD-01/02/03/05/06 + FI-01/02/05 (8 task) — chỉ cần **push + mở PR** | 🟡 chưa push |
+| **Thắng 2** · Claude (tk 2) — mới | — | **AI-08** (P0) → dự báo P1: FC-02..06, FC-09, FC-10 | 🆕 bắt đầu ngay |
 
 ## Thay đổi quy trình 2026-11-03
 - **PR tự động:** mở PR (Ready) → CI + `PR guard` + Claude review bot → biên bản `handoffs/REVIEW-<TASK>.md` → APPROVE thì auto-merge squash + xoá nhánh (TEAM.md §3.1). Cần Thắng làm TEAM.md §8 (secret `CLAUDE_CODE_OAUTH_TOKEN`, auto-merge, branch protection, quyền workflow).
-- **Thắng 2** nhận `frontend-input` (FI-*) + AI-08.
+- **Thắng 2** nhận dự báo P1 (FC-02..06, FC-09, FC-10, từ Huy) + AI-08 (từ Hoàng Anh). UI/UX (FD + FI) giữ ở Trường vì đã làm xong local.
 
 ## Đã merge 2026-11-03
 - **BA-03 đặc tả** (Nhân) — `docs/BA-03.md`; techlead tạo 9 test nghiệm thu (`ba03-prompt.review.test.ts`), chốt RISK-01..06, CR-004 thêm `InsightRequest.forecastConfidence?`.

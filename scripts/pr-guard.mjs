@@ -18,10 +18,10 @@ if (!branch) {
 /** Người → các role họ giữ (TEAM.md §1) */
 const PEOPLE = {
   'Thắng (techlead)': ['techlead', 'pm-release'],
-  Huy: ['data-engineer', 'forecast-engineer'],
+  Huy: ['data-engineer'],
   'Hoàng Anh': ['ai-engineer'],
-  Trường: ['frontend-dashboard'],
-  'Thắng 2': ['frontend-input'],
+  Trường: ['frontend-dashboard', 'frontend-input'],
+  'Thắng 2': ['forecast-engineer'],
   Nhân: ['ba-analyst', 'qa-engineer'],
 };
 
@@ -30,7 +30,16 @@ const OWNED = {
   techlead: ['*'],
   'pm-release': ['*'],
   'data-engineer': ['src/lib/domain/', 'src/lib/data/', 'src/lib/workers/', 'docs/02_DATA_SCHEMA.md'],
-  'forecast-engineer': ['src/lib/analytics/', 'docs/04_FORECAST_SPEC.md', 'docs/forecast-validation.md'],
+  'forecast-engineer': [
+    'src/lib/analytics/',
+    'docs/04_FORECAST_SPEC.md',
+    'docs/forecast-validation.md',
+    // AI-08 do Thắng 2 làm (nhánh feat/forecast-engineer/AI-08)
+    'src/lib/report/buildReport.ts',
+    'src/lib/report/buildReport.test.ts',
+    'src/lib/report/clipboard.ts',
+    'src/lib/report/clipboard.test.ts',
+  ],
   'ai-engineer': [
     'src/app/api/insights/',
     'src/lib/ai/',
@@ -43,14 +52,7 @@ const OWNED = {
     'docs/ai-eval-report.md',
   ],
   'frontend-dashboard': ['src/components/dashboard/', 'docs/06_UI_SPEC.md', 'docs/screens/'],
-  'frontend-input': [
-    'src/components/input/',
-    'src/lib/report/buildReport.ts',
-    'src/lib/report/buildReport.test.ts',
-    'src/lib/report/clipboard.ts',
-    'src/lib/report/clipboard.test.ts',
-    'docs/screens/',
-  ],
+  'frontend-input': ['src/components/input/', 'docs/screens/'],
   'ba-analyst': [
     'src/config/',
     'src/lib/ai/prompts/',

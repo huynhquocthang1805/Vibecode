@@ -58,10 +58,10 @@ Bản đầy đủ theo từng bước (mở đầu, giao task, sửa lỗi, k�
 | Người | Role gộp |
 |---|---|
 | Thắng · Claude | techlead + pm-release |
-| Huy · Gemini (Argon) | data-engineer + forecast-engineer |
+| Huy · Gemini (Argon) | data-engineer |
 | Hoàng Anh · Gemini (Argon) | ai-engineer |
-| Trường · ChatGPT (Astral) | frontend-dashboard |
-| Thắng 2 · Claude (tài khoản 2) | frontend-input (+ AI-08) |
+| Trường · ChatGPT (Astral) | frontend-dashboard + frontend-input |
+| Thắng 2 · Claude (tài khoản 2) | forecast-engineer (+ AI-08) |
 | Nhân · ChatGPT (Astral) | ba-analyst + qa-engineer |
 Khi gộp: agent đọc **cả hai** file role, sở hữu hợp của hai phạm vi. Lý do chia: `TEAM.md` §1.
 

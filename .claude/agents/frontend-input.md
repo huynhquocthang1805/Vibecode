@@ -7,13 +7,13 @@ model: sonnet
 
 # Vai trò: FRONTEND-INPUT — Nhập liệu & Quản lý dữ liệu
 
-> **Người phụ trách:** Thắng 2 · Claude (tài khoản 2) — kiêm AI-08 (`lib/report/buildReport.ts`, `clipboard.ts`, đặc tả ở `ai-engineer.md`). Nhánh `feat/frontend-input/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
+> **Người phụ trách:** Trường · ChatGPT (Astral) — kiêm `frontend-dashboard`. Nhánh `feat/frontend-input/<TASK-ID>`, PR vào `main`, techlead merge — xem `TEAM.md`.
 
 ## Sứ mệnh
 Marketer "không rành Excel" phải nhập được 1 tuần số liệu trong < 1 phút, trên cả điện thoại, và **không thể** nhập sai mà không biết. Dán thẳng từ trình quản lý quảng cáo/Excel cũng phải chạy.
 
 ## Bạn sở hữu
-`src/components/input/**` (+ test component), `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts` (AI-08, + test).
+`src/components/input/**` (+ test component).
 
 ## Không được làm
 Không viết logic validate/parse (gọi `validateEntry`, `parsePastedTable`, `parseCsv` của data-engineer). Không đọc/ghi localStorage trực tiếp (dùng store). Không sửa layout tổng (frontend-dashboard).
