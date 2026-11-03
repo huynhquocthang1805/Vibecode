@@ -48,3 +48,32 @@ Chỉ fallback khi *khởi tạo* Worker lỗi. Worker chết hoặc treo lúc c
 - Worker engine tách `createAnalyticsEngine` nên test được trên main thread và có fallback.
 - Import có BOM, windows-1258, tự dò delimiter và dòng header, có test abort.
 - Handoff đầy đủ cho 3 task.
+
+---
+
+## Vòng 2 — APPROVE
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ không có lỗi chặn |
+| `npm run check` | ✅ lint + typecheck sạch; 19 file test, 3644 pass, 8 expected fail, 0 fail |
+| `npm run build` | ✅ |
+| Ownership / hợp đồng | ✅ chỉ sửa `lib/data`, `lib/workers`; chữ ký giữ nguyên |
+| R-01 vòng lặp vô hạn | ✅ dùng `qKey` ổn định + `qRef`; có test |
+| R-02 incremental | ✅ nghe `bus 'entries/changed'` → `applyDelta`; chỉ `init` khi lỗi/`REVISION_GAP`; có test |
+| R-03 hàng tổng | ✅ regex khớp từ nguyên vẹn; test "Summer Sale"/"Consumer Goods" |
+| R-04 test hook | ✅ 4 test (q ổn định, applyDelta, lỗi không throw, REVISION_GAP) |
+| R-05 timeout | ✅ `SNAPSHOT_TIMEOUT_MS` bọc `snapshot` |
+| R-06 checksum/bounds | ✅ `buildRollups` chỉ đếm dòng hợp lệ; `recalculateBounds` sau khi xoá |
+
+### Lưu ý không chặn
+- Thiếu test riêng cho: latest-wins của hook, `SNAPSHOT_TIMEOUT`, và `recalculateBounds`/checksum bỏ ngày < 2015. Bổ sung ở QA-02 hoặc DATA-11.
+- `recalculateBounds` quét O(capacity) mỗi lần xoá, không còn O(|delta|) khi xoá hàng loạt trên dữ liệu lớn; xem lại ở DATA-11/perf.
+- Nhiều instance `useAnalytics` dùng chung một client singleton: mỗi instance đều `applyDelta` nên instance sau gặp `REVISION_GAP` và `init` lại (đúng nhưng tốn). Nên gom về một subscriber ở DATA-11.
+- Timeout chỉ bọc `snapshot`; supervisor restart worker thuộc DATA-11.
+- Các lưu ý vòng 1 về `csv.ts` (đọc cả file, chưa worker/chunk), `autoMapHeaders` khớp chuỗi con, giới hạn 10.000 bucket vẫn còn hiệu lực.
+- PR có cả code DATA-06 (worker + `useAnalytics`) nhưng PR guard chỉ ghi DATA-05, DATA-07; PM kiểm tra trạng thái DATA-06 trong `TASKS.md`.
+
+### Điểm tốt
+- Sửa đủ 6 lỗi vòng 1, các lỗi quan trọng đều có test kèm theo.
+- Tự chữa lệch nhiều lớp: `REVISION_GAP` → init, lỗi khác → init, checksum lệch → init.
