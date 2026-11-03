@@ -60,9 +60,9 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 ## Wave 4 — P1 (Dữ liệu lớn · Tháng/Quý · Dự báo)
 | | ID | Task | Owner | Người | P | Phụ thuộc |
 |---|---|---|---|---|---|---|
-| [ ] | DATA-05 | RollupIndex day/week/month/quarter + applyDelta + like-for-like | data-engineer | Huy | P1 | DATA-02 |
+| [x] | DATA-05 | RollupIndex day/week/month/quarter + applyDelta + like-for-like | data-engineer | Huy | P1 | DATA-02 |
 | [ ] | DATA-06 | Analytics Worker (Comlink) + useAnalytics + fallback main thread | data-engineer | Huy | P1 | DATA-05 |
-| [ ] | DATA-07 | parseCsv (worker, chunk) + parsePastedTable + autoMapHeaders | data-engineer | Huy | P1 | DATA-01 |
+| [x] | DATA-07 | parseCsv (worker, chunk) + parsePastedTable + autoMapHeaders | data-engineer | Huy | P1 | DATA-01 |
 | [ ] | FC-02 | Baselines naive / seasonal naive / moving avg | forecast-engineer | Thắng 2 | P1 | FC-01 |
 | [ ] | FC-03 | Holt + Holt-Winters (damped) + grid fit | forecast-engineer | Thắng 2 | P1 | FC-02 |
 | [ ] | FC-04 | Backtest rolling-origin + chọn mô hình + confidence | forecast-engineer | Thắng 2 | P1 | FC-03 |
