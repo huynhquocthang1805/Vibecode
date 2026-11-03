@@ -546,14 +546,69 @@ export const useDataStore = create<DataState>()(
 
     importBatch(inputs: EntryInput[], source: EntrySource, policy: DuplicatePolicy): ImportReport {
       const start = Date.now();
-      const withSource = inputs.map((i) => ({ ...i, source }));
+      const state = get();
+
+      // Kiểm tra và bỏ qua hàng tổng cộng (E38, docs/13 §6)
+      const filteredInputs: EntryInput[] = [];
+      const summaryRowWarnings: ImportReport['warnings'] = [];
+      for (let i = 0; i < inputs.length; i++) {
+        const item = inputs[i]!;
+        const rawDate = String(item.date ?? '').toLowerCase();
+        const rawCamp = String(item.campaignId ?? '').toLowerCase();
+        const isSummary =
+          rawDate.includes('tổng') ||
+          rawDate.includes('tong') ||
+          rawDate.includes('total') ||
+          rawDate.includes('sum') ||
+          rawCamp.includes('tổng') ||
+          rawCamp.includes('tong') ||
+          rawCamp.includes('total') ||
+          rawCamp.includes('sum');
+
+        if (isSummary) {
+          summaryRowWarnings.push({
+            row: i + 1,
+            issues: [
+              {
+                field: 'row',
+                code: 'SUMMARY_ROW',
+                level: 'warning',
+                message: 'Đã bỏ qua hàng tổng cộng để tránh cộng hai lần',
+              },
+            ],
+          });
+        } else {
+          filteredInputs.push(item);
+        }
+      }
+
+      const withSource = filteredInputs.map((i) => ({ ...i, source }));
       const { valid, report } = validateBatch(withSource, { today: todayVN() });
+
+      const allWarnings = [...summaryRowWarnings, ...report.warnings].slice(0, LIMITS.MAX_REPORT_ISSUES);
+      const warningTotal = report.warningTotal + summaryRowWarnings.length;
+
+      // Kiểm sức chứa trước khi ghi (E40, docs/13 §6)
+      if (state.entries.length + valid.length > LIMITS.MAX_ROWS_TOTAL) {
+        return {
+          ...report,
+          totalRows: inputs.length,
+          accepted: 0,
+          warnings: allWarnings,
+          warningTotal,
+          aborted: true,
+          durationMs: Date.now() - start,
+        };
+      }
 
       const { added } = get().addEntries(valid, policy);
 
       return {
         ...report,
+        totalRows: inputs.length,
         accepted: added,
+        warnings: allWarnings,
+        warningTotal,
         durationMs: Date.now() - start,
       };
     },
