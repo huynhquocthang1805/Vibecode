@@ -238,5 +238,5 @@ Cập nhật mục "Hạn chế / nợ kỹ thuật" trong handoff nếu có tha
    - *Allow specified actors to bypass*: chỉ tài khoản Thắng (để phiên Claude techlead đẩy cập nhật PM/docs). Không cho bypass Thắng 2.
 3. Settings → General → Pull Requests: bật *Allow squash merging*, **Allow auto-merge**, *Automatically delete head branches*.
 4. Settings → Actions → General → Workflow permissions: **Read and write permissions** (bot commit biên bản review vào nhánh PR + gắn nhãn).
-5. Settings → Secrets and variables → Actions → New repository secret: **`CLAUDE_CODE_OAUTH_TOKEN`** (trên máy có Claude Code chạy `claude setup-token`, dán token) — hoặc **`ANTHROPIC_API_KEY`**. Không có secret này thì job Claude review báo lỗi, CI vẫn chạy bình thường.
+5. Settings → Secrets and variables → Actions → New repository secret: **`CLAUDE_CODE_OAUTH_TOKEN`** (trên máy có Claude Code chạy `claude setup-token`, dán token) — hoặc **`ANTHROPIC_API_KEY`** (tên khác như `BOT_CHECK` cũng được — workflow tự nhận loại theo tiền tố `sk-ant-oat…` / `sk-ant-api…`). Không có secret này thì job Claude review báo lỗi, CI vẫn chạy bình thường.
 6. API key AI: chỉ Thắng giữ, đặt ở Vercel Environment Variables. Thành viên test local dùng provider `stub` hoặc key cá nhân trong `.env.local` (không commit).
