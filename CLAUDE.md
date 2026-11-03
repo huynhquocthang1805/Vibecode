@@ -2,7 +2,7 @@
 
 > File này là "hiến pháp" của dự án. MỌI agent phải đọc file này trước khi làm bất kỳ việc gì.
 > Owner: `techlead`. Agent khác KHÔNG được sửa file này — muốn đổi thì ghi vào `handoffs/CHANGE_REQUESTS.md`.
-> Đội 5 người — ai giữ role nào, nhánh nào, prompt mẫu cho Gemini/ChatGPT: **`TEAM.md`**.
+> Đội 5 người (6 tài khoản) — ai giữ role nào, nhánh nào, prompt mẫu cho Gemini/ChatGPT: **`TEAM.md`**.
 
 ## 0. Đội
 | Người | Công cụ AI | Role |
@@ -10,7 +10,8 @@
 | Thắng (chủ dự án) | Claude (+ ChatGPT review chéo) | `techlead` + `pm-release` — duy nhất được merge vào `main` |
 | Huy | Gemini · Argon | `data-engineer` + `forecast-engineer` |
 | Hoàng Anh | Gemini · Argon | `ai-engineer` (+ FC-07 bất thường, FC-08 pacing) |
-| Trường | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` |
+| Trường | ChatGPT · Astral | `frontend-dashboard` |
+| Thắng 2 (tài khoản 2 của Thắng) | Claude (tài khoản 2) | `frontend-input` (+ AI-08 `buildReport`, `copyText`) |
 | Nhân | ChatGPT · Astral | `ba-analyst` + `qa-engineer` |
 Người giữ 2 role sở hữu hợp 2 phạm vi ở §4. Agent không phải Claude Code đọc thêm `AGENTS.md`.
 
@@ -79,7 +80,7 @@ src/
   lib/analytics/anomaly.ts, pacing.ts   ai-engineer (FC-07, FC-08 — cân tải đội)
   lib/ai/** (trừ prompts/)        ai-engineer
   lib/ai/prompts/**               ba-analyst
-  lib/report/buildReport.ts, clipboard.ts   ai-engineer
+  lib/report/buildReport.ts, clipboard.ts   frontend-input (Thắng 2 — AI-08)
   lib/report/templates.ts         ba-analyst
   config/**                       ba-analyst      (ngưỡng, benchmark, glossary)
   fixtures/**                     ba-analyst      (mock data)
@@ -119,7 +120,7 @@ handoffs/**                       mọi agent (mỗi agent ghi file của task m
 3. Làm trên nhánh `feat/<role>/<TASK-ID>` tạo từ `main` mới nhất (nếu chạy song song trên cùng máy: dùng `git worktree`). 1 task = 1 nhánh = 1 PR.
 4. Viết test cùng lúc với code. Chạy `/check` (lint + typecheck + test) phải xanh.
 5. Ghi `handoffs/<TASK-ID>.md` theo `handoffs/_TEMPLATE.md` (gồm dòng log AI + change request nếu có). Thành viên **không** sửa `TASKS.md`, `docs/11_AI_USAGE_LOG.md`, `handoffs/CHANGE_REQUESTS.md` trên nhánh task.
-6. Rebase lên `origin/main`, push nhánh, mở PR vào `main` → techlead `/review` → techlead squash merge → PM đánh `[x]` + chép log AI. Không ai khác merge hoặc push lên `main`.
+6. Rebase lên `origin/main`, push nhánh, mở PR vào `main` (Draft khi đang làm, Ready khi xong). Tự động: CI + `PR guard` + **Claude review bot** (`.github/workflows/claude-review.yml`) ghi `handoffs/REVIEW-<TASK-ID>.md`, đánh `[x]` trong `TASKS.md` khi APPROVE và bật auto-merge squash; Thắng bấm Approve → merge → nhánh tự xoá. REQUEST_CHANGES → sửa trên cùng nhánh, bot review lại (TEAM.md §3.1). Không ai merge tay hoặc push thẳng lên `main` (trừ techlead cập nhật PM/docs).
 
 ## 7. Definition of Done (mọi task)
 - [ ] Đúng hợp đồng trong `src/types/domain.ts` (không tự đổi kiểu).

@@ -309,6 +309,8 @@ export interface InsightRequest {
   /** Tối đa 90 kỳ gần nhất, đã làm tròn — KHÔNG gửi raw rows */
   recent: Array<Pick<Bucket, 'key' | 'isPartial' | keyof Totals | 'kpis'>>;
   nowcasts: Nowcast[];
+  /** CR-004: độ tin cậy thấp nhất trong forecasts (orders/cost) — AI-07 điền; vắng = không có dự báo */
+  forecastConfidence?: MetricForecast['confidence'];
   anomalies: Anomaly[]; // tối đa 10
   context?: { industry?: string; goal?: 'sales' | 'leads' | 'awareness'; monthlyBudget?: number };
 }
