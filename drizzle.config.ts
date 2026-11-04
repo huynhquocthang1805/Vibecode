@@ -5,3 +5,4 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'postgresql',
 });
+

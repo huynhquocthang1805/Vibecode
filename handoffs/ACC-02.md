@@ -61,3 +61,4 @@ export const authClient: ReturnType<typeof createAuthClient>;
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-04 18:10 | data-engineer | ACC-02 | Tích hợp better-auth server, requireUser, rate limit, authClient, route handler | feat | Không có | src/lib/server/auth.ts, src/app/api/auth/[...all]/route.ts |
+

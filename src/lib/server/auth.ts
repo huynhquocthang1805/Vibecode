@@ -10,12 +10,19 @@ import { accountConfigured, notConfiguredResponse } from './accountConfig';
 import { getDb } from './db/client';
 import { schema } from './db/schema';
 
+// R-01: Chỉ dùng fallback secret cho môi trường test/build không phải production
+const authSecret =
+  process.env.BETTER_AUTH_SECRET ||
+  (process.env.NODE_ENV !== 'production'
+    ? 'fallback-secret-for-build-environment-32chars'
+    : '');
+
 export const auth = betterAuth({
   database: drizzleAdapter(getDb(), {
     provider: 'pg',
     schema,
   }),
-  secret: process.env.BETTER_AUTH_SECRET || 'fallback-secret-for-build-environment-32chars',
+  secret: authSecret,
   baseURL: process.env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,

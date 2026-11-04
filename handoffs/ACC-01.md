@@ -56,3 +56,4 @@ export function closeDb(): Promise<void>;
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-04 18:10 | data-engineer | ACC-01 | Tạo Drizzle schema, migration, getDb hỗ trợ Neon/PGlite | feat | `resetDb` ban đầu close client làm gãy singleton better-auth; sửa thành truncate/delete | src/lib/server/db/client.ts |
+
