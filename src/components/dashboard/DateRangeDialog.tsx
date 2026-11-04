@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { useDataStore } from '@/lib/data/store';
-import { addDays, parseISODate, todayVN } from '@/lib/domain/dates';
+import { addDays, bucketKey, bucketRange, parseISODate, todayVN } from '@/lib/domain/dates';
 import { LIMITS } from '@/types/domain';
 
 import DialogFrame from './DialogFrame';
@@ -51,6 +51,18 @@ export default function DateRangeDialog({ onOpenChange }: { onOpenChange: (open:
             {days} ngày
           </button>
         ))}
+        {(['month', 'quarter'] as const).map((grain) => (
+          <button
+            className="mvp-button"
+            key={grain}
+            onClick={() => setDraft({ from: bucketRange(bucketKey(today, grain), grain).start, to: today })}
+          >
+            {grain === 'month' ? 'Tháng này' : 'Quý này'}
+          </button>
+        ))}
+        <button className="mvp-button" onClick={() => setDraft({ from: today.slice(0, 4) + '-01-01', to: today })}>
+          Năm nay
+        </button>
         <button className="mvp-button" onClick={() => setDraft({ from: '', to: '' })}>
           Tất cả
         </button>

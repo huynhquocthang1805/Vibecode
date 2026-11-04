@@ -35,7 +35,9 @@ export function CampaignChart({
   const dark = useContext(ChartAppearanceContext);
   const reduced = useSyncExternalStore(
     subscribeMotion,
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    () =>
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 2,
     () => true,
   );
   if (!data?.series.buckets.length)
@@ -51,13 +53,27 @@ export function CampaignChart({
   const buckets = data.series.buckets;
   const metrics: Metric[] = ratio ? ['ctr', 'cpc', 'cpa'] : ['reach', 'cost', 'orders'];
   const labels = buckets.map((b) => b.key);
+  const partialKeys = new Set(buckets.filter((b) => b.isPartial).map((b) => b.key));
+  if (showForecast && data.series.grain === 'day') {
+    const future = data.forecasts
+      .filter((f) => metrics.includes(f.metric))
+      .flatMap((f) => f.points.map((p) => p.date))
+      .filter((date) => date > (buckets.at(-1)?.end ?? ''));
+    labels.push(...[...new Set(future)].sort());
+    if (data.query.today >= labels[0]! && data.query.today <= labels.at(-1)! && !labels.includes(data.query.today)) {
+      labels.push(data.query.today);
+      labels.sort();
+    }
+  }
   const series: NonNullable<EChartsOption['series']> = metrics.map((metric, index) => ({
     name: METRIC_META[metric].short,
     type: !ratio && metric === 'reach' ? 'bar' : 'line',
     yAxisIndex: index === 0 ? 0 : index === 1 ? 1 : ratio ? 1 : 2,
-    data: buckets.map((b) =>
-      metric in b.kpis ? b.kpis[metric as keyof typeof b.kpis] : b[metric as 'reach' | 'clicks' | 'cost' | 'orders'],
-    ),
+    data: buckets.map((b) => ({
+      value:
+        metric in b.kpis ? b.kpis[metric as keyof typeof b.kpis] : b[metric as 'reach' | 'clicks' | 'cost' | 'orders'],
+      itemStyle: { opacity: b.isPartial ? 0.5 : 1 },
+    })),
     itemStyle: { color: METRIC_COLORS[metric], borderRadius: metric === 'reach' ? [3, 3, 0, 0] : undefined },
     lineStyle: { width: 2.5 },
     barMaxWidth: 14,
@@ -84,8 +100,6 @@ export function CampaignChart({
       const metricIndex = metrics.indexOf(forecast.metric);
       const points = forecast.points.filter((p) => p.date > (buckets.at(-1)?.end ?? ''));
       const pointMap = new Map(points.map((p) => [p.date, p]));
-      const futureDates = points.map((p) => p.date);
-      for (const date of futureDates) if (!labels.includes(date)) labels.push(date);
       const forecastData = labels.map((date) => pointMap.get(date)?.mean ?? null);
       const axis = metricIndex === 0 ? 0 : metricIndex === 1 ? 1 : 2;
       series.push({
@@ -166,7 +180,9 @@ export function CampaignChart({
         color: labelColor,
         fontSize: 9,
         hideOverlap: true,
-        formatter: (value: string) => (data.series.grain === 'day' ? value.slice(8) + '/' + value.slice(5, 7) : value),
+        formatter: (value: string) =>
+          (data.series.grain === 'day' ? value.slice(8) + '/' + value.slice(5, 7) : value) +
+          (partialKeys.has(value) ? ' *' : ''),
       },
     },
     yAxis: [
@@ -219,7 +235,7 @@ export function CampaignChart({
         <span>
           {buckets[0]?.start.split('-').reverse().join('/')} — {buckets.at(-1)?.end.split('-').reverse().join('/')}
         </span>
-        <span>{buckets.length} kỳ · Chạm chú giải để ẩn/hiện</span>
+        <span>{buckets.length} kỳ · * đến hôm nay / thiếu ngày · Chạm chú giải để ẩn/hiện</span>
       </div>
     </>
   );

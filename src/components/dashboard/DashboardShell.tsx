@@ -15,16 +15,26 @@ import {
   Sun,
 } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
 
 import { useDataStore } from '@/lib/data/store';
 import { fmtInt } from '@/lib/domain/format';
 import type { AnalyticsSnapshot } from '@/types/domain';
+import { safeDiv } from '@/lib/domain/kpi';
+import { fmtPct } from '@/lib/domain/format';
 
 import { ChartAppearanceContext, ReviewContext } from './ReviewContext';
 import { DateRangeControl } from './DateRangeControl';
 import { SectionBoundary } from './SectionBoundary';
+import { DeferredDialog } from './DeferredDialog';
+import { loadReviewFixture } from './reviewLoader';
 import './dashboard.css';
+
+const MobileEntryForm = dynamic(() => import('@/components/input/EntryForm').then((m) => m.EntryForm), {
+  ssr: false,
+  loading: () => <p role="status">Đang mở biểu mẫu…</p>,
+});
 
 export interface DashboardShellProps {
   controls: ReactNode;
@@ -40,12 +50,16 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
   const [dark, setDark] = useState(false);
   const [preview, setPreview] = useState<AnalyticsSnapshot | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [mobileEntry, setMobileEntry] = useState(false);
   const hydrated = useDataStore((s) => s.hydrated);
   const campaigns = useDataStore((s) => s.campaigns);
   const settings = useDataStore((s) => s.settings);
   const rowCount = useDataStore((s) => s.entries.length);
   const health = useDataStore((s) => s.health);
   const storageKind = useDataStore((s) => s.storage.kind);
+  const storageUsed = useDataStore((s) => s.storage.usedBytes);
+  const storageQuota = useDataStore((s) => s.storage.quotaBytes);
+  const quotaUsage = safeDiv(storageUsed, storageQuota) ?? 0;
   const workspaceLabel = preview
     ? 'Dữ liệu minh hoạ'
     : settings.activeCampaignId === 'all'
@@ -60,8 +74,7 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
     if (previewLoading) return;
     setPreviewLoading(true);
     try {
-      const { default: fixture } = await import('./reviewFixture.json');
-      setPreview(fixture as AnalyticsSnapshot);
+      setPreview(await loadReviewFixture());
     } catch {
       toast.error('Chưa tải được dữ liệu minh hoạ. Hãy thử lại.');
     } finally {
@@ -222,6 +235,30 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
                   Chưa lưu được trên thiết bị. Hãy xuất bản sao lưu trước khi đóng tab.
                 </div>
               )}
+              {hydrated && health.worker === 'degraded' && (
+                <p role="status" className="notice warn">
+                  Chế độ tương thích: tính toán trên thiết bị có thể chậm hơn. Bạn vẫn có thể nhập và xuất số liệu.
+                </p>
+              )}
+              {hydrated && health.sync === 'degraded' && (
+                <p role="status" className="notice warn">
+                  Không đồng bộ được giữa các tab. Hãy tiếp tục làm việc trong tab này và xuất backup.
+                </p>
+              )}
+              {hydrated && health.rollup === 'degraded' && (
+                <p role="status" className="notice warn">
+                  Đang khôi phục số liệu tổng hợp. Giữ kết quả gần nhất trong khi cập nhật.
+                </p>
+              )}
+              {hydrated && quotaUsage >= 0.7 && (
+                <div className="notice warn" role="status">
+                  Đã dùng {fmtPct(quotaUsage)} dung lượng ({storageKind}).{' '}
+                  {quotaUsage >= 0.9 ? 'Dung lượng gần đầy.' : 'Nên sao lưu số liệu.'}
+                  <button className="mvp-button ml-2" onClick={() => goToData('manage')}>
+                    Xuất backup / Lưu trữ năm cũ
+                  </button>
+                </div>
+              )}
               <div className="workspace-filters">
                 <div className="filter-group">
                   <label className="sr-only" htmlFor="campaign-filter">
@@ -330,10 +367,21 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
               </footer>
             </main>
           </div>
-          <button className="mvp-button primary mobile-fab" onClick={() => goToData()}>
+          <button className="mvp-button primary mobile-fab" onClick={() => setMobileEntry(true)}>
             <Plus />
             Nhập số liệu
           </button>
+          <DeferredDialog
+            open={mobileEntry}
+            onOpenChange={setMobileEntry}
+            className="mobile-entry-sheet"
+            title="Nhập số liệu"
+            description="Nhập các dòng số liệu. Sau khi lưu, chỉ số tổng quan sẽ cập nhật."
+          >
+            <SectionBoundary name="Nhập số liệu mobile">
+              <MobileEntryForm onSubmitted={() => setMobileEntry(false)} />
+            </SectionBoundary>
+          </DeferredDialog>
         </div>
       </ChartAppearanceContext.Provider>
     </ReviewContext.Provider>

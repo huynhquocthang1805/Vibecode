@@ -1,0 +1,22 @@
+{
+  "checks": [
+    {
+      "viewport": 1440,
+      "noOverflow": true
+    },
+    {
+      "viewport": 768,
+      "noOverflow": true
+    },
+    {
+      "viewport": 375,
+      "noOverflow": true
+    },
+    "Mobile sheet within viewport; unique input IDs; accessible labels; save updates real KPI",
+    "Live simulator adds real data and stops via switch",
+    "Real demo nowcasts show 80% intervals; weekly grain switches through settings"
+  ],
+  "pageErrors": [],
+  "url": "http://localhost:3101",
+  "note": "AI endpoint stubbed 503 to exercise fallback without calling provider; not Lighthouse/perf certification."
+}

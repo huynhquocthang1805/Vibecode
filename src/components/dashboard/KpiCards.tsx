@@ -1,16 +1,18 @@
 'use client';
 
 import { Eye, Info, MousePointer2, ShoppingBag, Wallet } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useContext } from 'react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { GLOSSARY } from '@/config/glossary';
 import { METRIC_META } from '@/config/metricMeta';
 import { fmtDelta, fmtInt, fmtPct, fmtVnd, fmtVndShort } from '@/lib/domain/format';
 import { safeDiv } from '@/lib/domain/kpi';
+import { useDataStore } from '@/lib/data/store';
 import type { AnalyticsSnapshot, Metric } from '@/types/domain';
 
-import { useDisplaySnapshot } from './ReviewContext';
+import { ReviewContext, useDisplaySnapshot } from './ReviewContext';
+import { AnalyticsStatus } from './AnalyticsStatus';
 import { METRIC_COLORS } from './chartTheme';
 
 const PRIMARY = ['orders', 'reach', 'clicks', 'cost'] as const;
@@ -54,6 +56,8 @@ function MetricTooltip({ metric }: { metric: Metric }) {
 
 export const KpiCards = memo(function KpiCards({ snapshot }: { snapshot: AnalyticsSnapshot | null }) {
   const data = useDisplaySnapshot(snapshot);
+  const preview = useContext(ReviewContext);
+  const live = useDataStore((s) => s.settings.liveMode);
   const comparison = data?.trend?.comparison;
   const displayed = comparison?.current ?? data?.totals;
   function metricValue(source: typeof displayed, metric: Metric): number | null {
@@ -99,6 +103,7 @@ export const KpiCards = memo(function KpiCards({ snapshot }: { snapshot: Analyti
   }
   return (
     <div aria-live="polite" data-testid="kpi-cards">
+      <AnalyticsStatus snapshot={data} preview={!!preview} />
       <div className="kpi-primary-grid">
         {PRIMARY.map((metric) => {
           const meta = METRIC_META[metric];
@@ -115,7 +120,9 @@ export const KpiCards = memo(function KpiCards({ snapshot }: { snapshot: Analyti
                 <MetricTooltip metric={metric} />
               </div>
               <p
+                key={String(value(metric))}
                 className="metric-value"
+                data-live={(live && !preview) || undefined}
                 data-testid={`kpi-value-${metric}`}
                 title={metric === 'cost' ? fmtVnd(value(metric)) : undefined}
               >
@@ -146,7 +153,12 @@ export const KpiCards = memo(function KpiCards({ snapshot }: { snapshot: Analyti
                 <span>{METRIC_META[metric].short}</span>
                 <MetricTooltip metric={metric} />
               </div>
-              <p className="metric-value" data-testid={`kpi-value-${metric}`}>
+              <p
+                key={String(value(metric))}
+                className="metric-value"
+                data-live={(live && !preview) || undefined}
+                data-testid={`kpi-value-${metric}`}
+              >
                 {metric === 'ctr' ? fmtPct(value(metric)) : fmtVnd(value(metric))}
               </p>
               <div className="mt-2">{delta(metric)}</div>
