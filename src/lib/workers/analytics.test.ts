@@ -124,4 +124,28 @@ describe('DATA-06 · AnalyticsWorker & Client', () => {
 
     expect(snap.forecastStatus).toBe('insufficient');
   });
+
+  it('DATA-FIX-02 · snapshot có cả nowcast tháng và quý với horizon bao phủ cuối quý (R-07)', async () => {
+    const client = getAnalyticsClient();
+    const entries: DailyEntry[] = [];
+    // 30 ngày dữ liệu từ 2026-10-01 đến 2026-10-30
+    for (let day = 1; day <= 30; day++) {
+      const dStr = String(day).padStart(2, '0');
+      entries.push(makeEntry('default', `2026-10-${dStr}`, 1000 + day * 10, 50 + day, 100000, 5 + day));
+    }
+    await client.init(entries);
+
+    const snap = await client.snapshot({
+      campaignId: 'default',
+      grain: 'day',
+      horizonDays: 15, // Cố tình truyền horizonDays nhỏ (15 ngày)
+      today: '2026-10-30',
+    });
+
+    // Horizon phải được mở rộng ít nhất tới cuối quý Q4 (2026-12-31, ~62 ngày)
+    expect(snap.nowcasts).toBeDefined();
+    const periodKeys = snap.nowcasts.map((n) => n.periodKey);
+    expect(periodKeys).toContain('2026-10');
+    expect(periodKeys).toContain('2026-Q4');
+  });
 });

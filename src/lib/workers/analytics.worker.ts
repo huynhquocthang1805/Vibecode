@@ -12,7 +12,7 @@ import {
   type RollupIndex,
 } from '@/lib/data/aggregate';
 import { analyzeTrend, detectAnomalies, forecastAll, nowcast } from '@/lib/analytics';
-import { addDays, bucketKey } from '@/lib/domain/dates';
+import { addDays, bucketKey, bucketRange, daysBetween } from '@/lib/domain/dates';
 import { computeKpis, sumTotals } from '@/lib/domain/kpi';
 import {
   LIMITS,
@@ -105,29 +105,50 @@ export function createAnalyticsEngine(): AnalyticsWorkerApi {
       const trend = analyzeTrend(series, cmp, TREND_CONFIG);
       timings.trend = performance.now() - tTrend;
 
+      // R-07 / DATA-FIX-02: Horizon dự báo cần tối thiểu tới cuối quý cho nowcast
+      const monthKey = bucketKey(q.today, 'month');
+      const quarterKey = bucketKey(q.today, 'quarter');
+      const qRange = bucketRange(quarterKey, 'quarter');
+      const daysToQuarterEnd = Math.max(0, daysBetween(q.today, qRange.end) + 1);
+      const forecastHorizon = Math.max(q.horizonDays, daysToQuarterEnd);
+
       let forecasts: MetricForecast[] = [];
       try {
         const tFc = performance.now();
-        forecasts = forecastAll(daily, q.horizonDays);
+        forecasts = forecastAll(daily, forecastHorizon);
         timings.forecast = performance.now() - tFc;
-      } catch {
+      } catch (err) {
         forecasts = [];
+        timings.forecastError = 1;
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[AnalyticsWorker] forecastAll failed:', err instanceof Error ? err.message : err);
+        }
       }
 
-      let nowcasts: Nowcast[] = [];
-      try {
-        const tNow = performance.now();
-        const monthKey = bucketKey(q.today, 'month');
-        const quarterKey = bucketKey(q.today, 'quarter');
+      const nowcasts: Nowcast[] = [];
+      if (forecasts.length > 0) {
         const mTarget = q.targets?.[`${q.campaignId}:${monthKey}`];
         const qTarget = q.targets?.[`${q.campaignId}:${quarterKey}`];
-        nowcasts = [
-          nowcast(daily, forecasts, monthKey, 'month', q.today, mTarget),
-          nowcast(daily, forecasts, quarterKey, 'quarter', q.today, qTarget),
-        ];
+
+        const tNow = performance.now();
+        try {
+          nowcasts.push(nowcast(daily, forecasts, monthKey, 'month', q.today, mTarget));
+        } catch (err) {
+          timings.nowcastMonthError = 1;
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[AnalyticsWorker] nowcast month failed:', err instanceof Error ? err.message : err);
+          }
+        }
+
+        try {
+          nowcasts.push(nowcast(daily, forecasts, quarterKey, 'quarter', q.today, qTarget));
+        } catch (err) {
+          timings.nowcastQuarterError = 1;
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[AnalyticsWorker] nowcast quarter failed:', err instanceof Error ? err.message : err);
+          }
+        }
         timings.nowcast = performance.now() - tNow;
-      } catch {
-        nowcasts = [];
       }
 
       let anomalies: Anomaly[] = [];
