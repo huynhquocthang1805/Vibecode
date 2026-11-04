@@ -5,16 +5,8 @@ import dynamic from 'next/dynamic';
 import { Suspense, useRef, useState, type ClipboardEvent } from 'react';
 import { toast } from 'sonner';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DeferredDialog } from '@/components/dashboard/DeferredDialog';
 import { useDataStore } from '@/lib/data/store';
-import { parsePastedTable } from '@/lib/data/import/paste';
 import { addDays, todayVN } from '@/lib/domain/dates';
 import { validateEntry } from '@/lib/domain/validation';
 import { LIMITS, type EntryInput, type DuplicatePolicy, type ValidationIssue } from '@/types/domain';
@@ -100,23 +92,9 @@ function EntryFormContent({ onSubmitted }: { onSubmitted?: (n: number) => void }
     const text = event.clipboardData.getData('text');
     if (!text.includes('\t') && !text.includes('\n')) return;
     event.preventDefault();
-    if (text.split(/\r?\n/).length > LIMITS.PASTE_INLINE_MAX_ROWS) {
-      setLargePaste(text);
-      setShowLargePaste(true);
-      return;
-    }
-    try {
-      // DATA-07 is the single source of parsing rules; no duplicate parser in UI.
-      const parsed = parsePastedTable(text);
-      if (!parsed.rows.length) {
-        toast.info('Bảng dán chưa có dữ liệu.');
-        return;
-      }
-      setLargePaste(text);
-      setShowLargePaste(true);
-    } catch {
-      toast.info('Chức năng dán bảng chưa sẵn sàng. Bạn có thể nhập từng dòng ngay bên dưới.');
-    }
+    // Dialog tải theo nhu cầu và dùng DATA-07 để parse/kiểm tra bảng tại một nơi.
+    setLargePaste(text);
+    setShowLargePaste(true);
   }
 
   return (
@@ -239,39 +217,32 @@ function EntryFormContent({ onSubmitted }: { onSubmitted?: (n: number) => void }
           </p>
         </fieldset>
       </form>
-      <Dialog
+      <DeferredDialog
         open={!!pending}
         onOpenChange={(open) => {
           if (!open) setPending(null);
         }}
+        title="Ngày này đã có số liệu"
+        description={`Một số ngày trong ${pending?.length ?? 0} dòng đã tồn tại. Chọn cách xử lý cho tất cả ngày trùng. Chưa có dòng nào được lưu.`}
       >
-        <DialogContent className="mvp-dialog">
-          <DialogHeader>
-            <DialogTitle>Ngày này đã có số liệu</DialogTitle>
-            <DialogDescription>
-              Một số ngày trong {pending?.length} dòng đã tồn tại. Chọn cách xử lý cho tất cả ngày trùng. Chưa có dòng
-              nào được lưu.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            {(
-              [
-                ['skip', 'Bỏ qua'],
-                ['sum', 'Cộng dồn'],
-                ['overwrite', 'Ghi đè'],
-              ] as const
-            ).map(([policy, label]) => (
-              <button
-                key={policy}
-                className={`mvp-button ${policy === 'overwrite' ? 'primary' : ''}`}
-                onClick={() => pending && finish(pending, policy)}
-              >
-                {label}
-              </button>
-            ))}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <div className="toolbar justify-end">
+          {(
+            [
+              ['skip', 'Bỏ qua'],
+              ['sum', 'Cộng dồn'],
+              ['overwrite', 'Ghi đè'],
+            ] as const
+          ).map(([policy, label]) => (
+            <button
+              key={policy}
+              className={`mvp-button ${policy === 'overwrite' ? 'primary' : ''}`}
+              onClick={() => pending && finish(pending, policy)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </DeferredDialog>
       {showLargePaste && (
         <PasteDialog initialText={largePaste} initiallyOpen onClose={() => setShowLargePaste(false)} />
       )}

@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "R-05 campaign label follows selection; no personal identity",
+    "Preview fixture loads on click; small charts SVG; no overflow at 375/768/1440px",
+    "R-01 real input: current=6 orders/2.00% CTR; selected total=28 orders/2.19% CTR",
+    "Deferred dialogs: range, report dependency state, edit validation/Escape, demo cancel, typed clear guard",
+    "1095 daily buckets: Canvas for both chart tabs, dark theme and 375px resize"
+  ],
+  "pageErrors": [],
+  "fixtureChunks": [
+    "http://localhost:3003/_next/static/chunks/0o3dr0m3ua3mb.js"
+  ],
+  "knownRemaining": {
+    "insufficientInsightRequestsFromPageCaller": 3,
+    "report": "AI-08 remains a dependency; copy/download disabled while unavailable"
+  }
+}

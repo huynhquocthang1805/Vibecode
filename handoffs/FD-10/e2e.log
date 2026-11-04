@@ -1,0 +1,27 @@
+
+> kpi-dashboard-mini@0.1.0 test:e2e
+> playwright test --pass-with-no-tests tests/e2e/g1-smoke.spec.ts --workers=1
+
+
+Running 14 tests using 1 worker
+
+(node:19464) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [chromium-desktop] › tests\e2e\g1-smoke.spec.ts:37:5 › F1 + F3: nhập 3 ngày → KPI tính đúng tỉ số của tổng; reload vẫn còn dữ liệu (1.6s)
+  ok  2 [chromium-desktop] › tests\e2e\g1-smoke.spec.ts:48:5 › F1: validation chặn click > reach ngay dưới ô (684ms)
+  ok  3 [chromium-desktop] › tests\e2e\g1-smoke.spec.ts:58:5 › F2: biểu đồ Reach · Chi phí · Đơn hàng hiển thị theo ngày (1.3s)
+  ok  4 [chromium-desktop] › tests\e2e\g1-smoke.spec.ts:65:5 › F4: AI nhận xét có đúng 3 gợi ý (provider stub ở E2E, fallback khi lỗi) (2.1s)
+  x   5 [chromium-desktop] › tests\e2e\g1-smoke.spec.ts:72:5 › F4 · E26: trang chưa có dữ liệu không được gọi /api/insights (2.8s)
+  x   6 [chromium-desktop] › tests\e2e\g1-smoke.spec.ts:83:5 › F5: xuất báo cáo text → sao chép được (7.0s)
+  ok  7 [chromium-desktop] › tests\e2e\g1-smoke.spec.ts:96:5 › 375px: không tràn ngang, không lỗi console (1.6s)
+(node:29020) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  8 [iphone-12] › tests\e2e\g1-smoke.spec.ts:37:5 › F1 + F3: nhập 3 ngày → KPI tính đúng tỉ số của tổng; reload vẫn còn dữ liệu (2.6s)
+  ok  9 [iphone-12] › tests\e2e\g1-smoke.spec.ts:48:5 › F1: validation chặn click > reach ngay dưới ô (671ms)
+  ok 10 [iphone-12] › tests\e2e\g1-smoke.spec.ts:58:5 › F2: biểu đồ Reach · Chi phí · Đơn hàng hiển thị theo ngày (1.4s)
+  ok 11 [iphone-12] › tests\e2e\g1-smoke.spec.ts:65:5 › F4: AI nhận xét có đúng 3 gợi ý (provider stub ở E2E, fallback khi lỗi) (2.1s)
+  x  12 [iphone-12] › tests\e2e\g1-smoke.spec.ts:72:5 › F4 · E26: trang chưa có dữ liệu không được gọi /api/insights (2.8s)
+  x  13 [iphone-12] › tests\e2e\g1-smoke.spec.ts:83:5 › F5: xuất báo cáo text → sao chép được (6.7s)
+  ok 14 [iphone-12] › tests\e2e\g1-smoke.spec.ts:96:5 › 375px: không tràn ngang, không lỗi console (1.3s)
+
+  14 passed (37.5s)

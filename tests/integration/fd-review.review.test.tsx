@@ -29,7 +29,7 @@ describe('FD-02 · KpiCards', () => {
   // R-01: giá trị chính = TỔNG cả khoảng ngày (692 đơn), nhưng delta = KỲ CUỐI so với kỳ trước (01/11 vs 31/10).
   // Marketer đọc "692 đơn ▼x%" là "692 đơn, giảm x%". Quyết định techlead: giá trị chính khớp với delta
   // (= comparison.current), tổng khoảng ngày hiển thị phụ.
-  it.fails('R-01 giá trị chính của thẻ khớp kỳ đang so sánh (comparison.current), không phải tổng khoảng ngày', () => {
+  it('R-01 giá trị chính của thẻ khớp kỳ đang so sánh (comparison.current), không phải tổng khoảng ngày', () => {
     const s = structuredClone(base);
     const cur = s.trend!.comparison!.current;
     render(

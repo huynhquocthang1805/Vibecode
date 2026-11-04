@@ -24,7 +24,6 @@ import type { AnalyticsSnapshot } from '@/types/domain';
 import { ChartAppearanceContext, ReviewContext } from './ReviewContext';
 import { DateRangeControl } from './DateRangeControl';
 import { SectionBoundary } from './SectionBoundary';
-import reviewFixture from './reviewFixture.json';
 import './dashboard.css';
 
 export interface DashboardShellProps {
@@ -39,13 +38,36 @@ export interface DashboardShellProps {
 
 export function DashboardShell({ controls, kpis, chart, forecast, insight, anomalies, data }: DashboardShellProps) {
   const [dark, setDark] = useState(false);
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreview] = useState<AnalyticsSnapshot | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const hydrated = useDataStore((s) => s.hydrated);
   const campaigns = useDataStore((s) => s.campaigns);
   const settings = useDataStore((s) => s.settings);
   const rowCount = useDataStore((s) => s.entries.length);
   const health = useDataStore((s) => s.health);
   const storageKind = useDataStore((s) => s.storage.kind);
+  const workspaceLabel = preview
+    ? 'Dữ liệu minh hoạ'
+    : settings.activeCampaignId === 'all'
+      ? 'Tất cả chiến dịch'
+      : (campaigns.find((campaign) => campaign.id === settings.activeCampaignId)?.name ?? 'Chiến dịch');
+
+  async function togglePreview() {
+    if (preview) {
+      setPreview(null);
+      return;
+    }
+    if (previewLoading) return;
+    setPreviewLoading(true);
+    try {
+      const { default: fixture } = await import('./reviewFixture.json');
+      setPreview(fixture as AnalyticsSnapshot);
+    } catch {
+      toast.error('Chưa tải được dữ liệu minh hoạ. Hãy thử lại.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
 
   useEffect(() => {
     let lastNotification = 0;
@@ -74,7 +96,7 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
   }
 
   return (
-    <ReviewContext.Provider value={preview ? (reviewFixture as AnalyticsSnapshot) : null}>
+    <ReviewContext.Provider value={preview}>
       <ChartAppearanceContext.Provider value={dark}>
         <div className="kpi-workspace" data-theme={dark ? 'dark' : 'light'}>
           <a href="#tong-quan" className="sr-only focus:not-sr-only">
@@ -132,10 +154,14 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
               <strong>Dữ liệu của bạn, trên thiết bị của bạn.</strong>Chủ động sao lưu để giữ số liệu luôn an toàn.
             </div>
             <div className="workspace-profile">
-              <div className="profile-avatar">MT</div>
-              <div>
-                <p className="font-medium text-xs">Minh Trường</p>
-                <p className="muted text-[10px] mt-1">Không gian cá nhân</p>
+              <div className="profile-avatar" aria-hidden="true">
+                <ChartNoAxesCombined size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium text-xs truncate" title={workspaceLabel}>
+                  {workspaceLabel}
+                </p>
+                <p className="muted text-[10px] mt-1">Chiến dịch đang xem</p>
               </div>
             </div>
           </aside>
@@ -164,7 +190,7 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
                   {dark ? <Sun /> : <Moon />}
                 </button>
                 <span className="profile-avatar topbar-avatar" aria-hidden="true">
-                  MT
+                  <ChartNoAxesCombined size={16} />
                 </span>
               </div>
             </header>
@@ -204,7 +230,7 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
                   <select
                     id="campaign-filter"
                     className="mvp-select"
-                    disabled={!hydrated || preview}
+                    disabled={!hydrated || !!preview}
                     value={settings.activeCampaignId}
                     onChange={(e) => useDataStore.getState().setSettings({ activeCampaignId: e.target.value })}
                   >
@@ -216,9 +242,15 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
                     ))}
                   </select>
                   <DateRangeControl />
-                  <button className="mvp-button" aria-pressed={preview} onClick={() => setPreview(!preview)}>
+                  <button
+                    className="mvp-button"
+                    aria-pressed={!!preview}
+                    aria-busy={previewLoading}
+                    disabled={previewLoading}
+                    onClick={() => void togglePreview()}
+                  >
                     <Sparkles />
-                    {preview ? 'Đóng bản xem trước' : 'Xem giao diện mẫu'}
+                    {previewLoading ? 'Đang tải bản mẫu…' : preview ? 'Đóng bản xem trước' : 'Xem giao diện mẫu'}
                   </button>
                 </div>
                 <div className="header-controls">{controls}</div>

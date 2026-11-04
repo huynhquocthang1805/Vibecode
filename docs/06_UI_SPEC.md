@@ -79,3 +79,11 @@ Label cho mọi input, tương phản ≥ 4.5:1, không chỉ dùng màu để b
 ### Cập nhật 04/11/2026
 
 Nhánh UI đã cập nhật main `2c48866`. DATA-05/06/07 và mô hình FC-02..06 hiện đã triển khai; kiểm tra bằng trình duyệt xác nhận nhập Excel cập nhật KPI thật. Các ghi chú §9 về analytics/CSV còn stub là trạng thái ngày 02/11. AI/báo cáo vẫn chờ task tương ứng; nowcast rỗng là lỗi DATA-FIX-02 đã được techlead ghi nhận.
+
+### Sửa theo review FD-02 / FD-05 / FD-10 — 04/11/2026
+
+- Thay quy ước KPI cũ trong §9: số chính lấy `trend.comparison.current` để cùng kỳ với delta; dòng phụ **Tổng kỳ đã chọn** lấy `totals`. Không có comparison thì số chính lấy tổng và hiện **Chưa có so sánh**. Caption cho biết kỳ hiện tại/kỳ trước, giữ nhãn partial và màu tốt/xấu theo metric.
+- Card AI truyền `null` vào `useInsights` khi chưa đủ dữ liệu hoặc đang xem minh hoạ. AI-FIX-01 vẫn cần chặn ở hook dùng chung và gộp request từ trang ghép; phần frontend này không thay thế sửa lỗi đó. FD-06 vẫn chờ AI-08 tạo nội dung báo cáo.
+- Sidebar hiện chiến dịch được chọn, không gắn tên cá nhân. Fixture minh hoạ chỉ tải sau khi bấm xem mẫu; đóng/mở lại dùng module đã tải.
+- Biểu đồ dùng các module ECharts cần thiết, SVG khi ≤ 1.000 điểm, Canvas khi nhiều hơn. Theo dõi kích thước vùng chứa để cập nhật khi resize/đổi tab; giữ LTTB, dataZoom và tắt animation theo quy tắc hiện có.
+- Hộp ngày, hộp báo cáo, nội dung AI có kết quả và các tab bảng/quản lý dữ liệu tải theo nhu cầu. Hiện thông báo đang tải; giữ API component công khai. Bằng chứng và giới hạn kiểm thử nằm trong `handoffs/FD-02.md`, `handoffs/FD-05.md`, `handoffs/FD-10.md`.
