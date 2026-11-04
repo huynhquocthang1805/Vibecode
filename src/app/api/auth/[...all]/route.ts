@@ -1,9 +1,15 @@
-// Owner: data-engineer (Huy) — ACC-02: thay bằng toNextJsHandler(auth) của better-auth.
-import { accountStub } from '@/lib/server/accountConfig';
+// Owner: data-engineer (Huy) — ACC-02: better-auth route handler
+import { accountConfigured, notConfiguredResponse } from '@/lib/server/accountConfig';
+import { auth } from '@/lib/server/auth';
+import { ensureMigrated } from '@/lib/server/db/client';
 
-export async function GET(): Promise<Response> {
-  return accountStub('ACC-02');
+async function handle(req: Request): Promise<Response> {
+  if (!accountConfigured()) {
+    return notConfiguredResponse();
+  }
+  await ensureMigrated();
+  return auth.handler(req);
 }
-export async function POST(): Promise<Response> {
-  return accountStub('ACC-02');
-}
+
+export const GET = handle;
+export const POST = handle;
