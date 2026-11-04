@@ -7,7 +7,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | Người | Công cụ AI | Role |
 |---|---|---|
 | Thắng (chủ dự án) | Claude (+ ChatGPT review chéo) | techlead + pm-release |
-| Huy | Gemini · Argon | data-engineer |
+| Huy | Gemini · Argon | data-engineer (+ tài khoản ACC-01..06) |
 | Hoàng Anh | Gemini · Argon | ai-engineer (+ FC-07, FC-08) |
 | Trường | ChatGPT · Astral | frontend-dashboard + frontend-input |
 | Thắng 2 (tài khoản 2) | Claude (tài khoản 2) | forecast-engineer (FC-02..06, 09, 10) + AI-08 |
@@ -91,6 +91,18 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [ ] | BA-08 | Ca biên E31–E50 + bộ dữ liệu stress / CSV thực tế (docs/13 §10) | ba-analyst | Nhân | P1 | BA-05 |
 | [ ] | QA-08 | Stress & chaos test + bất biến #7–#10 (docs/13 §11) | qa-engineer | Nhân | P1 | DATA-10, DATA-11, BA-08 |
 | [ ] | TL-07 | Review hiệu năng/bảo mật/bundle + **Gate G2** | techlead | Thắng+Claude | P1 | P1 |
+
+## Wave A — Tài khoản & database (CR-005, song song G1 — KHÔNG được làm hỏng P0) · đặc tả `docs/14_ACCOUNTS_DB.md`
+| | ID | Task | Owner | Người | P | Phụ thuộc |
+|---|---|---|---|---|---|---|
+| [x] | ACC-00 | Chốt stack, đặc tả docs/14, kiểu domain, stub 6 route (503 khi chưa cấu hình), cài thư viện | techlead | Thắng+Claude | P1 | — |
+| [ ] | ACC-01 | DB: schema Drizzle (bảng better-auth + profile + user_data), migration `drizzle/`, `getDb()` neon/pglite, harness test PGlite | data-engineer | Huy | P1 | ACC-00 |
+| [ ] | ACC-02 | better-auth server + `/api/auth/[...all]` + `requireUser` + rate limit; đăng ký/đăng nhập/đăng xuất (A2–A5) | data-engineer | Huy | P1 | ACC-01 |
+| [ ] | ACC-03 | Hồ sơ + avatar (magic bytes, ≤ 200 KB, cấm SVG) + xoá tài khoản (A6–A8, A11) | data-engineer | Huy | P1 | ACC-02 |
+| [ ] | ACC-04 | Đồng bộ dữ liệu: `/api/account/data` (revision, 409), không gian localStorage theo user, chuyển dữ liệu khách (A9, A10) | data-engineer | Huy | P1 | ACC-02, DATA-03 |
+| [ ] | ACC-05 | UI: `AccountMenu`, `AuthDialog`, `ProfileDialog`, nén avatar 256 px bằng canvas, dialog xung đột đồng bộ (A12) | data-engineer | Huy | P1 | ACC-03, ACC-04 |
+| [ ] | ACC-06 | Test: unit + integration route trên PGlite (A1–A11) + E2E `tests/e2e/account.spec.ts`; `g1-smoke` vẫn xanh khi không có DB | data-engineer | Huy | P1 | ACC-05 |
+| [ ] | ACC-07 | Bật trên Vercel: tạo Neon (Storage → Neon), đặt `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, chạy `npm run db:migrate` | techlead | Thắng | P1 | ACC-02 |
 
 ## Wave 5 — P2 (Realtime nâng cao) + Hardening + Release
 | | ID | Task | Owner | Người | P | Phụ thuộc |

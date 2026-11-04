@@ -151,3 +151,20 @@ Hook gọi trong render (`useAnalytics`, `useInsights`) **không bao giờ throw
 <GrainSwitcher />  <ForecastPanel nowcasts forecasts />  <AiInsightCard snapshot />  <ExportReportButton snapshot insight />
 <LiveModeToggle />  <AnomalyFeed anomalies />
 ```
+
+## I. Tài khoản & database (CR-005) — owner: data-engineer (Huy) · đặc tả `docs/14_ACCOUNTS_DB.md`
+Kiểu: `UserProfile`, `ProfilePatch`, `CloudSnapshotMeta`, `AccountError`, `LIMITS_ACCOUNT` trong `domain.ts`.
+```ts
+// server (import 'server-only')
+export function accountConfigured(): boolean;                 // lib/server/accountConfig.ts — có DATABASE_URL + BETTER_AUTH_SECRET
+export function getDb(): Database;                             // lib/server/db/client.ts — neon | pglite theo DATABASE_URL, khởi tạo lười
+export const auth: ReturnType<typeof betterAuth>;              // lib/server/auth.ts
+export function requireUser(req: Request): Promise<{ id: string; email: string } | Response>; // 401 Response nếu không có phiên
+// client
+export const authClient: ReturnType<typeof createAuthClient>; // lib/auth-client.ts (better-auth/react)
+export function useAccount(): { status: 'guest'|'loading'|'signed-in'|'disabled'; profile: UserProfile | null; sync: { state: 'idle'|'syncing'|'conflict'|'offline'|'error'; lastSyncedAt: number | null }; syncNow(): Promise<void> };
+// HTTP (docs/14 §4): /api/auth/[...all] · /api/account/profile GET|PUT · /api/account/avatar POST|DELETE
+// /api/account/avatar/[userId] GET · /api/account/data GET|PUT (409 CONFLICT) · /api/account DELETE
+<AccountMenu />  <AuthDialog />  <ProfileDialog />   // components/account
+```
+
