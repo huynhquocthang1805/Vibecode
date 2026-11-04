@@ -5,17 +5,13 @@ import type {
   Metric,
   TrendDirection,
 } from '@/types/domain';
+import { BANNED_PHRASES } from '@/config/bannedPhrases';
 
 import { fallbackInsight } from './fallback';
 import { insightSuggestionSchema, rawInsightOutputSchema } from './schemas';
 
-const BANNED_PATTERNS = [
-  'toi uu chien dich',
-  'cai thien noi dung',
-  'toi uu hoa',
-  'cai thien hieu qua',
-  'tang cuong quang cao',
-];
+// Cụm chung chung do BA soạn (config/bannedPhrases.ts), so khớp sau khi bỏ dấu + chữ thường
+const BANNED_PATTERNS = BANNED_PHRASES.map((p) => removeVietnameseDiacritics(p.toLowerCase()));
 
 function removeVietnameseDiacritics(str: string): string {
   return str
