@@ -42,20 +42,22 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | AI-03 | Provider adapter Gemini (+ OpenAI, + stub cho test) | ai-engineer | Hoàng Anh | P0 | AI-01 |
 | [x] | AI-04 | enforceGuardrails (7 bước) | ai-engineer | Hoàng Anh | P0 | AI-01, BA-02 |
 | [x] | AI-05 | fallbackInsight rule-based | ai-engineer | Hoàng Anh | P0 | BA-02, FC-01 |
-| [x] | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
+| [~] (Hoàng Anh · sửa R-02..R-04 ở AI-FIX-01) | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
 | [x] | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
 | [ ] | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
+| [ ] | AI-FIX-01 | `useInsights`: không gọi khi chưa đủ dữ liệu (E26), gộp request trùng, khoá effect theo cacheKey (R-02..R-04 `handoffs/REVIEW-FD-FI-2026-11-04.md`) | ai-engineer | Hoàng Anh | P0 | AI-06 |
 | [x] | FI-01 | EntryForm nhiều dòng + validation inline + dialog trùng ngày | frontend-input | Trường | P0 | DATA-01, DATA-04 |
 | [x] | FI-02 | EntryTable (sửa/xoá/hoàn tác) — bản thường, ảo hoá ở FI-02b | frontend-input | Trường | P0 | DATA-04 |
 | [x] | FI-05 | DataManager: dữ liệu mẫu, backup xuất/nhập, xoá hết | frontend-input | Trường | P0 | DATA-04 |
 | [x] | FD-01 | DashboardShell responsive + header + tabs | frontend-dashboard | Trường | P0 | TL-03 |
-| [~] (Trường · làm local, chưa push) | FD-02 | KpiCards (delta, màu ngữ nghĩa, tooltip, "—") | frontend-dashboard | Trường | P0 | DATA-02 |
-| [~] (Trường · làm local, chưa push) | FD-03 | TrendChart + KpiRatioChart (ECharts, lazy) | frontend-dashboard | Trường | P0 | BA-05 |
-| [~] (Trường · làm local, chưa push) | FD-05 | AiInsightCard (5 trạng thái) | frontend-dashboard | Trường | P0 | AI-06 |
-| [~] (Trường · làm local, chưa push) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
+| [~] (Trường · chạy với dữ liệu thật; sửa R-01 giá trị ↔ delta) | FD-02 | KpiCards (delta, màu ngữ nghĩa, tooltip, "—") | frontend-dashboard | Trường | P0 | DATA-02 |
+| [x] | FD-03 | TrendChart + KpiRatioChart (ECharts, lazy) | frontend-dashboard | Trường | P0 | BA-05 |
+| [~] (Trường · chạy, có fallback; sửa R-02 cùng AI-06) | FD-05 | AiInsightCard (5 trạng thái) | frontend-dashboard | Trường | P0 | AI-06 |
+| [~] (Trường · UI xong; chờ AI-08 của Thắng 2) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
 | [ ] | QA-01 | Test ca biên + property-based từ contracts | qa-engineer | Nhân | P0 | BA-01, TL-02 |
 | [~] (Thắng+Claude · bot review + review tích hợp) | TL-05 | Review PR liên tục (`/review`) | techlead | Thắng+Claude | P0 | — |
-| [ ] | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
+| [x] | TL-06a | Ghép trang (today thật) + E2E smoke G1 desktop/iPhone + chấm G1 lần 1 | techlead | Thắng+Claude | P0 | TL-03 |
+| [~] (G1 lần 1: CHƯA ĐẠT — handoffs/GATE-G1.md) | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
 
 ## Wave 4 — P1 (Dữ liệu lớn · Tháng/Quý · Dự báo)
 | | ID | Task | Owner | Người | P | Phụ thuộc |
@@ -99,6 +101,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [ ] | FC-08 | Target pacing (`pacing.ts`) | ai-engineer | Hoàng Anh | P2 | FC-06 |
 | [ ] | FD-07 | LiveModeToggle + AnomalyFeed + animation thẻ | frontend-dashboard | Trường | P2 | DATA-08, FC-07 |
 | [ ] | FD-08 | Rà soát trạng thái rỗng/lỗi, a11y, dark mode | frontend-dashboard | Trường | P2 | — |
+| [ ] | FD-10 | Bundle đầu < 250 KB (lazy `reviewFixture`), renderer canvas khi nhiều điểm, bỏ tên hard-code (R-05, R-06) | frontend-dashboard | Trường | P1 | FD-01 |
 | [ ] | QA-04 | 8 E2E Playwright (cả mobile, cả trên deploy) | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-06 | Phiên test vai Marketer + `docs/bugs.md` | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-07 | Kiểm tra bảo mật nhanh | qa-engineer | Nhân | P0* | G1 |

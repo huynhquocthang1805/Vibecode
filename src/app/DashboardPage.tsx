@@ -5,6 +5,7 @@
  * Mỗi khu bọc SectionBoundary (docs/13 §7). TL-06 nối dữ liệu thật khi các module xong.
  */
 import dynamic from 'next/dynamic';
+import { useSyncExternalStore } from 'react';
 
 import { AiInsightCard } from '@/components/dashboard/AiInsightCard';
 import { AnomalyFeed } from '@/components/dashboard/AnomalyFeed';
@@ -22,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInsights } from '@/lib/ai/useInsights';
 import { useDataStore } from '@/lib/data/store';
+import { todayVN } from '@/lib/domain/dates';
 import { useAnalytics } from '@/lib/workers/useAnalytics';
 
 // ECharts nặng → tách chunk, chỉ tải ở client
@@ -42,11 +44,12 @@ const PasteImportDialog = dynamic(
   { ssr: false },
 );
 
+const noopSubscribe = () => () => undefined;
+
 export function DashboardPage() {
   const settings = useDataStore((s) => s.settings);
-  const rowCount = useDataStore((s) => s.entries.length);
-  // TL-06: today = todayVN() khi DATA-02 xong; tạm lấy ngày cuối của dữ liệu demo
-  const lastDate = useDataStore((s) => s.entries.at(-1)?.date ?? '');
+  // Ngày hôm nay theo giờ VN chỉ đọc ở client: Next 16 (Cache Components) cấm new Date() lúc prerender
+  const today = useSyncExternalStore(noopSubscribe, todayVN, () => '');
 
   const { data: snapshot } = useAnalytics({
     campaignId: settings.activeCampaignId,
@@ -54,7 +57,7 @@ export function DashboardPage() {
     range: settings.range ?? undefined,
     horizonDays: 30,
     targets: settings.targets,
-    today: lastDate,
+    today,
   });
   const { data: insight } = useInsights(snapshot);
 
@@ -62,7 +65,6 @@ export function DashboardPage() {
     <DashboardShell
       controls={
         <SectionBoundary name="Bộ lọc">
-          <span className="text-sm text-muted-foreground">{rowCount} dòng (store tạm)</span>
           <GrainSwitcher />
           <LiveModeToggle />
         </SectionBoundary>

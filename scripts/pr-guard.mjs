@@ -97,6 +97,8 @@ let role = null;
 let taskIds = [];
 if (isTechlead) {
   role = 'techlead';
+  // nhánh feat/techlead/TL-06a vẫn ghi mã task để bot đánh [x] khi APPROVE
+  if (m) taskIds = m[2].match(/[A-Z]+(?:-[A-Z]+)*-\d+[a-z]*(?:-lite)?/g) ?? [m[2]];
 } else if (!m || !ROLES.includes(m[1])) {
   errors.push(
     `Tên nhánh \`${branch}\` sai mẫu \`feat/<role>/<TASK-ID>\` (role ∈ ${ROLES.join(', ')}). Ví dụ: \`feat/frontend-input/FI-01\`.`,
