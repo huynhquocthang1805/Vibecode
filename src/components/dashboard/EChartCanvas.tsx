@@ -33,6 +33,15 @@ export default function EChartCanvas({ option, pointCount }: { option: EChartsOp
   const container = useRef<HTMLDivElement>(null);
   const chart = useRef<ReactECharts>(null);
   useEffect(() => {
+    function zoom(event: Event) {
+      const date: unknown = (event as CustomEvent<unknown>).detail;
+      if (typeof date !== 'string') return;
+      chart.current?.getEchartsInstance()?.dispatchAction({ type: 'dataZoom', startValue: date, endValue: date });
+    }
+    window.addEventListener('kpi:zoom-date', zoom);
+    return () => window.removeEventListener('kpi:zoom-date', zoom);
+  }, []);
+  useEffect(() => {
     let frame = 0;
     const observer = new ResizeObserver(() => {
       cancelAnimationFrame(frame);

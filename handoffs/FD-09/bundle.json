@@ -1,0 +1,78 @@
+{
+  "modernInitialScriptGzipBytes": 276754,
+  "allScriptGzipBytes": 316381,
+  "chunks": [
+    {
+      "path": "/_next/static/chunks/1xxew7t7erf09.js",
+      "legacyOnly": false,
+      "gzipBytes": 48784,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/2ki52vdnbo2ft.js",
+      "legacyOnly": false,
+      "gzipBytes": 71991,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+      "legacyOnly": false,
+      "gzipBytes": 3940,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/0npl-aums1dj3.js",
+      "legacyOnly": false,
+      "gzipBytes": 12981,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/3thtrfcgo5up6.js",
+      "legacyOnly": false,
+      "gzipBytes": 15887,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/0_mbz_hpu9lvk.js",
+      "legacyOnly": false,
+      "gzipBytes": 13650,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/24o6v14t9g4sp.js",
+      "legacyOnly": false,
+      "gzipBytes": 538,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/0opx59ddixsyr.js",
+      "legacyOnly": false,
+      "gzipBytes": 18522,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/11fn7jkzy54cb.js",
+      "legacyOnly": false,
+      "gzipBytes": 41785,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/15qfi15wo13ws.js",
+      "legacyOnly": false,
+      "gzipBytes": 41372,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/0cz1d0mv5g_q7.js",
+      "legacyOnly": true,
+      "gzipBytes": 39627,
+      "reviewFixture": false
+    },
+    {
+      "path": "/_next/static/chunks/19wg2q9r2_sev.js",
+      "legacyOnly": false,
+      "gzipBytes": 7304,
+      "reviewFixture": false
+    }
+  ]
+}

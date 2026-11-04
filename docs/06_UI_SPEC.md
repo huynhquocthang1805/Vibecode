@@ -87,3 +87,12 @@ Nhánh UI đã cập nhật main `2c48866`. DATA-05/06/07 và mô hình FC-02..0
 - Sidebar hiện chiến dịch được chọn, không gắn tên cá nhân. Fixture minh hoạ chỉ tải sau khi bấm xem mẫu; đóng/mở lại dùng module đã tải.
 - Biểu đồ dùng các module ECharts cần thiết, SVG khi ≤ 1.000 điểm, Canvas khi nhiều hơn. Theo dõi kích thước vùng chứa để cập nhật khi resize/đổi tab; giữ LTTB, dataZoom và tắt animation theo quy tắc hiện có.
 - Hộp ngày, hộp báo cáo, nội dung AI có kết quả và các tab bảng/quản lý dữ liệu tải theo nhu cầu. Hiện thông báo đang tải; giữ API component công khai. Bằng chứng và giới hạn kiểm thử nằm trong `handoffs/FD-02.md`, `handoffs/FD-05.md`, `handoffs/FD-10.md`.
+
+### Cập nhật dashboard — 05/11/2026
+
+- Live mô phỏng ghi thêm dữ liệu qua simulator của DATA-08, có ×1/×10/×60; dừng khi tắt, đổi chiến dịch/tốc độ hoặc bật xem mẫu. Chế độ Tất cả dùng chiến dịch đầu tiên, có nhãn thông báo. Sự kiện bất thường hiện toast có giới hạn và danh sách 10 mục; chọn mục để xem khoảng ngày liên quan.
+- Snapshot hiển thị Live theo nhịp 250ms/1s (>50k dòng). Giữ kết quả cũ, báo đang cập nhật, dataSpan/forecastStatus; grain Ngày >400 điểm có gợi ý Tuần. Dữ liệu dài >180 ngày mặc định xem90 ngày tính từ ngày cuối có dữ liệu; người dùng vẫn chọn Tất cả được.
+- Preset thêm Tháng này/Quý này/Năm nay. ForecastPanel hiển thị khoảng80%, mô hình và sMAPE cho orders/cost, pacing khi engine trả về. Trục ngày của mọi dải forecast dùng cùng tập ngày; các kỳ partial có nhãn `*` và độ mờ.
+- Mobile FAB mở sheet nhập liệu thật; ID form duy nhất để nhãn và focus đúng khi có cả form trên trang. Dark mode và reduced-motion giữ hoạt động; animation biểu đồ tắt với thiết bị≤2GB RAM.
+- Health/quota có banner và hành động sao lưu/lưu trữ. Progress/cancel cho Worker chưa có API; không hiển thị phần trăm giả.
+- Bằng chứng browser/test và các tiêu chí chưa đạt: [tổng hợp nhiệm vụ Trường](../handoffs/FRONTEND-TRUONG-2026-11-05.md), [FD-09](../handoffs/FD-09.md). Bundle hiện277KB modern gzip, chưa đạt250KB; Lighthouse/axe/stress200k chưa chứng nhận. AI-08, FC-07/08 và AI-FIX-01 vẫn theo owner của module đó.
