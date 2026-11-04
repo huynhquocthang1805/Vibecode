@@ -1,0 +1,26 @@
+
+> kpi-dashboard-mini@0.1.0 check
+> npm run lint && npm run typecheck && npm run test
+
+
+> kpi-dashboard-mini@0.1.0 lint
+> eslint --max-warnings=0
+
+
+> kpi-dashboard-mini@0.1.0 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+
+> kpi-dashboard-mini@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/Project/Geocarbon/Vibecode
+
+
+ Test Files  43 passed (43)
+      Tests  3791 passed | 10 expected fail (3801)
+   Start at  21:06:10
+   Duration  11.65s (environment 44%, tests 30%, import 12%, setup 9%, transform 4%, worker 1%)

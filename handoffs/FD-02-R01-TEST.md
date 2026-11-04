@@ -19,3 +19,7 @@
 | Ngày | Role | Task | Nội dung | Hạn chế |
 |---|---|---|---|---|
 | 2026-11-04 | frontend-dashboard, ngoại lệ test QA do người dùng yêu cầu | FD-02-R01-TEST | Đổi duy nhất khai báo R-01, giữ assertions | Phụ thuộc frontend PR #12 |
+
+## Cập nhật: ghép code frontend và test R-01 (2026-11-04)
+
+Đã cherry-pick test commit d772bcf của PR #19 vào nhánh frontend PR #12 thành 1c77d9a theo yêu cầu xử lý lỗi tiếp của người dùng. Đây là ngoại lệ sửa đúng một khai báo QA đã được người dùng yêu cầu; giữ nguyên assertions và R-02/R-03. `npm run check` đạt **3791 passed, 10 expected fail, 0 failed** (43 file). Bằng chứng: `handoffs/FD-10/check-with-r01.log`. Các ghi chú phía trên về blocker QA R-01 là lịch sử trước khi ghép, không còn là trạng thái hiện tại của nhánh frontend. PR #19 vẫn thiếu frontend nếu kiểm tra riêng trên main, không merge độc lập. Các phụ thuộc AI-FIX-01/AI-08 và giới hạn bundle legacy giữ nguyên.

@@ -24,7 +24,7 @@ Mở http://localhost:3000 (hoặc cổng Terminal thông báo). Dừng bằng C
 ```powershell
 npm run check
 ```
-Hiện còn duy nhất `Expect test to fail` của test QA R-01 vì code đã sửa thành công nhưng test còn đánh `it.fails`. Đừng tự xoá test hoặc bỏ điều kiện kiểm tra. Nhờ Nhân/techlead đổi khai báo R-01 sang `it` theo handoff FD-02. Có thể push **Draft PR** để họ xem và xử lý; chưa bấm Ready cho tới khi check xanh.
+Nhánh frontend đã ghép test R-01 từ PR #19; check local đạt 3791 passed, 10 expected fail, 0 failed. Sau mỗi lần sửa vẫn chạy lại check. Không xoá assertions hoặc đổi expected value để làm test xanh. Nếu còn thấy R-01, xác nhận đã pull đúng nhánh frontend này, vì nhánh test riêng trên main thiếu frontend fix.
 
 ## 4. Push nhánh lên GitHub
 ```powershell
@@ -39,7 +39,7 @@ Mở [trang so sánh nhánh](https://github.com/huynhquocthang1805/Vibecode/comp
 - Tiêu đề: `fix(FD-02, FD-05, FD-10): KPI cùng kỳ, guard AI và tối ưu frontend`.
 - Dán nội dung `handoffs/FD-10/PR.md` vào mô tả.
 - Chọn mũi tên cạnh Create pull request → **Create draft pull request**. Techlead vẫn xem được code trong Draft.
-- Khi Nhân/techlead cập nhật QA R-01, lấy commit mới về nhánh, chạy lại check. Check xanh rồi bấm **Ready for review** để bot review; techlead quyết định merge.
+- PR #12 đã tồn tại: push tiếp cùng nhánh sẽ tự cập nhật; không tạo PR mới. Đợi CI GitHub xanh và xử lý đủ review rồi chuyển **Ready for review**. PR #19 là bản test riêng để tham khảo, không merge trước frontend.
 
 ## 6. Những lần sửa tiếp trên cùng PR
 Sau khi kiểm tra và commit đúng file của bạn:

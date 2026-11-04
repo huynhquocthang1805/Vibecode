@@ -16,16 +16,16 @@
 - [x] Frontend: 39/39 test
 - [x] UI production: 375/768/1440px, 1095 ngày Canvas, dark/resize, dialog, fixture lazy, KPI thật
 - [x] G1: 14 passed, **gồm 4 expected-failure có sẵn** cho E26 và F5, chưa đóng 2 mục này
-- [ ] `npm run check`: 3790 passed, 10 expected fail, 1 failed vì QA R-01 unexpected-pass (`it.fails`)
+- [x] `npm run check` sau ghép test R-01: **3791 passed, 10 expected fail, 0 failed**; `handoffs/FD-10/check-with-r01.log`.
 
 ## Tự kiểm
-- [x] Chỉ frontend, docs/06 và handoff; giữ ownership cả frontend-dashboard + frontend-input
+- [x] Frontend, docs/06, handoff; ngoại lệ do người dùng yêu cầu: đổi một khai báo test QA R-01, giữ nguyên assertions.
 - [x] Không đổi contracts/dependency/cấu hình hoặc tài liệu PM bị cấm
 - [x] Không any/ts-ignore/console.log/secret
 - [x] Base `origin/main` mới nhất khi làm: 39ae556
 
 ## Cần người khác làm / change request
-- Nhân/techlead: đổi duy nhất `it.fails` thành `it` của QA **R-01**, giữ assertions và R-02/R-03. Trường chưa được cho phép sửa file QA; để Draft tới khi check xanh.
+- Đã ghép test từ PR #19 vào nhánh này (commit `1c77d9a`): frontend fix và regression test chạy cùng nhau, giữ nguyên assertions/R-02/R-03. Người dùng đã yêu cầu ngoại lệ file QA. PR #19 không merge độc lập vì main chưa có frontend fix.
 - Hoàng Anh: AI-FIX-01 guard ở hook/refresh, request dedup, effect key (R-02..04).
 - Thắng 2: AI-08 buildReport/copyText, FD-06 còn chờ.
 - Techlead: chốt phép đo budget modern so với tổng script gồm nomodule; số liệu đầy đủ trong FD-10.md.
