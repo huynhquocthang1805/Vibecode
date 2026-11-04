@@ -62,3 +62,20 @@ ErrorBoundary từng khu, khoảng mặc định 90 ngày, giữ dữ liệu cũ
 
 ## 8. Khả năng truy cập
 Label cho mọi input, tương phản ≥ 4.5:1, không chỉ dùng màu để biểu thị tăng/giảm (kèm ▲▼), focus ring rõ, thao tác bàn phím đầy đủ cho form.
+
+## 9. Bản frontend MVP của Minh Trường — FD-01-MVP (02/11/2026)
+
+- Thiết kế được triển khai trong `src/components/dashboard/dashboard.css`: nền off-white `#f6f7f9`, bề mặt trắng, Electric Blue `#355df5`, chế độ tối với nền `#11151e`. Dùng font Be Vietnam Pro có sẵn để giữ dấu tiếng Việt rõ nét; không thêm dependency hoặc đổi cấu hình gốc.
+- Desktop: sidebar 222px, header mờ nhẹ, 4 thẻ số liệu chính + 3 thẻ tỷ lệ, Bento với biểu đồ/AI ở cột lớn và dự báo/cảnh báo ở cột phụ. Tablet thu gọn sidebar, mobile bỏ sidebar, thẻ KPI cuộn ngang và nút nhập nổi. Khoảng cách nội dung tối thiểu 20px trên mobile.
+- Bộ chọn chiến dịch, khoảng ngày và grain ghi vào settings qua store. Ở bản hiện tại, `useAnalytics` vẫn trả `null`; thay đổi bộ lọc chưa tạo snapshot cho dashboard. Khu nhập/bảng/sao lưu dùng store thật.
+- Nút **Xem giao diện mẫu** bật snapshot minh hoạ tĩnh, không ghi vào store, không gọi AI và không tạo báo cáo thật. Banner giải thích rõ số liệu minh hoạ; đóng chế độ này để quay về dữ liệu thật. Thay đổi form không cập nhật thẻ minh hoạ.
+- Delta trên thẻ được ghi rõ **kỳ gần nhất / kỳ trước** vì `snapshot.trend.comparison` so sánh các bucket, trong khi số lớn trên thẻ là tổng của khoảng đang chọn. Không trình bày delta này thành tăng trưởng của toàn khoảng.
+- Form dùng validation/domain helper có sẵn, kiểm tra ô vừa rời và kiểm toàn bộ khi lưu. Xung đột ngày được xác nhận trước khi ghi bất kỳ dòng nào. Giới hạn form/lưu trữ/cộng dồn lấy từ `LIMITS` và `validateEntry`.
+- Bảng MVP phân trang 25 dòng, có lọc ngày, sắp xếp ngày, sửa trong dialog, chọn/xoá nhiều dòng và hoàn tác. Đây chưa phải bản ảo hoá FI-02b.
+- Biểu đồ dùng ECharts tải động, lấy mẫu LTTB, dataZoom khi hơn 90 kỳ, tắt animation khi giảm chuyển động hoặc hơn 2.000 kỳ. Ba metric khối lượng dùng ba trục đơn vị riêng; CTR/CPC/CPA dùng hai trục. Màu tập trung ở `chartTheme.ts`.
+- AI, nhập CSV/dán Excel, dự báo và báo cáo có giao diện chờ/lỗi rõ ràng khi module phụ thuộc còn stub. Không hiển thị nội dung AI hoặc kết quả dự báo giả.
+- Bằng chứng review và hướng dẫn kỹ thuật: `handoffs/FD-01-MVP.md`, `handoffs/FD-01-MVP/screens/`, `handoffs/FD-01-MVP/browser-checks.json`.
+
+### Cập nhật 04/11/2026
+
+Nhánh UI đã cập nhật main `2c48866`. DATA-05/06/07 và mô hình FC-02..06 hiện đã triển khai; kiểm tra bằng trình duyệt xác nhận nhập Excel cập nhật KPI thật. Các ghi chú §9 về analytics/CSV còn stub là trạng thái ngày 02/11. AI/báo cáo vẫn chờ task tương ứng; nowcast rỗng là lỗi DATA-FIX-02 đã được techlead ghi nhận.

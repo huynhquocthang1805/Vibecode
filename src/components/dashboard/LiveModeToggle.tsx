@@ -1,8 +1,12 @@
 'use client';
 
-// Owner: frontend-dashboard (Trường) — FD-07. Thay khung tạm bằng component thật, giữ tên + props.
-import { Placeholder } from '@/components/ui/placeholder';
+import { HardDrive } from 'lucide-react';
 
 export function LiveModeToggle() {
-  return <Placeholder title="● Live" taskId="FD-07" />;
+  return (
+    <span className="status-label" title="Bản MVP dùng chế độ nhập thủ công">
+      <HardDrive size={13} />
+      Thủ công
+    </span>
+  );
 }
