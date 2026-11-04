@@ -146,9 +146,10 @@ jobs:
           git add -- TASKS.md
           git checkout -- . && git clean -fdq -e node_modules
           if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
-          git commit -m "chore(review): cập nhật biên bản review PR #$PR"
+          # [skip ci]: không sinh run pull_request "0 job, failure" cho chính commit của bot (và không tự review lại);
+          # CI thật chạy qua workflow_dispatch ngay dưới (dispatch không bị [skip ci] chặn)
+          git commit -m "chore(review): cập nhật biên bản review PR #$PR [skip ci]"
           git push origin "HEAD:$HEAD_REF"
-          # Commit bằng GITHUB_TOKEN không tự kích hoạt CI → dispatch để check chạy trên commit mới
           gh workflow run ci.yml --ref "$HEAD_REF"
 
       - name: Đăng biên bản lên PR + xử lý verdict
