@@ -63,7 +63,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | DATA-05 | RollupIndex day/week/month/quarter + applyDelta + like-for-like | data-engineer | Huy | P1 | DATA-02 |
 | [x] | DATA-06 | Analytics Worker (Comlink) + useAnalytics + fallback main thread | data-engineer | Huy | P1 | DATA-05 |
 | [x] | DATA-07 | parseCsv (worker, chunk) + parsePastedTable + autoMapHeaders | data-engineer | Huy | P1 | DATA-01 |
-| [ ] | DATA-FIX-02 | Nowcast rỗng: horizon dự báo đủ tới cuối quý, tách try tháng/quý, không nuốt lỗi im lặng (R-07, `handoffs/REVIEW-INTEGRATION-2026-11-04.md`) | data-engineer | Huy | P1 | DATA-06, FC-06 |
+| [x] | DATA-FIX-02 | Nowcast rỗng: horizon dự báo đủ tới cuối quý, tách try tháng/quý, không nuốt lỗi im lặng (R-07, `handoffs/REVIEW-INTEGRATION-2026-11-04.md`) | data-engineer | Huy | P1 | DATA-06, FC-06 |
 | [x] | FC-02 | Baselines naive / seasonal naive / moving avg | forecast-engineer | Thắng 2 | P1 | FC-01 |
 | [x] | FC-03 | Holt + Holt-Winters (damped) + grid fit | forecast-engineer | Thắng 2 | P1 | FC-02 |
 | [x] | FC-04 | Backtest rolling-origin + chọn mô hình + confidence | forecast-engineer | Thắng 2 | P1 | FC-03 |
