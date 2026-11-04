@@ -2,7 +2,7 @@
 
 import { Copy, Keyboard, Plus, Save, Trash2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { Suspense, useRef, useState, type ClipboardEvent } from 'react';
+import { Suspense, useId, useRef, useState, type ClipboardEvent } from 'react';
 import { toast } from 'sonner';
 
 import { DeferredDialog } from '@/components/dashboard/DeferredDialog';
@@ -26,6 +26,7 @@ export function EntryForm({ onSubmitted }: { onSubmitted?: (n: number) => void }
 }
 
 function EntryFormContent({ onSubmitted }: { onSubmitted?: (n: number) => void }) {
+  const formId = useId();
   const hydrated = useDataStore((s) => s.hydrated);
   const campaigns = useDataStore((s) => s.campaigns);
   const activeCampaign = useDataStore((s) => s.settings.activeCampaignId);
@@ -111,11 +112,11 @@ function EntryFormContent({ onSubmitted }: { onSubmitted?: (n: number) => void }
       >
         <fieldset disabled={!hydrated}>
           <div className="form-campaign">
-            <label className="field-label mb-0" htmlFor="entry-campaign">
+            <label className="field-label mb-0" htmlFor={`entry-campaign-${formId}`}>
               Nhập cho
             </label>
             <select
-              id="entry-campaign"
+              id={`entry-campaign-${formId}`}
               className="mvp-select"
               value={effectiveCampaign}
               onChange={(e) => setCampaignId(e.target.value)}
@@ -131,7 +132,7 @@ function EntryFormContent({ onSubmitted }: { onSubmitted?: (n: number) => void }
             {rows.map((row, index) => (
               <div className="entry-row" key={row.key} data-testid="draft-row">
                 <EntryFields
-                  id={`draft-${row.key}`}
+                  id={`draft-${formId}-${row.key}`}
                   value={row.value}
                   issues={row.issues}
                   onChange={(field, value) =>

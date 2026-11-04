@@ -1261,6 +1261,51 @@ body:has(.kpi-workspace[data-theme='dark']) .mvp-dialog {
   width: 40px;
   height: 40px;
 }
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+.metric-value[data-live] {
+  animation: metric-flash 0.6s ease-out;
+}
+@keyframes live-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes metric-flash {
+  from {
+    text-shadow: 0 0 12px var(--blue);
+  }
+  to {
+    text-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .metric-value[data-live] {
+    animation: none;
+  }
+}
+@media (max-width: 639px) {
+  .mvp-dialog.mobile-entry-sheet {
+    left: 0;
+    top: auto;
+    bottom: 0;
+    /* Override the centering utilities inherited from DialogContent. */
+    translate: 0 0 !important;
+    transform: none;
+    animation: none;
+    max-height: 90dvh;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    overflow-y: auto;
+  }
+}
 @media (max-width: 959px) {
   .topbar-logo {
     display: inline-flex;

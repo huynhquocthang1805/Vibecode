@@ -38,6 +38,18 @@ function addExisting() {
 }
 
 describe('FI-01 — form nhập số liệu thật', () => {
+  it('hai biểu mẫu trên trang và sheet có ID riêng, nhãn trỏ đúng ô', () => {
+    const { container } = render(
+      <>
+        <EntryForm />
+        <EntryForm />
+      </>,
+    );
+    const ids = Array.from(container.querySelectorAll('input[id], select[id]')).map((element) => element.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(screen.getAllByLabelText('Lượt tiếp cận')).toHaveLength(2);
+    expect(screen.getAllByLabelText('Nhập cho')).toHaveLength(2);
+  });
   it('lưu số có phân cách nghìn, gọi callback và đặt lại bản nháp', () => {
     const onSubmitted = vi.fn();
     render(<EntryForm onSubmitted={onSubmitted} />);
