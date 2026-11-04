@@ -2,7 +2,8 @@
 import { DEFAULT_STORAGE_KEY } from './localStorageAdapter';
 import { MANIFEST_KEY } from './partitionCodec';
 
-export function getUserStorageKey(userId: string): string {
+export function getUserStorageKey(userId?: string | null): string {
+  if (!userId) return DEFAULT_STORAGE_KEY;
   return `${DEFAULT_STORAGE_KEY}:u:${userId}`;
 }
 

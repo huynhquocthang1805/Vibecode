@@ -58,7 +58,7 @@ export function useAccount(): UseAccountReturn {
 
   useEffect(() => {
     let active = true;
-    if (user) {
+    if (user?.id) {
       void fetch('/api/account/profile')
         .then(async (res) => {
           if (!active) return;
@@ -76,7 +76,7 @@ export function useAccount(): UseAccountReturn {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user?.id]);
 
   // Đồng bộ dữ liệu lên cloud
   const syncNow = useCallback(async () => {
@@ -142,15 +142,23 @@ export function useAccount(): UseAccountReturn {
             setConflictServerMeta(null);
             // Reload trang để nạp lại dữ liệu vào store
             window.location.reload();
+          } else {
+            setSyncState('error');
           }
         } catch {
-          setSyncState('offline');
+          setSyncState(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'error');
         }
       } else {
-        // Giữ bản local, ghi đè với revision của server
+        // R-02: Giữ bản local, ghi đè với revision của server
+        // Kiểm tra khoá user, nếu chưa có thì fallback về khoá mặc định (khách)
         const userKey = getUserStorageKey(user.id);
-        const localStateRaw = window.localStorage.getItem(userKey);
-        if (!localStateRaw || !conflictServerMeta) return;
+        const localStateRaw =
+          window.localStorage.getItem(userKey) || window.localStorage.getItem(DEFAULT_STORAGE_KEY);
+
+        if (!localStateRaw || !conflictServerMeta) {
+          setSyncState('error');
+          return;
+        }
 
         try {
           const res = await fetch('/api/account/data', {
@@ -167,9 +175,22 @@ export function useAccount(): UseAccountReturn {
             setLastSyncedAt(Date.now());
             setSyncState('idle');
             setConflictServerMeta(null);
+          } else {
+            // R-02: Đặt trạng thái lỗi khi PUT thất bại
+            if (res.status === 409) {
+              const body = await res.json().catch(() => null);
+              if (body?.server) {
+                setConflictServerMeta(body.server as CloudSnapshotMeta);
+                setSyncState('conflict');
+              } else {
+                setSyncState('error');
+              }
+            } else {
+              setSyncState('error');
+            }
           }
         } catch {
-          setSyncState('offline');
+          setSyncState(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'error');
         }
       }
     },

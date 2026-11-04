@@ -1,5 +1,5 @@
 # Handoff — ACC-05 · UI: AccountMenu, AuthDialog, ProfileDialog, nén avatar 256 px bằng canvas, dialog xung đột đồng bộ (A12)
-- **Role:** data-engineer   **Người:** Huy · Gemini Argon   **Nhánh:** feat/data-engineer/ACC-03-ACC-06   **Thời gian:** 2026-11-04 18:35
+- **Role:** data-engineer   **Người:** Huy · Gemini Argon   **Nhánh:** feat/data-engineer/ACC-03-ACC-06   **Thời gian:** 2026-11-04 19:05
 - **Contracts:** đã đọc `domain.ts` v1.0.0 — không đổi chữ ký ✅
 
 ## Đã làm
@@ -12,6 +12,7 @@
   - Quản lý trạng thái phiên đăng nhập (`authClient.useSession`), tải và cache hồ sơ người dùng.
   - Tự động di chuyển dữ liệu khách sang tài khoản khi vừa đăng nhập/đăng ký thành công (`migrateGuestDataToUser`).
   - Quản lý đồng bộ Cloud 2 chiều: tự động phát hiện thay đổi và debounce đồng bộ sau 2s, xử lý trạng thái syncing, synced, offline, error, conflict.
+  - **R-02 (Review fix)**: Nhánh "giữ bản local" của `resolveConflict` hỗ trợ fallback đọc dữ liệu từ khoá mặc định (khách) khi khoá user chưa có; đồng thời đặt `syncState = 'error'` (hoặc `'conflict'` nếu 409 tiếp) khi PUT lên máy chủ thất bại, tránh nuốt lỗi lặng lẽ.
 - **UI Components (`src/components/account/`)**:
   - `AccountMenu`: Nút menu tài khoản ở header, hiển thị avatar người dùng (hoặc chữ cái đầu), chỉ báo trạng thái đồng bộ (chấm xanh khi synced, chấm cam xoay khi syncing, chấm đỏ khi conflict/lỗi). Dropdown gồm thông tin cá nhân, mở hộp thoại hồ sơ, kích hoạt đồng bộ thủ công, và nút đăng xuất.
   - `AuthDialog`: Hộp thoại Đăng nhập / Đăng ký chuyển đổi mượt mà, hỗ trợ bật/tắt ẩn hiện mật khẩu, kiểm tra hợp lệ client-side và hiển thị lỗi tiếng Việt.
@@ -43,10 +44,11 @@ export function mapAuthError(error: unknown): string;
 ```
 
 ## Kiểm thử
-- Lệnh: `npx vitest run src/components/account/accountUi.test.tsx` → 2 passed / 0 failed
+- Lệnh: `npx vitest run src/components/account/accountUi.test.tsx` → 3 passed / 0 failed
 - Nghiệm thu:
   - Test ánh xạ lỗi tiếng Việt cho better-auth.
   - Test tương tác hộp thoại xung đột `ConflictDialog`.
+  - R-02: `resolveConflict('local')` fallback đọc khoá khách khi chưa có khoá user và cập nhật syncState = 'error' khi PUT thất bại.
   - E2E 375 px không tràn ngang, các nút đảm bảo kích thước chạm.
 
 ## Cách dùng cho người nhận
@@ -64,3 +66,4 @@ export function mapAuthError(error: unknown): string;
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-04 18:35 | data-engineer | ACC-05 | Xây dựng bộ UI Account: AccountMenu, AuthDialog, ProfileDialog, ConflictDialog, nén canvas avatar | feat | React 19 linter cảnh báo setState trong useEffect; sửa thành derived state và async promise resolution | src/components/account/AccountMenu.tsx, src/components/account/useAccount.ts |
+| 2026-11-04 19:05 | data-engineer | ACC-05 | Sửa R-02 resolveConflict local đọc key fallback và báo lỗi khi PUT thất bại | fix | Không có | src/components/account/useAccount.ts, src/components/account/accountUi.test.tsx |

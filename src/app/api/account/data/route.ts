@@ -1,5 +1,5 @@
 // Owner: data-engineer (Huy) — ACC-04: GET cloud data & PUT cloud data (revision check & 409 conflict)
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { decodeState } from '@/lib/data/storage/codec';
 import { accountConfigured, notConfiguredResponse } from '@/lib/server/accountConfig';
@@ -86,27 +86,31 @@ export async function PUT(req: Request): Promise<Response> {
   const db = getDb();
 
   const [existing] = await db.select().from(userData).where(eq(userData.userId, userOrRes.id));
+  const currentRevision = existing ? existing.revision : 0;
 
   // A9: Phát hiện xung đột revision (baseRevision khác revision hiện tại trên server)
-  if (existing && existing.revision !== baseRevision) {
+  if (baseRevision !== currentRevision) {
     const error: AccountError = {
       code: 'CONFLICT',
       message: 'Xung đột dữ liệu: Dữ liệu trên máy chủ đã có bản cập nhật mới hơn.',
-      server: {
-        revision: existing.revision,
-        updatedAt: existing.updatedAt.getTime(),
-        rows: existing.rows,
-        bytes: existing.bytes,
-      },
+      server: existing
+        ? {
+            revision: existing.revision,
+            updatedAt: existing.updatedAt.getTime(),
+            rows: existing.rows,
+            bytes: existing.bytes,
+          }
+        : undefined,
     };
     return Response.json(error, { status: 409 });
   }
 
   const now = new Date();
-  const nextRevision = (existing ? existing.revision : 0) + 1;
+  const nextRevision = currentRevision + 1;
 
   if (existing) {
-    await db
+    // R-01 (Atomic update): Dùng optimistic locking với condition revision = baseRevision
+    const updated = await db
       .update(userData)
       .set({
         state,
@@ -115,16 +119,53 @@ export async function PUT(req: Request): Promise<Response> {
         bytes,
         updatedAt: now,
       })
-      .where(eq(userData.userId, userOrRes.id));
+      .where(and(eq(userData.userId, userOrRes.id), eq(userData.revision, baseRevision)))
+      .returning();
+
+    if (updated.length === 0) {
+      // Race condition: request đồng thời khác đã commit trước
+      const [latest] = await db.select().from(userData).where(eq(userData.userId, userOrRes.id));
+      const error: AccountError = {
+        code: 'CONFLICT',
+        message: 'Xung đột dữ liệu: Dữ liệu trên máy chủ đã có bản cập nhật mới hơn.',
+        server: latest
+          ? {
+              revision: latest.revision,
+              updatedAt: latest.updatedAt.getTime(),
+              rows: latest.rows,
+              bytes: latest.bytes,
+            }
+          : undefined,
+      };
+      return Response.json(error, { status: 409 });
+    }
   } else {
-    await db.insert(userData).values({
-      userId: userOrRes.id,
-      state,
-      revision: nextRevision,
-      rows,
-      bytes,
-      updatedAt: now,
-    });
+    // Tạo mới lần đầu (baseRevision === 0): bắt race condition nếu 2 request insert đồng thời
+    try {
+      await db.insert(userData).values({
+        userId: userOrRes.id,
+        state,
+        revision: nextRevision,
+        rows,
+        bytes,
+        updatedAt: now,
+      });
+    } catch {
+      const [latest] = await db.select().from(userData).where(eq(userData.userId, userOrRes.id));
+      const error: AccountError = {
+        code: 'CONFLICT',
+        message: 'Xung đột dữ liệu: Dữ liệu trên máy chủ đã có bản cập nhật mới hơn.',
+        server: latest
+          ? {
+              revision: latest.revision,
+              updatedAt: latest.updatedAt.getTime(),
+              rows: latest.rows,
+              bytes: latest.bytes,
+            }
+          : undefined,
+      };
+      return Response.json(error, { status: 409 });
+    }
   }
 
   const meta: CloudSnapshotMeta = {

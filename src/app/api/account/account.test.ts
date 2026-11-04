@@ -344,6 +344,56 @@ describe('ACC-03 & ACC-04 · Account Profile, Avatar, Cloud Sync & Deletion on P
     expect(largeRes.status).toBe(413);
   });
 
+  it('R-01: Hai request PUT đồng thời cùng baseRevision → atomic update đảm bảo đúng 1 request thành công (200), 1 request 409 CONFLICT', async () => {
+    const validState: PersistedState = {
+      v: CONTRACT_VERSION,
+      campaigns: [{ id: 'default', name: 'Chiến dịch mặc định', createdAt: Date.now() }],
+      entries: [
+        {
+          id: 'default|2026-10-01',
+          date: '2026-10-01',
+          campaignId: 'default',
+          reach: 1000,
+          clicks: 100,
+          cost: 500000,
+          orders: 10,
+          source: 'manual',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ],
+      settings: {
+        activeCampaignId: ALL_CAMPAIGNS,
+        grain: 'day',
+        range: null,
+        liveMode: false,
+        liveSpeed: 1,
+        targets: {},
+        reportFormat: 'short',
+        duplicatePolicy: 'ask',
+      },
+    };
+    const encoded = encodeState(validState);
+
+    // Bắt đầu 2 request đồng thời với cùng baseRevision 0
+    const req1 = new Request('http://localhost:3000/api/account/data', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie: sessionCookieA },
+      body: JSON.stringify({ state: encoded, baseRevision: 0 }),
+    });
+    const req2 = new Request('http://localhost:3000/api/account/data', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie: sessionCookieA },
+      body: JSON.stringify({ state: encoded, baseRevision: 0 }),
+    });
+
+    const [res1, res2] = await Promise.all([putCloudData(req1), putCloudData(req2)]);
+    const statuses = [res1.status, res2.status].sort();
+
+    // Đúng một request thành công (200) và đúng một request nhận 409 CONFLICT
+    expect(statuses).toEqual([200, 409]);
+  });
+
   /* ───────────────────────── ACC-03: Xoá tài khoản & Cascade ───────────────────────── */
 
   it('A11: Xoá tài khoản yêu cầu xác nhận gõ "XOÁ" (204); cascade xoá profile & data; đăng nhập lại thất bại', async () => {

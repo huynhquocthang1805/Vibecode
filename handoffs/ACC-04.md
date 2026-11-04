@@ -1,5 +1,5 @@
 # Handoff — ACC-04 · Đồng bộ dữ liệu: /api/account/data (revision, 409), không gian localStorage theo user, chuyển dữ liệu khách (A9, A10)
-- **Role:** data-engineer   **Người:** Huy · Gemini Argon   **Nhánh:** feat/data-engineer/ACC-03-ACC-06   **Thời gian:** 2026-11-04 18:35
+- **Role:** data-engineer   **Người:** Huy · Gemini Argon   **Nhánh:** feat/data-engineer/ACC-03-ACC-06   **Thời gian:** 2026-11-04 19:05
 - **Contracts:** đã đọc `domain.ts` v1.0.0 — không đổi chữ ký ✅
 
 ## Đã làm
@@ -9,9 +9,11 @@
     - Kiểm tra giới hạn payload snapshot ≤ 4 MB (trả `413 Payload Too Large` nếu vượt).
     - Giải mã và kiểm tra tính toàn vẹn của state bằng `decodeState` từ domain layer (trả `400 Bad Request` nếu dữ liệu dị dạng).
     - Kiểm tra xung đột phiên bản: so sánh `baseRevision` của client với `currentRevision` trong DB. Nếu lệch, lập tức trả về `409 Conflict` kèm thông tin snapshot hiện tại của cloud để client giải quyết xung đột (A9).
+    - **R-01 (Review fix)**: Chuyển đổi toàn bộ quá trình cập nhật revision thành atomic bằng optimistic locking: `UPDATE user_data ... WHERE userId = ? AND revision = baseRevision RETURNING ...`. Bắt kịp thời các race condition khi 2 request PUT đồng thời có cùng `baseRevision`, đảm bảo đúng 1 request thành công và request còn lại nhận 409 CONFLICT.
     - Khi hợp lệ: ghi vào bảng `user_data` với `revision = currentRevision + 1`, lưu `rows` và `bytes` phục vụ telemetry/thống kê.
 - **Không gian localStorage theo người dùng (`src/lib/data/storage/userStorage.ts`)**:
-  - Tách không gian lưu trữ: khách dùng key mặc định `kpi-dash:v1:storage:manifest`, người dùng đã đăng nhập dùng key `kpi-dash:v1:u:<userId>:manifest` (docs/14 §4).
+  - Tách không gian lưu trữ: khách dùng key mặc định `kpi-dash:v1`, người dùng đã đăng nhập dùng key `kpi-dash:v1:u:<userId>` (docs/14 §4).
+  - Hỗ trợ `getUserStorageKey(userId?: string | null)`: fallback về key mặc định khi `userId` null/undefined.
   - Chuyển giao dữ liệu từ khách (Guest Migration): hàm `migrateGuestDataToUser(userId)` sao chép an toàn dữ liệu từ vùng lưu trữ khách sang tài khoản người dùng khi đăng ký/đăng nhập lần đầu, có cờ `guestMigrated` chống sao chép lặp lại.
   - Dọn dẹp lưu trữ người dùng khi đăng xuất (`clearUserStorage(userId)`).
 
@@ -54,4 +56,4 @@ export function clearUserStorage(userId: string): void;
 
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
-| 2026-11-04 18:35 | data-engineer | ACC-04 | API sync dữ liệu cloud có kiểm soát revision 409, storage isolation theo user | feat | Không có | src/app/api/account/data/route.ts, src/lib/data/storage/userStorage.ts |
+| 2026-11-04 18:35 | data-engineer | ACC-04 | API sync dữ liệu cloud có kiểm soát revision 409, storage isolation theo user | feat | Kiểm tra revision rồi mới update không atomic; sửa thành optimistic locking update where revision = baseRevision | src/app/api/account/data/route.ts, src/lib/data/storage/userStorage.ts |
