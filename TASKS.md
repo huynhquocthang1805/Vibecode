@@ -96,8 +96,8 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | | ID | Task | Owner | Người | P | Phụ thuộc |
 |---|---|---|---|---|---|---|
 | [x] | ACC-00 | Chốt stack, đặc tả docs/14, kiểu domain, stub 6 route (503 khi chưa cấu hình), cài thư viện | techlead | Thắng+Claude | P1 | — |
-| [ ] | ACC-01 | DB: schema Drizzle (bảng better-auth + profile + user_data), migration `drizzle/`, `getDb()` neon/pglite, harness test PGlite | data-engineer | Huy | P1 | ACC-00 |
-| [ ] | ACC-02 | better-auth server + `/api/auth/[...all]` + `requireUser` + rate limit; đăng ký/đăng nhập/đăng xuất (A2–A5) | data-engineer | Huy | P1 | ACC-01 |
+| [x] | ACC-01 | DB: schema Drizzle (bảng better-auth + profile + user_data), migration `drizzle/`, `getDb()` neon/pglite, harness test PGlite | data-engineer | Huy | P1 | ACC-00 |
+| [x] | ACC-02 | better-auth server + `/api/auth/[...all]` + `requireUser` + rate limit; đăng ký/đăng nhập/đăng xuất (A2–A5) | data-engineer | Huy | P1 | ACC-01 |
 | [ ] | ACC-03 | Hồ sơ + avatar (magic bytes, ≤ 200 KB, cấm SVG) + xoá tài khoản (A6–A8, A11) | data-engineer | Huy | P1 | ACC-02 |
 | [ ] | ACC-04 | Đồng bộ dữ liệu: `/api/account/data` (revision, 409), không gian localStorage theo user, chuyển dữ liệu khách (A9, A10) | data-engineer | Huy | P1 | ACC-02, DATA-03 |
 | [ ] | ACC-05 | UI: `AccountMenu`, `AuthDialog`, `ProfileDialog`, nén avatar 256 px bằng canvas, dialog xung đột đồng bộ (A12) | data-engineer | Huy | P1 | ACC-03, ACC-04 |
