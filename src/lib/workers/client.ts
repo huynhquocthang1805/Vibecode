@@ -1,20 +1,180 @@
 import * as Comlink from 'comlink';
 
+import { bus } from '@/lib/data/realtime/bus';
+import { daysBetween } from '@/lib/domain/dates';
 import { LIMITS, type AnalyticsQuery, type AnalyticsSnapshot, type DailyEntry, type EntryDelta } from '@/types/domain';
 
 import { createAnalyticsEngine } from './analytics.worker';
-import type { AnalyticsWorkerApi } from './types';
+import type { AnalyticsWorkerApi, PackedEntries } from './types';
 
 let singletonClient: AnalyticsWorkerApi | null = null;
+let activeWorkerInstance: Worker | null = null;
+let lastEntriesSnapshot: DailyEntry[] = [];
+const restartTimestamps: number[] = [];
+let isCompatibilityMode = false;
 
-function wrapWithTimeout(baseClient: AnalyticsWorkerApi): AnalyticsWorkerApi {
+const SOURCE_TO_NUM: Record<string, number> = {
+  manual: 0,
+  paste: 1,
+  csv: 2,
+  live: 3,
+  mock: 4,
+};
+
+/**
+ * Đóng gói mảng DailyEntry thành TypedArray (zero-copy / compact transfer) (docs/13 §4).
+ */
+export function packEntries(entries: DailyEntry[]): PackedEntries {
+  const n = entries.length;
+  const epoch = entries[0]?.date ?? '2024-01-01';
+
+  const campMap = new Map<string, number>();
+  const campList: string[] = [];
+
+  const days = new Int32Array(n);
+  const campaignIdxs = new Uint16Array(n);
+  const reaches = new Float64Array(n);
+  const clicks = new Float64Array(n);
+  const costs = new Float64Array(n);
+  const orders = new Float64Array(n);
+  const sources = new Uint8Array(n);
+
+  for (let i = 0; i < n; i++) {
+    const e = entries[i]!;
+    days[i] = daysBetween(epoch, e.date);
+
+    let cIdx = campMap.get(e.campaignId);
+    if (cIdx === undefined) {
+      cIdx = campList.length;
+      campMap.set(e.campaignId, cIdx);
+      campList.push(e.campaignId);
+    }
+    campaignIdxs[i] = cIdx;
+
+    reaches[i] = e.reach;
+    clicks[i] = e.clicks;
+    costs[i] = e.cost;
+    orders[i] = e.orders;
+    sources[i] = SOURCE_TO_NUM[e.source] ?? 0;
+  }
+
   return {
-    init(entries: DailyEntry[]): Promise<number> {
-      return baseClient.init(entries);
+    days,
+    campaignIdxs,
+    reaches,
+    clicks,
+    costs,
+    orders,
+    sources,
+    epoch,
+    campaigns: campList,
+  };
+}
+
+function spawnWorker(): AnalyticsWorkerApi {
+  if (typeof window === 'undefined' || typeof Worker === 'undefined' || isCompatibilityMode) {
+    return createAnalyticsEngine({ isCompatibilityMode });
+  }
+
+  try {
+    const worker = new Worker(new URL('./analytics.worker.ts', import.meta.url), { type: 'module' });
+    activeWorkerInstance = worker;
+
+    worker.onerror = (e) => {
+      handleWorkerFailure('WORKER_ERROR: ' + e.message);
+    };
+
+    worker.onmessageerror = () => {
+      handleWorkerFailure('WORKER_MESSAGE_ERROR');
+    };
+
+    return Comlink.wrap<AnalyticsWorkerApi>(worker);
+  } catch {
+    isCompatibilityMode = true;
+    bus.emit({
+      type: 'system/health',
+      area: 'worker',
+      status: 'degraded',
+      message: 'Không thể tạo Web Worker. Chuyển sang Chế độ tương thích trên main thread.',
+    });
+    return createAnalyticsEngine({ isCompatibilityMode: true });
+  }
+}
+
+function handleWorkerFailure(reason: string): void {
+  const now = Date.now();
+  // Giữ lại các lần restart trong vòng 60 giây
+  while (restartTimestamps.length > 0 && now - restartTimestamps[0]! > 60_000) {
+    restartTimestamps.shift();
+  }
+
+  if (restartTimestamps.length >= LIMITS.WORKER_MAX_RESTARTS) {
+    // Quá số lần restart cho phép -> Chế độ tương thích
+    isCompatibilityMode = true;
+    if (activeWorkerInstance) {
+      activeWorkerInstance.terminate();
+      activeWorkerInstance = null;
+    }
+    bus.emit({
+      type: 'system/health',
+      area: 'worker',
+      status: 'degraded',
+      message: 'Worker gặp sự cố liên tục. Đã chuyển sang Chế độ tương thích trên main thread.',
+      detail: reason,
+    });
+    singletonClient = createAnalyticsEngine({ isCompatibilityMode: true });
+    if (lastEntriesSnapshot.length > 0) {
+      void singletonClient.init(lastEntriesSnapshot);
+    }
+    return;
+  }
+
+  restartTimestamps.push(now);
+  bus.emit({
+    type: 'system/health',
+    area: 'worker',
+    status: 'degraded',
+    message: 'Worker gặp sự cố, đang tự động khởi động lại supervisor.',
+    detail: reason,
+  });
+
+  if (activeWorkerInstance) {
+    activeWorkerInstance.terminate();
+    activeWorkerInstance = null;
+  }
+
+  singletonClient = createSupervisedClient(spawnWorker());
+  if (lastEntriesSnapshot.length > 0) {
+    void singletonClient.init(lastEntriesSnapshot);
+  }
+}
+
+function createSupervisedClient(baseApi: AnalyticsWorkerApi): AnalyticsWorkerApi {
+  const activeApi = baseApi;
+
+  return {
+    async ping(): Promise<string> {
+      if (activeApi.ping) {
+        return activeApi.ping();
+      }
+      return 'pong';
     },
-    applyDelta(delta: EntryDelta, revision: number): Promise<number> {
-      return baseClient.applyDelta(delta, revision);
+
+    async init(entries: DailyEntry[] | PackedEntries): Promise<number> {
+      if (Array.isArray(entries)) {
+        lastEntriesSnapshot = entries;
+        if (entries.length > 500 && !isCompatibilityMode) {
+          const packed = packEntries(entries);
+          return activeApi.init(packed);
+        }
+      }
+      return activeApi.init(entries);
     },
+
+    async applyDelta(delta: EntryDelta, revision: number): Promise<number> {
+      return activeApi.applyDelta(delta, revision);
+    },
+
     async snapshot(q: AnalyticsQuery): Promise<AnalyticsSnapshot> {
       let timer: NodeJS.Timeout | null = null;
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -24,8 +184,17 @@ function wrapWithTimeout(baseClient: AnalyticsWorkerApi): AnalyticsWorkerApi {
       });
 
       try {
-        const result = await Promise.race([baseClient.snapshot(q), timeoutPromise]);
+        const result = await Promise.race([activeApi.snapshot(q), timeoutPromise]);
         return result;
+      } catch (err) {
+        if (err instanceof Error && err.message === 'SNAPSHOT_TIMEOUT') {
+          handleWorkerFailure('SNAPSHOT_TIMEOUT');
+          // Thử lại 1 lần sau khi khởi động lại worker hoặc chuyển chế độ tương thích
+          if (singletonClient) {
+            return singletonClient.snapshot(q);
+          }
+        }
+        throw err;
       } finally {
         if (timer) clearTimeout(timer);
       }
@@ -34,29 +203,26 @@ function wrapWithTimeout(baseClient: AnalyticsWorkerApi): AnalyticsWorkerApi {
 }
 
 /**
- * Tạo AnalyticsClient kết nối tới Web Worker qua Comlink.
- * Nếu không có môi trường Worker (SSR, Node.js, Vitest) hoặc khởi tạo Worker thất bại,
- * tự động fallback về engine chạy trên main thread (docs/13 §4).
- * Có bọc timeout SNAPSHOT_TIMEOUT_MS chống treo worker (R-05).
+ * Lấy AnalyticsClient kết nối tới Web Worker có giám sát (Supervisor) (docs/13 §4).
  */
 export function getAnalyticsClient(): AnalyticsWorkerApi {
   if (singletonClient) {
     return singletonClient;
   }
+  singletonClient = createSupervisedClient(spawnWorker());
+  return singletonClient;
+}
 
-  // Fallback nếu không có Worker (ví dụ SSR hoặc Vitest test)
-  if (typeof window === 'undefined' || typeof Worker === 'undefined') {
-    singletonClient = wrapWithTimeout(createAnalyticsEngine());
-    return singletonClient;
+/**
+ * Reset client (dành cho kiểm thử hoặc phục hồi khẩn cấp).
+ */
+export function resetAnalyticsClient(): void {
+  if (activeWorkerInstance) {
+    activeWorkerInstance.terminate();
+    activeWorkerInstance = null;
   }
-
-  try {
-    const worker = new Worker(new URL('./analytics.worker.ts', import.meta.url), { type: 'module' });
-    const remoteApi = Comlink.wrap<AnalyticsWorkerApi>(worker);
-    singletonClient = wrapWithTimeout(remoteApi);
-    return singletonClient;
-  } catch {
-    singletonClient = wrapWithTimeout(createAnalyticsEngine());
-    return singletonClient;
-  }
+  singletonClient = null;
+  isCompatibilityMode = false;
+  restartTimestamps.length = 0;
+  lastEntriesSnapshot = [];
 }

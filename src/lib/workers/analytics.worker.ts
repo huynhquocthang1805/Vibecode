@@ -21,22 +21,71 @@ import {
   type Anomaly,
   type DailyEntry,
   type EntryDelta,
+  type EntrySource,
   type ForecastStatus,
   type MetricForecast,
   type Nowcast,
   type Series,
 } from '@/types/domain';
 
-import type { AnalyticsWorkerApi } from './types';
+import type { AnalyticsWorkerApi, PackedEntries } from './types';
+
+const NUM_TO_SOURCE: EntrySource[] = ['manual', 'paste', 'csv', 'live', 'mock'];
+
+function unpackEntries(packed: PackedEntries): DailyEntry[] {
+  const count = packed.days.length;
+  const entries: DailyEntry[] = new Array(count);
+  const now = Date.now();
+
+  for (let i = 0; i < count; i++) {
+    const dayOffset = packed.days[i] ?? 0;
+    const date = addDays(packed.epoch, dayOffset);
+    const cIdx = packed.campaignIdxs[i] ?? 0;
+    const campaignId = packed.campaigns[cIdx] ?? 'default';
+    const sourceIdx = packed.sources[i] ?? 0;
+    const source = NUM_TO_SOURCE[sourceIdx] ?? 'manual';
+    const id = `${campaignId}|${date}`;
+
+    entries[i] = {
+      id,
+      date,
+      campaignId,
+      reach: packed.reaches[i] ?? 0,
+      clicks: packed.clicks[i] ?? 0,
+      cost: packed.costs[i] ?? 0,
+      orders: packed.orders[i] ?? 0,
+      source,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+  return entries;
+}
 
 let rollupIndex: RollupIndex = buildRollups([]);
 let currentRevision = 0;
+let completedVersion = 1;
+let lastKnownToday: string | null = null;
+
+// Cache theo phần: forecastCache key: `${campaignId}:${forecastHorizon}`
+interface ForecastCacheEntry {
+  completedVersion: number;
+  forecasts: MetricForecast[];
+}
+const forecastCache = new Map<string, ForecastCacheEntry>();
 
 function computeForecastStatus(
   dataSpan: { first: string | null; last: string | null },
   daily: Series,
   today: string,
+  totalRows: number,
+  isCompatibilityMode: boolean,
 ): ForecastStatus {
+  // Chế độ tương thích trên main thread: tắt dự báo khi > 20k dòng (docs/13 §4)
+  if (isCompatibilityMode && totalRows > 20_000) {
+    return 'disabled';
+  }
+
   if (!dataSpan.first || !dataSpan.last) {
     return 'insufficient';
   }
@@ -54,11 +103,20 @@ function computeForecastStatus(
   return 'ok';
 }
 
-export function createAnalyticsEngine(): AnalyticsWorkerApi {
+export function createAnalyticsEngine(options?: { isCompatibilityMode?: boolean }): AnalyticsWorkerApi {
+  const isCompat = options?.isCompatibilityMode ?? false;
+
   return {
-    async init(entries: DailyEntry[]): Promise<number> {
+    async ping(): Promise<string> {
+      return 'pong';
+    },
+
+    async init(entriesInput: DailyEntry[] | PackedEntries): Promise<number> {
+      const entries = Array.isArray(entriesInput) ? entriesInput : unpackEntries(entriesInput);
       rollupIndex = buildRollups(entries);
       currentRevision = 1;
+      completedVersion++;
+      forecastCache.clear();
       return currentRevision;
     },
 
@@ -66,12 +124,27 @@ export function createAnalyticsEngine(): AnalyticsWorkerApi {
       if (currentRevision !== 0 && revision !== currentRevision + 1) {
         throw new Error('REVISION_GAP');
       }
+
+      // Kiểm tra xem delta có chạm ngày đã kết thúc (< lastKnownToday) không
+      if (lastKnownToday) {
+        const touchesCompletedDay =
+          delta.added.some((e) => e.date < lastKnownToday!) ||
+          delta.removed.some((e) => e.date < lastKnownToday!);
+
+        if (touchesCompletedDay) {
+          completedVersion++;
+        }
+      } else {
+        completedVersion++;
+      }
+
       rollupIndex = applyDelta(rollupIndex, delta);
       currentRevision = revision;
       return currentRevision;
     },
 
     async snapshot(q: AnalyticsQuery): Promise<AnalyticsSnapshot> {
+      lastKnownToday = q.today;
       const timings: Record<string, number> = {};
 
       const t0 = performance.now();
@@ -105,26 +178,45 @@ export function createAnalyticsEngine(): AnalyticsWorkerApi {
       const trend = analyzeTrend(series, cmp, TREND_CONFIG);
       timings.trend = performance.now() - tTrend;
 
-      // R-07 / DATA-FIX-02: Horizon dự báo cần tối thiểu tới cuối quý cho nowcast
       const monthKey = bucketKey(q.today, 'month');
       const quarterKey = bucketKey(q.today, 'quarter');
       const qRange = bucketRange(quarterKey, 'quarter');
       const daysToQuarterEnd = Math.max(0, daysBetween(q.today, qRange.end) + 1);
       const forecastHorizon = Math.max(q.horizonDays, daysToQuarterEnd);
 
+      const dataSpan = getRollupDataSpan(rollupIndex, q.campaignId);
+      const checksum = getRollupChecksum(rollupIndex);
+      const forecastStatus = computeForecastStatus(dataSpan, daily, q.today, checksum.rows, isCompat);
+
+      // Cache theo phần cho forecast: chỉ tính lại khi completedVersion đổi
+      const fcKey = `${q.campaignId}:${forecastHorizon}`;
       let forecasts: MetricForecast[] = [];
-      try {
-        const tFc = performance.now();
-        forecasts = forecastAll(daily, forecastHorizon);
-        timings.forecast = performance.now() - tFc;
-      } catch (err) {
-        forecasts = [];
-        timings.forecastError = 1;
-        if (typeof console !== 'undefined' && console.warn) {
-          console.warn('[AnalyticsWorker] forecastAll failed:', err instanceof Error ? err.message : err);
+
+      if (forecastStatus === 'ok') {
+        const cachedFc = forecastCache.get(fcKey);
+        if (cachedFc && cachedFc.completedVersion === completedVersion) {
+          forecasts = cachedFc.forecasts;
+          timings.forecastCached = 1;
+        } else {
+          try {
+            const tFc = performance.now();
+            forecasts = forecastAll(daily, forecastHorizon);
+            timings.forecast = performance.now() - tFc;
+            forecastCache.set(fcKey, {
+              completedVersion,
+              forecasts,
+            });
+          } catch (err) {
+            forecasts = [];
+            timings.forecastError = 1;
+            if (typeof console !== 'undefined' && console.warn) {
+              console.warn('[AnalyticsWorker] forecastAll failed:', err instanceof Error ? err.message : err);
+            }
+          }
         }
       }
 
+      // Nowcast tính rẻ (< 5ms) từ forecasts và actualToDate
       const nowcasts: Nowcast[] = [];
       if (forecasts.length > 0) {
         const mTarget = q.targets?.[`${q.campaignId}:${monthKey}`];
@@ -159,10 +251,6 @@ export function createAnalyticsEngine(): AnalyticsWorkerApi {
       } catch {
         anomalies = [];
       }
-
-      const dataSpan = getRollupDataSpan(rollupIndex, q.campaignId);
-      const checksum = getRollupChecksum(rollupIndex);
-      const forecastStatus = computeForecastStatus(dataSpan, daily, q.today);
 
       return {
         computedAt: Date.now(),

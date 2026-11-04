@@ -86,6 +86,12 @@ export function useAnalytics(q: AnalyticsQuery): UseAnalyticsResult {
           ) {
             await client.init(currentEntries);
             snap = await client.snapshot(qRef.current);
+            bus.emit({
+              type: 'system/health',
+              area: 'rollup',
+              status: 'recovered',
+              message: 'Đã tự động chữa lệch rollup index.',
+            });
           }
 
           if (currentReqId === reqIdRef.current) {
