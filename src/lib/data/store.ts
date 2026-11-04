@@ -108,6 +108,7 @@ let storageAdapter: StorageAdapter = createLocalStorageAdapter();
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 let firstPersistRequestTime = 0;
 let isMigrating = false;
+let needsPersistAfterMigration = false;
 
 export function getStorageAdapter(): StorageAdapter {
   return storageAdapter;
@@ -123,7 +124,14 @@ export function setStorageAdapter(adapter: StorageAdapter): void {
 export async function checkAndAutoSwitchAdapter(entryCount: number): Promise<void> {
   if (isMigrating) return;
   if (entryCount > LIMITS.LOCAL_STORAGE_SOFT_ROWS && storageAdapter.kind === 'localStorage') {
+    if (persistTimer) {
+      clearTimeout(persistTimer);
+      persistTimer = null;
+    }
+    firstPersistRequestTime = 0;
     isMigrating = true;
+    needsPersistAfterMigration = false;
+
     try {
       const newAdapter = await migrateToIndexedDb(storageAdapter);
       storageAdapter = newAdapter;
@@ -137,11 +145,19 @@ export async function checkAndAutoSwitchAdapter(entryCount: number): Promise<voi
         message: 'Đã tự động chuyển đổi sang IndexedDB do dữ liệu vượt ngưỡng 40.000 dòng.',
       });
     } catch (err) {
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[store] auto-switch to IndexedDB failed:', err);
-      }
+      bus.emit({
+        type: 'system/health',
+        area: 'storage',
+        status: 'degraded',
+        message: 'Không thể chuyển đổi sang IndexedDB. Dữ liệu vẫn được giữ an toàn trên localStorage.',
+        detail: String(err),
+      });
     } finally {
       isMigrating = false;
+      if (needsPersistAfterMigration) {
+        needsPersistAfterMigration = false;
+        schedulePersist(useDataStore.getState);
+      }
     }
   }
 }
@@ -193,6 +209,10 @@ export function applyRemoteDelta(delta: EntryDelta, revision?: number): void {
 }
 
 function schedulePersist(getState: () => DataState): void {
+  if (isMigrating) {
+    needsPersistAfterMigration = true;
+    return;
+  }
   const now = Date.now();
   if (firstPersistRequestTime === 0) {
     firstPersistRequestTime = now;
@@ -201,6 +221,10 @@ function schedulePersist(getState: () => DataState): void {
   const flush = () => {
     persistTimer = null;
     firstPersistRequestTime = 0;
+    if (isMigrating) {
+      needsPersistAfterMigration = true;
+      return;
+    }
     const s = getState();
     const persisted: PersistedState = {
       v: CONTRACT_VERSION,
@@ -218,9 +242,13 @@ function schedulePersist(getState: () => DataState): void {
         });
       })
       .catch((err) => {
-        if (typeof console !== 'undefined' && console.warn) {
-          console.warn('[store] persistence warning:', err);
-        }
+        bus.emit({
+          type: 'system/health',
+          area: 'storage',
+          status: 'degraded',
+          message: 'Lưu trữ dữ liệu store gặp sự cố.',
+          detail: String(err),
+        });
       });
   };
 

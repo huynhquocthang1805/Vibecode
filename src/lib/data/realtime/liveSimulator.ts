@@ -1,5 +1,5 @@
 import { useDataStore } from '@/lib/data/store';
-import { todayVN } from '@/lib/domain/dates';
+import { hourVN, todayVN } from '@/lib/domain/dates';
 import type { Anomaly } from '@/types/domain';
 
 import { bus } from './bus';
@@ -73,7 +73,7 @@ export function startLiveSimulator(opts: { speed: 1 | 10 | 60; campaignId: strin
   const tick = () => {
     if (stopped) return;
 
-    const hour = new Date().getHours();
+    const hour = hourVN();
     const diurnalWeight = DIURNAL_HOURLY_WEIGHTS[hour] ?? 1.0;
 
     // Tính phần tăng reach mỗi tick

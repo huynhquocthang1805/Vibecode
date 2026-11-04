@@ -302,4 +302,65 @@ describe('DATA-09: IndexedDB Adapter & Auto Migration', () => {
 
     unlisten();
   });
+  it('R-01: IndexedDB không khả dụng khi migrate → localStorage còn nguyên dữ liệu, storage.kind vẫn localStorage', async () => {
+    // 1. Chuẩn bị dữ liệu trong localStorage
+    const local = createLocalStorageAdapter();
+    await local.save(sampleState);
+    expect(await local.load()).not.toBeNull();
+
+    // 2. Tắt IndexedDB
+    delete (window as unknown as { indexedDB?: unknown }).indexedDB;
+
+    // 3. Thử migrate
+    await expect(migrateToIndexedDb(local)).rejects.toThrow();
+
+    // 4. Dữ liệu trong localStorage phải còn nguyên vẹn 100%
+    const loadedLocal = await local.load();
+    expect(loadedLocal).not.toBeNull();
+    expect(loadedLocal?.entries.length).toBe(1);
+    expect(loadedLocal?.entries[0]?.reach).toBe(20000);
+
+    // Không được đặt ACTIVE_STORAGE_TYPE_KEY thành indexedDB
+    expect(localStorage.getItem(ACTIVE_STORAGE_TYPE_KEY)).not.toBe('indexedDB');
+
+    // 5. Thử auto-switch trong store khi IDB không khả dụng
+    setStorageAdapter(local);
+    await checkAndAutoSwitchAdapter(LIMITS.LOCAL_STORAGE_SOFT_ROWS + 100);
+    expect(getStorageAdapter().kind).toBe('localStorage');
+    expect(useDataStore.getState().storage.kind).toBe('localStorage');
+  });
+
+  it('R-02: addEntries trong lúc migrate → không ghi race vào adapter cũ, persist đầy đủ vào adapter mới sau swap', async () => {
+    const local = createLocalStorageAdapter();
+    await local.save(sampleState);
+    setStorageAdapter(local);
+
+    // Bắt đầu auto-switch (chạy bất đồng bộ)
+    const switchPromise = checkAndAutoSwitchAdapter(LIMITS.LOCAL_STORAGE_SOFT_ROWS + 10);
+
+    // Trong lúc migrate đang chạy, gọi addEntries vào store
+    useDataStore.getState().addEntries([
+      {
+        date: '2026-11-05',
+        campaignId: 'default',
+        reach: 5000,
+        clicks: 100,
+        cost: 500000,
+        orders: 5,
+        source: 'manual',
+      },
+    ]);
+
+    await switchPromise;
+
+    // Chờ debounce persist hoàn tất vào adapter mới
+    await new Promise((r) => setTimeout(r, LIMITS.PERSIST_DEBOUNCE_MS + 100));
+
+    // Adapter mới là IndexedDB và đã lưu trữ đầy đủ cả bản ghi mới
+    const activeAdapter = getStorageAdapter();
+    expect(activeAdapter.kind).toBe('indexedDB');
+    const loaded = await activeAdapter.load();
+    expect(loaded).not.toBeNull();
+    expect(loaded?.entries.some((e) => e.date === '2026-11-05')).toBe(true);
+  });
 });

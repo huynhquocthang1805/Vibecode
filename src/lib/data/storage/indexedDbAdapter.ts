@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS: Settings = {
   duplicatePolicy: 'ask',
 };
 
-function isIndexedDbAvailable(): boolean {
+export function isIndexedDbAvailable(): boolean {
   try {
     return typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
   } catch {
@@ -68,11 +68,13 @@ function openDatabase(): Promise<IDBDatabase> {
  * Chuyên dùng khi số lượng bản ghi vượt quá 40.000 dòng hoặc khi localStorage đầy.
  * Cấu hình (settings) vẫn được đồng bộ vào localStorage để tải nhanh giao diện ban đầu.
  */
-export function createIndexedDbAdapter(): StorageAdapter {
+export function createIndexedDbAdapter(opts?: { strict?: boolean }): StorageAdapter & { isDegraded(): boolean } {
   const inMemoryBackup: Map<string, unknown> = new Map();
   let degradedReported = false;
+  let isDegraded = !isIndexedDbAvailable();
 
   function reportDegraded(err: unknown) {
+    isDegraded = true;
     if (!degradedReported) {
       degradedReported = true;
       bus.emit({
@@ -87,6 +89,10 @@ export function createIndexedDbAdapter(): StorageAdapter {
 
   return {
     kind: 'indexedDB' as const,
+
+    isDegraded(): boolean {
+      return isDegraded;
+    },
 
     async load(): Promise<PersistedState | null> {
       try {
@@ -179,6 +185,9 @@ export function createIndexedDbAdapter(): StorageAdapter {
       } catch (err) {
         reportDegraded(err);
         inMemoryBackup.set('state', state);
+        if (opts?.strict) {
+          throw err;
+        }
       }
     },
 
@@ -248,13 +257,34 @@ export function createIndexedDbAdapter(): StorageAdapter {
 
 /**
  * Chuyển dữ liệu hai chiều giữa 2 adapter lưu trữ.
+ * Trước khi dọn dẹp adapter nguồn (from.clear()), phải xác minh dữ liệu đã được ghi thật
+ * và lưu trữ bền vững vào adapter đích (to.load()), tránh mất trắng dữ liệu khi IndexedDB không khả dụng.
  */
 export async function migrateStorage(from: StorageAdapter, to: StorageAdapter): Promise<void> {
   const state = await from.load();
-  if (state) {
-    await to.save(state);
-    await from.clear();
+  if (!state) return;
+
+  // Nếu đích là IndexedDB nhưng môi trường không hỗ trợ, huỷ bỏ ngay lập tức
+  if (to.kind === 'indexedDB' && !isIndexedDbAvailable()) {
+    throw new Error('INDEXED_DB_NOT_AVAILABLE: IndexedDB không khả dụng, không thể di chuyển dữ liệu');
   }
+
+  await to.save(state);
+
+  // R-01: Kiểm tra xem adapter đích có bị suy giảm sang in-memory không
+  const isTargetDegraded = (to as { isDegraded?: () => boolean }).isDegraded?.();
+  if (isTargetDegraded) {
+    throw new Error('TARGET_STORAGE_DEGRADED: Bộ nhớ đích bị lỗi và suy giảm sang RAM, hủy di chuyển');
+  }
+
+  // R-01: Tải lại để xác minh dữ liệu thực tế trước khi dọn dẹp nguồn cũ
+  const verified = await to.load();
+  if (!verified || verified.entries.length !== state.entries.length) {
+    throw new Error('MIGRATION_VERIFICATION_FAILED: Dữ liệu tải lại từ adapter mới không khớp');
+  }
+
+  // Chỉ dọn dẹp nguồn cũ khi đã xác minh thành công 100%
+  await from.clear();
 }
 
 /**
@@ -265,8 +295,11 @@ export async function migrateToIndexedDb(
   targetAdapter?: StorageAdapter
 ): Promise<StorageAdapter> {
   const from = sourceAdapter ?? createLocalStorageAdapter();
-  const to = targetAdapter ?? createIndexedDbAdapter();
+  const to = targetAdapter ?? createIndexedDbAdapter({ strict: true });
+
   await migrateStorage(from, to);
+
+  // R-01: Chỉ đặt ACTIVE_STORAGE_TYPE_KEY khi việc di chuyển thành công
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       window.localStorage.setItem(ACTIVE_STORAGE_TYPE_KEY, 'indexedDB');
@@ -286,7 +319,9 @@ export async function migrateToLocalStorage(
 ): Promise<StorageAdapter> {
   const from = sourceAdapter ?? createIndexedDbAdapter();
   const to = targetAdapter ?? createLocalStorageAdapter();
+
   await migrateStorage(from, to);
+
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       window.localStorage.setItem(ACTIVE_STORAGE_TYPE_KEY, 'localStorage');
