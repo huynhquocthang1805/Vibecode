@@ -63,6 +63,12 @@ const DEFAULT_CAMPAIGN: Campaign = {
   createdAt: 0,
 };
 
+export const MOCK_CAMPAIGNS: readonly Campaign[] = [
+  { id: 'thoi-trang', name: 'Thời trang', createdAt: 0 },
+  { id: 'my-pham', name: 'Mỹ phẩm', createdAt: 0 },
+  { id: 'do-gia-dung', name: 'Đồ gia dụng', createdAt: 0 },
+];
+
 function computeChecksum(entries: DailyEntry[]): Checksum {
   const c: Checksum = { rows: entries.length, reach: 0, clicks: 0, cost: 0, orders: 0 };
   for (let i = 0; i < entries.length; i++) {
@@ -654,58 +660,81 @@ export const useDataStore = create<DataState>()(
     async loadMock(name: 'demo-30d' | 'campaign-2y' | 'edge-cases'): Promise<void> {
       clearUndo(); // R-01: Xoá undo khi loadMock
 
-      const entries: DailyEntry[] = [];
-      const now = Date.now();
+      let entries: DailyEntry[] = [];
+      const currentCampaigns = get().campaigns;
+      const campaignMap = new Map(currentCampaigns.map((c) => [c.id, c]));
 
       if (name === 'demo-30d') {
-        const end = Date.UTC(2026, 9, 29);
-        for (let i = 29; i >= 0; i--) {
-          const d = new Date(end - i * 86_400_000);
-          const date = d.toISOString().slice(0, 10);
-          const weekend = d.getUTCDay() === 0 || d.getUTCDay() === 6 ? 1.25 : 1;
-          const t = 29 - i;
-          const reach = Math.round((12_000 + t * 150) * weekend);
-          const clicks = Math.round(reach * 0.021);
-          const cost = Math.round(clicks * 5_800);
-          const orders = Math.round(clicks * 0.032);
-          entries.push({
-            id: `default|${date}`,
-            date,
-            campaignId: 'default',
-            reach,
-            clicks,
-            cost,
-            orders,
-            source: 'mock',
-            createdAt: now,
-            updatedAt: now,
-          });
+        const mod = await import('@/fixtures/demo-30d.json');
+        entries = mod.default as DailyEntry[];
+        if (!campaignMap.has('default')) {
+          campaignMap.set('default', DEFAULT_CAMPAIGN);
         }
-      } else {
-        // Sinh tối thiểu 14 ngày dữ liệu mẫu
-        for (let i = 14; i >= 0; i--) {
-          const date = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10);
-          entries.push({
-            id: `default|${date}`,
-            date,
-            campaignId: 'default',
-            reach: 5000 + i * 200,
-            clicks: 150 + i * 5,
-            cost: 800000 + i * 20000,
-            orders: 10 + i,
-            source: 'mock',
-            createdAt: now,
-            updatedAt: now,
-          });
+      } else if (name === 'campaign-2y') {
+        const mod = await import('@/fixtures/campaign-2y.json');
+        entries = mod.default as DailyEntry[];
+        for (const camp of MOCK_CAMPAIGNS) {
+          if (!campaignMap.has(camp.id)) {
+            campaignMap.set(camp.id, camp);
+          }
+        }
+      } else if (name === 'edge-cases') {
+        const mod = await import('@/fixtures/edge-cases.json');
+        const raw = mod.default as Array<{
+          id?: string;
+          kind: string;
+          context?: { today?: string };
+          input?: unknown;
+          expect?: { ok?: boolean; value?: Record<string, unknown> };
+        }>;
+        const seenKeys = new Set<string>();
+        entries = [];
+        for (const item of raw) {
+          if (item.kind !== 'validate' || !item.input) continue;
+
+          // R-01: Chạy qua validateEntry và chỉ giữ bản ghi hợp lệ (ok === true)
+          const today = item.context?.today ?? '2026-10-20';
+          const res = validateEntry(item.input, { today });
+          if (!res.ok || !res.value) continue;
+
+          // Sử dụng value đã được chuẩn hoá từ validation
+          const val = res.value;
+          const id = `${val.campaignId}|${val.date}`;
+          if (!seenKeys.has(id)) {
+            seenKeys.add(id);
+            entries.push({
+              id,
+              date: val.date,
+              campaignId: val.campaignId,
+              reach: val.reach,
+              clicks: val.clicks,
+              cost: val.cost,
+              orders: val.orders,
+              source: 'mock',
+              createdAt: 0,
+              updatedAt: 0,
+            });
+          }
+        }
+        for (const e of entries) {
+          if (!campaignMap.has(e.campaignId)) {
+            campaignMap.set(e.campaignId, {
+              id: e.campaignId,
+              name: e.campaignId === 'default' ? 'Chiến dịch chính' : e.campaignId,
+              createdAt: 0,
+            });
+          }
         }
       }
 
+      const nextCampaigns = Array.from(campaignMap.values());
       const delta: EntryDelta = { added: entries, removed: get().entries };
       const nextRevision = get().revision + 1;
       const nextChecksum = computeChecksum(entries);
 
       set({
         entries,
+        campaigns: nextCampaigns,
         revision: nextRevision,
         checksum: nextChecksum,
       });
