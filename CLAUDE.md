@@ -8,7 +8,7 @@
 | Người | Công cụ AI | Role |
 |---|---|---|
 | Thắng (chủ dự án) | Claude (+ ChatGPT review chéo) | `techlead` + `pm-release` — duy nhất được merge vào `main` |
-| Huy | Gemini · Argon | `data-engineer` |
+| Huy | Gemini · Argon | `data-engineer` (+ tài khoản & database ACC-01..06) |
 | Hoàng Anh | Gemini · Argon | `ai-engineer` (+ FC-07 bất thường, FC-08 pacing) |
 | Trường | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` |
 | Thắng 2 (tài khoản 2 của Thắng) | Claude (tài khoản 2) | `forecast-engineer` (dự báo P1) + AI-08 `buildReport`, `copyText` |
@@ -44,8 +44,11 @@ Web app một trang giúp Marketer (không rành Excel) nhập số liệu quả
 | AI | Google Gemini (structured output JSON) qua adapter; OpenAI là phương án 2 | Có free tier, hỗ trợ `responseSchema` |
 | Test | Vitest + Testing Library + fast-check + Playwright | Unit, property-based, E2E, mobile viewport |
 | Deploy | Vercel + GitHub Actions CI | Link online + CI xanh làm bằng chứng |
+| Tài khoản (CR-005) | better-auth (email+mật khẩu, Google tuỳ chọn) | Phiên trong DB, băm mật khẩu sẵn, chạy được Next 16 — chủ dự án quyết 2026-11-04 |
+| Database (CR-005) | Postgres Neon + drizzle-orm (migration) · PGlite cho test/E2E | Lưu hồ sơ, avatar (bytea ≤ 200 KB), bản đồng bộ dữ liệu KPI · test không cần DB ngoài |
 
-KHÔNG dùng: backend/database riêng (đề không yêu cầu, không cộng điểm), Redux, moment.js, thư viện ML nặng (tensorflow.js) — mô hình dự báo tự viết, thuần TypeScript, có test.
+KHÔNG dùng: Redux, moment.js, thư viện ML nặng (tensorflow.js) — mô hình dự báo tự viết, thuần TypeScript, có test.
+**Tài khoản/database chỉ là phần thêm (docs/14):** khách không đăng nhập vẫn dùng đủ 5 tính năng P0 với localStorage; thiếu `DATABASE_URL`/`BETTER_AUTH_SECRET` thì API tài khoản trả 503 `NOT_CONFIGURED`, không crash, build không cần DB.
 
 ## 3. Lệnh
 ```bash
@@ -81,11 +84,15 @@ src/
   lib/ai/** (trừ prompts/)        ai-engineer
   lib/ai/prompts/**               ba-analyst
   lib/report/buildReport.ts, clipboard.ts   forecast-engineer (Thắng 2 — AI-08)
+  lib/server/**, lib/auth-client.ts         data-engineer (Huy — ACC, docs/14)
+  app/api/auth/**, app/api/account/**       data-engineer (Huy — ACC)
+  components/account/**           data-engineer (Huy — ACC-05; Trường chỉnh giao diện qua CR)
   lib/report/templates.ts         ba-analyst
   config/**                       ba-analyst      (ngưỡng, benchmark, glossary)
   fixtures/**                     ba-analyst      (mock data)
 scripts/gen-mock.ts               ba-analyst
 scripts/eval-ai.ts                ai-engineer
+drizzle/**, drizzle.config.ts     data-engineer (Huy — migration)
 tests/integration/** tests/e2e/** tests/perf/**   qa-engineer
 package.json, tsconfig, eslint/prettier, next/vitest/playwright config, .github/**, .env.example   techlead
 **/*.test.ts cạnh file nguồn      owner của file nguồn
@@ -139,6 +146,6 @@ Nếu thiếu thời gian: cắt P2 trước, rồi P1. KHÔNG BAO GIỜ để P
 `03_KPI_RULES.md` công thức + ca biên · `04_FORECAST_SPEC.md` dự báo · `05_AI_SPEC.md` AI + prompt ·
 `06_UI_SPEC.md` giao diện · `07_REPORT_TEMPLATE.md` báo cáo · `08_TEST_PLAN.md` kiểm thử ·
 `09_TIMELINE.md` tiến độ · `10_CONTRACTS.md` hợp đồng module · `11_AI_USAGE_LOG.md` bằng chứng vibe coding ·
-`12_DEMO_SCRIPT.md` kịch bản demo · **`13_SCALE_RESILIENCE.md` dữ liệu lớn, chống phình, xử lý lỗi (giới hạn = `LIMITS` trong domain.ts)**.
+`12_DEMO_SCRIPT.md` kịch bản demo · **`14_ACCOUNTS_DB.md` tài khoản + database (CR-005)** · **`13_SCALE_RESILIENCE.md` dữ liệu lớn, chống phình, xử lý lỗi (giới hạn = `LIMITS` trong domain.ts)**.
 
 @docs/10_CONTRACTS.md

@@ -91,3 +91,14 @@ docs/13 §3–4: init bằng typed array transfer, latest-wins, cache theo phầ
 
 ## Bàn giao
 `handoffs/DATA-0x.md`: API đã làm, số đo hiệu năng thật, giới hạn đã biết.
+
+## Tài khoản & database — ACC-01..06 (CR-005, P1 song song G1)
+Đặc tả đầy đủ: **`docs/14_ACCOUNTS_DB.md`** (schema, API, bảo mật, 12 ca nghiệm thu A1–A12). Hợp đồng: `docs/10` §I, kiểu trong `domain.ts`.
+Khung đã có (ACC-00): thư viện `better-auth`, `drizzle-orm`, `@neondatabase/serverless`, `drizzle-kit` + `@electric-sql/pglite` (dev); 6 route stub trả 503 khi chưa cấu hình; `<AccountMenu />` đã cắm vào `DashboardPage`; script `db:generate`, `db:migrate`.
+Luật riêng:
+- **Không làm hỏng P0:** khách vẫn đủ 5 tính năng; `npm run build` không cần DB; thiếu env → 503 `NOT_CONFIGURED`; `tests/e2e/g1-smoke.spec.ts` phải vẫn xanh.
+- Không `export const runtime` trong route (Next 16 Cache Components — build đỏ, xem PR #3).
+- Không `new Date()`/`Date.now()` lúc render component client khi prerender (xem TL-06a) — chỉ trong handler/effect.
+- Test integration chạy **thật** trên PGlite (không mock better-auth/DB). Mỗi ca A1–A12 có test.
+- Cần đổi `package.json`, `next.config.ts` (CSP Google), `DashboardPage` → ghi change request trong handoff, techlead làm.
+

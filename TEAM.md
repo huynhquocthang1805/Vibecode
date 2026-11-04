@@ -8,7 +8,7 @@
 | Người | Công cụ AI | Vai (role trong `.claude/agents/`) | Phạm vi một câu | Số task (P0) |
 |---|---|---|---|---|
 | **Thắng** (chủ dự án) | **Claude** (+ ChatGPT để review chéo) | `techlead` + `pm-release` | Khởi tạo repo, hợp đồng, stub, CI, **review & merge mọi PR**, gate G1–G3, TASKS/STATUS, README, deploy, log AI, demo | 15 (14) |
-| **Huy** | Gemini · Argon | `data-engineer` | "Động cơ dữ liệu": validation, KPI, lưu trữ, store, rollup, worker, CSV, realtime (FC-01 xu hướng đã xong) | 12 (6) |
+| **Huy** | Gemini · Argon | `data-engineer` | \"Động cơ dữ liệu\" + **tài khoản & database** (CR-005): validation, KPI, lưu trữ, store, rollup, worker, CSV, realtime **và** đăng nhập/đăng xuất, hồ sơ, avatar, Postgres, đồng bộ (docs/14) | 12 (6) |
 | **Hoàng Anh** | Gemini · Argon | `ai-engineer` (+ FC-07, FC-08) | Tích hợp AI thật (Gemini): `/api/insights`, adapter, guardrails, fallback, hook `useInsights`, eval AI **và** phát hiện bất thường, pacing | 10 (7) |
 | **Trường** | ChatGPT · Astral | `frontend-dashboard` + `frontend-input` | Toàn bộ giao diện: dashboard, thẻ KPI, biểu đồ, card AI, nút xuất **và** form nhập, bảng, import (UI đã làm local — cần push ngay) | 17 (8) |
 | **Thắng 2** (tài khoản thứ 2 của Thắng) | Claude (tài khoản 2) | `forecast-engineer` (+ AI-08) | Phần phía sau: mô hình dự báo baseline/Holt/Holt-Winters, backtest, khoảng tin cậy, nowcast tháng/quý, dự báo bền vững **và** `buildReport` + `copyText` | 9 (1) |
@@ -31,7 +31,7 @@ Chi tiết từng role: `.claude/agents/<role>.md` → mục "Bạn sở hữu".
 | Người | Được sửa | KHÔNG được sửa |
 |---|---|---|
 | Thắng + Claude | `CLAUDE.md`, `TEAM.md`, `AGENTS.md`, `GEMINI.md`, `TASKS.md`, `README.md`, `src/types/domain.ts`, `docs/13`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/**`, config gốc (`package.json`, `tsconfig.json`, eslint, vitest, playwright, next), `.github/**`, `.claude/**`, `docs/00,01,09,10,11,12`, `docs/STATUS.md`, `docs/QA_DEFENSE.md`, `handoffs/CHANGE_REQUESTS.md`, `handoffs/GATE-*.md` | — (nhưng không viết logic nghiệp vụ thay owner) |
-| Huy | `src/lib/domain/**`, `src/lib/data/**`, `src/lib/workers/**`, `docs/02` | UI, `lib/analytics/**` (Thắng 2, Hoàng Anh), `lib/ai`, `config`, `fixtures`, `domain.ts` |
+| Huy | `src/lib/domain/**`, `src/lib/data/**`, `src/lib/workers/**`, `docs/02` + tài khoản: `src/lib/server/**`, `src/lib/auth-client.ts`, `src/app/api/auth/**`, `src/app/api/account/**`, `src/components/account/**`, `drizzle/**`, `tests/e2e/account.spec.ts` | UI, `lib/analytics/**` (Thắng 2, Hoàng Anh), `lib/ai`, `config`, `fixtures`, `domain.ts` |
 | Hoàng Anh | `src/app/api/insights/**`, `src/lib/ai/**` (trừ `prompts/`), `src/lib/analytics/anomaly.ts`, `src/lib/analytics/pacing.ts`, `scripts/eval-ai.ts`, `docs/05` (trừ §4, §7), `docs/ai-eval-report.md` | `lib/ai/prompts/**`, `config/**` (của Nhân), `lib/report/**` |
 | Trường | `src/components/dashboard/**`, `src/components/input/**`, `docs/06` | `components/ui/**` (shadcn — nhờ techlead generate), `app/page.tsx` |
 | Thắng 2 | `src/lib/analytics/**` (trừ `anomaly.ts`, `pacing.ts` của Hoàng Anh), `docs/04`, `docs/forecast-validation.md`, `src/lib/report/buildReport.ts`, `src/lib/report/clipboard.ts` (+ test cạnh file) | UI, `lib/data/**` (Huy), `lib/report/templates.ts` (Nhân) |
@@ -210,7 +210,7 @@ Cập nhật mục "Hạn chế / nợ kỹ thuật" trong handoff nếu có tha
 
 ### 6.6 Prompt mở đầu đã điền sẵn
 
-**Huy (Gemini Argon)** — `<TÊN>`=Huy, `<ROLE_1>`=`data-engineer` (từ 2026-11-03 không giữ forecast nữa). Task đầu: `DATA-01`. Đọc kỹ `docs/13_SCALE_RESILIENCE.md` (phần lớn là của Huy). Đọc thêm skill `.claude/skills/big-data-frontend/SKILL.md`, `.claude/skills/kpi-metrics/SKILL.md`, `.claude/skills/time-series-forecasting/SKILL.md`, rule `.claude/rules/data-layer.md`, `.claude/rules/analytics.md`.
+**Huy (Gemini Argon)** — `<TÊN>`=Huy, `<ROLE_1>`=`data-engineer` (từ 2026-11-03 không giữ forecast nữa). **Tài khoản & database (ACC-01..06):** giao task `ACC-01` → … → `ACC-06`, nhánh `feat/data-engineer/ACC-01` (có thể gộp `ACC-01-ACC-02`); đọc kỹ `docs/14_ACCOUNTS_DB.md` + mục cuối `.claude/agents/data-engineer.md`; test integration chạy thật trên PGlite (`DATABASE_URL=pglite://memory`). Task đầu: `DATA-01`. Đọc kỹ `docs/13_SCALE_RESILIENCE.md` (phần lớn là của Huy). Đọc thêm skill `.claude/skills/big-data-frontend/SKILL.md`, `.claude/skills/kpi-metrics/SKILL.md`, `.claude/skills/time-series-forecasting/SKILL.md`, rule `.claude/rules/data-layer.md`, `.claude/rules/analytics.md`.
 
 **Hoàng Anh (Gemini Argon)** — `<ROLE_1>`=`ai-engineer`. Task đầu: `AI-01`. Đọc thêm `.claude/skills/llm-structured-output/SKILL.md`, `.claude/rules/ai-api.md`, `docs/05_AI_SPEC.md`. Prompt (`lib/ai/prompts/**`) là của Nhân — cần đổi thì change request.
 

@@ -7,6 +7,7 @@
 import dynamic from 'next/dynamic';
 import { useSyncExternalStore } from 'react';
 
+import { AccountMenu } from '@/components/account/AccountMenu';
 import { AiInsightCard } from '@/components/dashboard/AiInsightCard';
 import { AnomalyFeed } from '@/components/dashboard/AnomalyFeed';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
@@ -67,6 +68,7 @@ export function DashboardPage() {
         <SectionBoundary name="Bộ lọc">
           <GrainSwitcher />
           <LiveModeToggle />
+          <AccountMenu />
         </SectionBoundary>
       }
       kpis={
