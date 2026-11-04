@@ -71,3 +71,4 @@ export function migrateToLocalStorage(sourceAdapter?: StorageAdapter, targetAdap
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-04 | data-engineer | DATA-09 | Triển khai IndexedDB adapter thuần, 2-way migration và auto-switch khi vượt 40k dòng | Code + Test | Đảm bảo settings đồng bộ vào localStorage và fallback in-memory an toàn | src/lib/data/storage/indexedDbAdapter.ts, src/lib/data/store.ts |
+

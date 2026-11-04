@@ -79,3 +79,4 @@ export function startLiveSimulator(opts: { speed: 1|10|60; campaignId: string; s
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-04 | data-engineer | DATA-08 | Xây dựng CrossTab sync (BroadcastChannel + storage fallback) và Live Simulator với diurnal curve, CPC shock | Code + Test | Tránh echo bằng tabId và chống lặp vô hạn bằng lọc origin: remote | src/lib/data/realtime/crossTab.ts, src/lib/data/realtime/liveSimulator.ts |
+
