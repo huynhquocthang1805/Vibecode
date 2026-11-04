@@ -1,0 +1,8 @@
+
+ RUN  v5.0.5 D:/Project/Geocarbon/Vibecode
+
+
+ Test Files  7 passed (7)
+      Tests  39 passed (39)
+   Start at  11:09:24
+   Duration  7.54s (environment 42%, tests 28%, setup 15%, import 11%, transform 3%)

@@ -54,14 +54,27 @@ function MetricTooltip({ metric }: { metric: Metric }) {
 
 export const KpiCards = memo(function KpiCards({ snapshot }: { snapshot: AnalyticsSnapshot | null }) {
   const data = useDisplaySnapshot(snapshot);
+  const comparison = data?.trend?.comparison;
+  const displayed = comparison?.current ?? data?.totals;
+  function metricValue(source: typeof displayed, metric: Metric): number | null {
+    if (!source) return null;
+    return metric in source.kpis
+      ? source.kpis[metric as keyof typeof source.kpis]
+      : source[metric as 'reach' | 'clicks' | 'cost' | 'orders'];
+  }
   function value(metric: Metric): number | null {
-    if (!data) return null;
-    return metric in data.totals.kpis
-      ? data.totals.kpis[metric as keyof typeof data.totals.kpis]
-      : data.totals[metric as keyof Pick<typeof data.totals, 'reach' | 'clicks' | 'cost' | 'orders'>];
+    return metricValue(displayed, metric);
+  }
+  function selectedTotal(metric: Metric) {
+    const total = metricValue(data?.totals, metric);
+    return METRIC_META[metric].unit === 'ratio'
+      ? fmtPct(total)
+      : METRIC_META[metric].unit === 'vnd'
+        ? fmtVnd(total)
+        : fmtInt(total);
   }
   function delta(metric: Metric) {
-    const pct = data?.trend?.comparison?.deltaPct[metric] ?? null;
+    const pct = comparison?.deltaPct[metric] ?? null;
     const better = METRIC_META[metric].higherIsBetter;
     const bad = pct !== null && better !== null && (better ? pct < 0 : pct > 0);
     return (
@@ -101,17 +114,26 @@ export const KpiCards = memo(function KpiCards({ snapshot }: { snapshot: Analyti
                 </span>
                 <MetricTooltip metric={metric} />
               </div>
-              <p className="metric-value" title={metric === 'cost' ? fmtVnd(value(metric)) : undefined}>
+              <p
+                className="metric-value"
+                data-testid={`kpi-value-${metric}`}
+                title={metric === 'cost' ? fmtVnd(value(metric)) : undefined}
+              >
                 {metric === 'cost' ? fmtVndShort(value(metric)) : fmtInt(value(metric))}
                 {metric === 'cost' && Math.abs(value(metric) ?? 0) >= 1_000 && <span className="metric-unit"> ₫</span>}
               </p>
               <div className="metric-footer">
                 <div>
                   {delta(metric)}
-                  <p className="metric-footnote mt-1">kỳ gần nhất / kỳ trước</p>
+                  <p className="metric-footnote mt-1">{comparison ? 'kỳ gần nhất / kỳ trước' : 'trong kỳ đã chọn'}</p>
                 </div>
                 {spark(metric, metric === 'orders')}
               </div>
+              {comparison && (
+                <p className="metric-footnote mt-2" data-testid={`kpi-total-${metric}`}>
+                  Tổng kỳ đã chọn: {selectedTotal(metric)}
+                </p>
+              )}
             </article>
           );
         })}
@@ -124,17 +146,28 @@ export const KpiCards = memo(function KpiCards({ snapshot }: { snapshot: Analyti
                 <span>{METRIC_META[metric].short}</span>
                 <MetricTooltip metric={metric} />
               </div>
-              <p className="metric-value">{metric === 'ctr' ? fmtPct(value(metric)) : fmtVnd(value(metric))}</p>
+              <p className="metric-value" data-testid={`kpi-value-${metric}`}>
+                {metric === 'ctr' ? fmtPct(value(metric)) : fmtVnd(value(metric))}
+              </p>
               <div className="mt-2">{delta(metric)}</div>
+              {comparison && (
+                <p className="metric-footnote mt-2" data-testid={`kpi-total-${metric}`}>
+                  Tổng kỳ đã chọn: {selectedTotal(metric)}
+                </p>
+              )}
             </div>
             {spark(metric)}
           </article>
         ))}
       </div>
-      {data?.trend?.comparison?.current.isPartial && (
+      {comparison && (
         <p className="card-description mt-2">
-          Kỳ hiện tại: đến hôm nay.{' '}
-          {data.trend.comparison.likeForLike ? 'So sánh cùng số ngày.' : 'Các kỳ có độ dài khác nhau.'}
+          Chỉ số chính: {comparison.current.key} · So với {comparison.previous?.key ?? 'chưa có kỳ trước'}.
+        </p>
+      )}
+      {comparison?.current.isPartial && (
+        <p className="card-description mt-2">
+          Kỳ hiện tại: đến hôm nay. {comparison.likeForLike ? 'So sánh cùng số ngày.' : 'Các kỳ có độ dài khác nhau.'}
         </p>
       )}
     </div>

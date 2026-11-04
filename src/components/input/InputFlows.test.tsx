@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_SETTINGS, useDataStore } from '@/lib/data/store';
 
-import { DataManager } from './DataManager';
-import { EntryTable } from './EntryTable';
+import { DataManager } from './DataManagerContent';
+import { EntryTable } from './EntryTableContent';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
@@ -51,18 +51,20 @@ describe('FI-02 — bảng dữ liệu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hoàn tác thử' }));
     expect(useDataStore.getState().entries[0]?.reach).toBe(1000);
   });
-  it('không ghi số âm khi sửa, giữ hộp thoại và lỗi inline', () => {
+  it('không ghi số âm khi sửa, giữ hộp thoại và lỗi inline', async () => {
     render(<EntryTable />);
     fireEvent.click(screen.getByRole('button', { name: 'Sửa dòng 2026-11-01' }));
+    await screen.findByRole('dialog', {}, { timeout: 10_000 });
     const dialog = screen.getByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText('Lượt tiếp cận'), { target: { value: '-5' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Lưu thay đổi' }));
     expect(within(dialog).getByLabelText('Lượt tiếp cận')).toHaveAttribute('aria-invalid', 'true');
     expect(useDataStore.getState().entries[0]?.reach).toBe(1000);
   });
-  it('lưu dữ liệu chỉnh sửa hợp lệ từ dialog', () => {
+  it('lưu dữ liệu chỉnh sửa hợp lệ từ dialog', async () => {
     render(<EntryTable />);
     fireEvent.click(screen.getByRole('button', { name: 'Sửa dòng 2026-11-01' }));
+    await screen.findByRole('dialog', {}, { timeout: 10_000 });
     fireEvent.change(screen.getByLabelText('Lượt tiếp cận'), { target: { value: '2.000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -74,6 +76,7 @@ describe('FI-05 — quản lý dữ liệu', () => {
   it('chỉ cho xoá toàn bộ khi gõ chính xác XOÁ', async () => {
     render(<DataManager />);
     fireEvent.click(screen.getByRole('button', { name: 'Xoá toàn bộ' }));
+    await screen.findByRole('dialog', {}, { timeout: 10_000 });
     const confirm = screen.getByRole('button', { name: 'Xác nhận xoá' });
     expect(confirm).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Nhập XOÁ'), { target: { value: 'xoa' } });
@@ -82,9 +85,10 @@ describe('FI-05 — quản lý dữ liệu', () => {
     await act(async () => fireEvent.click(confirm));
     expect(useDataStore.getState().entries).toHaveLength(0);
   });
-  it('huỷ nạp dữ liệu mẫu không làm mất dòng đang có', () => {
+  it('huỷ nạp dữ liệu mẫu không làm mất dòng đang có', async () => {
     render(<DataManager />);
     fireEvent.click(screen.getByRole('button', { name: 'Dùng dữ liệu mẫu' }));
+    await screen.findByRole('dialog', {}, { timeout: 10_000 });
     fireEvent.click(screen.getByRole('button', { name: 'Huỷ' }));
     expect(useDataStore.getState().entries[0]?.reach).toBe(1000);
   });

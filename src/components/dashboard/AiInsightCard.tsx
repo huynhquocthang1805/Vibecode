@@ -2,20 +2,26 @@
 
 import { ArrowUpRight, RefreshCw, Sparkles } from 'lucide-react';
 import { useContext } from 'react';
+import dynamic from 'next/dynamic';
 
-import { METRIC_META } from '@/config/metricMeta';
 import { useInsights } from '@/lib/ai/useInsights';
-import { fmtDelta } from '@/lib/domain/format';
 import type { AnalyticsSnapshot } from '@/types/domain';
 
 import { ReviewContext } from './ReviewContext';
 
-const DIRECTION = { up: '▲', down: '▼', flat: '→', volatile: '↕' };
+const InsightContent = dynamic(() => import('./InsightContent'), {
+  ssr: false,
+  loading: () => (
+    <p role="status" className="card-description">
+      Đang hiển thị nhận xét…
+    </p>
+  ),
+});
 
 export function AiInsightCard({ snapshot }: { snapshot: AnalyticsSnapshot | null }) {
   const preview = useContext(ReviewContext);
-  const { data, status, error, refresh } = useInsights(preview ? null : snapshot);
   const enough = !preview && !!snapshot?.trend?.dataQuality.sufficient;
+  const { data, status, error, refresh } = useInsights(enough ? snapshot : null);
   const loading = status === 'loading';
   return (
     <div className="bento-card insight-card" data-testid="ai-insight">
@@ -46,52 +52,7 @@ export function AiInsightCard({ snapshot }: { snapshot: AnalyticsSnapshot | null
           </div>
         </div>
       ) : data ? (
-        <>
-          <h3 className="insight-headline">{data.headline}</h3>
-          <div className="toolbar mt-4">
-            {data.metricComments.map((c) => (
-              <span className="badge-soft" key={c.metric} title={c.comment}>
-                {DIRECTION[c.direction]} {METRIC_META[c.metric].short} {fmtDelta(c.changePct)}
-              </span>
-            ))}
-          </div>
-          {data.forecastComment && <p className="card-description mt-3">{data.forecastComment}</p>}
-          <div className="suggestion-grid">
-            {data.suggestions.map((s, i) => (
-              <article className="suggestion" key={`${i}-${s.title}`}>
-                <span className="suggestion-number">0{i + 1}</span>
-                <h4>{s.title}</h4>
-                <p className="muted">{s.action}</p>
-                <details className="mt-2 muted">
-                  <summary className="cursor-pointer">Vì sao & kỳ vọng</summary>
-                  <p>{s.rationale}</p>
-                  <p>{s.expectedImpact}</p>
-                  <span className="badge-soft mt-2">
-                    Ưu tiên {s.priority === 'high' ? 'cao' : s.priority === 'medium' ? 'vừa' : 'thấp'}
-                  </span>
-                </details>
-              </article>
-            ))}
-          </div>
-          {data.riskFlags.map((flag) => (
-            <p className="field-warning" key={flag}>
-              {flag}
-            </p>
-          ))}
-          <footer className="insight-footer">
-            {data.source === 'ai' ? `AI · ${data.model}` : 'Nhận xét tự động theo quy tắc (dự phòng)'} ·{' '}
-            {new Intl.DateTimeFormat('vi-VN', {
-              timeZone: 'Asia/Ho_Chi_Minh',
-              dateStyle: 'short',
-              timeStyle: 'short',
-            }).format(data.generatedAt)}
-            <br />
-            {data.corrected && 'Đã tự động hiệu chỉnh số liệu cho khớp dữ liệu. '}
-            {data.warnings.join(' ')}
-            <br />
-            Nhận xét do AI tạo — hãy kiểm tra trước khi gửi.
-          </footer>
-        </>
+        <InsightContent data={data} />
       ) : (
         <>
           <h3 className="insight-headline">

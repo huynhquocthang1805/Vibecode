@@ -1,0 +1,36 @@
+
+> kpi-dashboard-mini@0.1.0 check
+> npm run lint && npm run typecheck && npm run test
+
+
+> kpi-dashboard-mini@0.1.0 lint
+> eslint --max-warnings=0
+
+
+> kpi-dashboard-mini@0.1.0 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+
+> kpi-dashboard-mini@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/Project/Geocarbon/Vibecode
+
+ ❯ |dom| tests/integration/fd-review.review.test.tsx (3 tests | 1 failed) 289ms
+   ❯ FD-02 · KpiCards (1)
+     × R-01 giá trị chính của thẻ khớp kỳ đang so sánh (comparison.current), không phải tổng khoảng ngày 141ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |dom| tests/integration/fd-review.review.test.tsx > FD-02 · KpiCards > R-01 giá trị chính của thẻ khớp kỳ đang so sánh (comparison.current), không phải tổng khoảng ngày
+Error: Expect test to fail
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 42 passed (43)
+      Tests  1 failed | 3790 passed | 10 expected fail (3801)
+   Start at  11:07:14
+   Duration  12.79s (environment 46%, tests 29%, import 12%, setup 8%, transform 3%, worker 1%)

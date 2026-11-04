@@ -72,27 +72,37 @@ describe('FI-01 — form nhập số liệu thật', () => {
     expect(screen.getByLabelText('Lượt click')).toHaveAttribute('aria-invalid', 'true');
     expect(useDataStore.getState().entries).toHaveLength(0);
   });
-  it('giữ nguyên dữ liệu khi huỷ hộp thoại trùng ngày', () => {
+  it('dán bảng mở preview với nguyên văn dữ liệu, chưa ghi store', async () => {
+    render(<EntryForm />);
+    const text = 'Ngày\tReach\tClick\tChi phí\tĐơn hàng\n2026-11-01\t1000\t10\t10000\t1';
+    fireEvent.paste(screen.getByTestId('entry-form'), { clipboardData: { getData: () => text } });
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 10_000 });
+    expect(within(dialog).getByLabelText('Nội dung bảng')).toHaveValue(text);
+    expect(useDataStore.getState().entries).toHaveLength(0);
+  });
+  it('giữ nguyên dữ liệu khi huỷ hộp thoại trùng ngày', async () => {
     addExisting();
     render(<EntryForm />);
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'Lưu 1 dòng' }));
+    await screen.findByRole('dialog', {}, { timeout: 10_000 });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(useDataStore.getState().entries[0]?.reach).toBe(1000);
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Đóng' }));
     expect(useDataStore.getState().entries[0]?.reach).toBe(1000);
     expect(screen.getByLabelText('Lượt tiếp cận')).toHaveValue('10.000');
   });
-  it('cộng dồn ngày trùng sau khi người dùng lựa chọn', () => {
+  it('cộng dồn ngày trùng sau khi người dùng lựa chọn', async () => {
     addExisting();
     render(<EntryForm />);
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'Lưu 1 dòng' }));
+    await screen.findByRole('dialog', {}, { timeout: 10_000 });
     fireEvent.click(screen.getByRole('button', { name: 'Cộng dồn' }));
     expect(useDataStore.getState().entries).toHaveLength(1);
     expect(useDataStore.getState().entries[0]).toMatchObject({ reach: 11000, clicks: 350, cost: 1600000, orders: 15 });
   });
-  it('không ghi một phần batch khi còn trùng ngày chưa xử lý', () => {
+  it('không ghi một phần batch khi còn trùng ngày chưa xử lý', async () => {
     addExisting();
     render(<EntryForm />);
     fill();
@@ -102,6 +112,7 @@ describe('FI-01 — form nhập số liệu thật', () => {
     for (const label of ['Lượt tiếp cận', 'Lượt click', 'Chi phí (₫)', 'Đơn hàng'])
       fireEvent.change(within(second).getByLabelText(label), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu 2 dòng' }));
+    await screen.findByRole('dialog', {}, { timeout: 10_000 });
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(useDataStore.getState().entries).toHaveLength(1);
   });

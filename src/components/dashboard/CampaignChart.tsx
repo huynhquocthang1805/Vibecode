@@ -213,7 +213,7 @@ export function CampaignChart({
           ratio ? 'Biểu đồ CTR, CPC và CPA theo kỳ' : 'Biểu đồ reach, chi phí và đơn hàng với ba trục đơn vị riêng'
         }
       >
-        <EChart option={option} />
+        <EChart option={option} pointCount={labels.length} />
       </div>
       <div className="chart-footer">
         <span>
