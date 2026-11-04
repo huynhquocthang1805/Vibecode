@@ -154,7 +154,8 @@ describe('BA-05 REVIEW — fixtures phát hành, tái lập nguyên byte', () =>
     const nextDay=addDays(finalDate,1);
     auditDataset(rows,nextDay,n);
     const generated=generate(n,{profile,seed:DEFAULT_SEED,today:nextDay,endDate:finalDate});
-    expect(content).toBe(`${JSON.stringify(generated,null,2)}\n`);
+    // Chỉ chuẩn hóa CRLF khi checkout trên Windows, không bỏ qua sai dữ liệu/định dạng.
+    expect(content.replace(/\r\n/g, '\n')).toBe(`${JSON.stringify(generated,null,2)}\n`);
   });
 });
 

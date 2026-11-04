@@ -32,50 +32,51 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | DATA-04 | Zustand store CRUD + duplicate policy + undo + loadMock | data-engineer | Huy | P0 | DATA-03 |
 | [x] | DATA-FIX-01 | Sửa R-01..R-05 + hydrate tăng revision (`handoffs/REVIEW-DATA-01-04-FC-01.md`) | data-engineer | Huy | P0 | DATA-04 |
 | [ ] | DATA-04b | `loadMock` dùng fixture thật của BA-05 (`demo-30d`, `campaign-2y`) + đăng ký 3 chiến dịch mẫu; bỏ dữ liệu tạm dùng `toISOString` | data-engineer | Huy | P0 | BA-05 |
-| [ ] | DATA-05-lite | Snapshot P0 trên main thread: `buildRollups`/`getSeries` (không incremental) + `comparePeriods` + `useAnalytics` thật (không Worker) → mở khoá KPI/biểu đồ/AI cho G1 | data-engineer | Huy | P0 | DATA-FIX-01 |
+| [x] (thay bằng DATA-05 + DATA-06 thật) | DATA-05-lite | Snapshot P0 trên main thread: `buildRollups`/`getSeries` (không incremental) + `comparePeriods` + `useAnalytics` thật (không Worker) → mở khoá KPI/biểu đồ/AI cho G1 | data-engineer | Huy | P0 | DATA-FIX-01 |
 | [x] | FC-01 | analyzeTrend + comparePeriods consumer (TrendSummary) | forecast-engineer | Huy | P0 | TL-03 |
 | [ ] | BA-02 | `config/thresholds.ts`, `bannedPhrases.ts`, `ruleSuggestions.ts`, `glossary.ts` | ba-analyst | Nhân | P0 | BA-01 |
-| [~] (Nhân · spec đã merge, chờ code) | BA-03 | System prompt v1 + user template + few-shot | ba-analyst | Nhân | P0 | TL-02 |
+| [~] (Nhân · code ở nhánh BA-03-code, 9/9 test xanh — chờ mở PR) | BA-03 | System prompt v1 + user template + few-shot | ba-analyst | Nhân | P0 | TL-02 |
 | [ ] | BA-04 | `lib/report/templates.ts` (ngắn + đầy đủ) | ba-analyst | Nhân | P0 | TL-02 |
-| [ ] | AI-01 | Zod request/response + JSON schema provider | ai-engineer | Hoàng Anh | P0 | TL-02 |
-| [ ] | AI-02 | Route `/api/insights` (validate, size, rate limit, timeout, error map) | ai-engineer | Hoàng Anh | P0 | AI-01 |
-| [ ] | AI-03 | Provider adapter Gemini (+ OpenAI, + stub cho test) | ai-engineer | Hoàng Anh | P0 | AI-01 |
-| [ ] | AI-04 | enforceGuardrails (7 bước) | ai-engineer | Hoàng Anh | P0 | AI-01, BA-02 |
-| [ ] | AI-05 | fallbackInsight rule-based | ai-engineer | Hoàng Anh | P0 | BA-02, FC-01 |
-| [ ] | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
-| [ ] | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
+| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-01 | Zod request/response + JSON schema provider | ai-engineer | Hoàng Anh | P0 | TL-02 |
+| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-02 | Route `/api/insights` (validate, size, rate limit, timeout, error map) | ai-engineer | Hoàng Anh | P0 | AI-01 |
+| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-03 | Provider adapter Gemini (+ OpenAI, + stub cho test) | ai-engineer | Hoàng Anh | P0 | AI-01 |
+| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-04 | enforceGuardrails (7 bước) | ai-engineer | Hoàng Anh | P0 | AI-01, BA-02 |
+| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-05 | fallbackInsight rule-based | ai-engineer | Hoàng Anh | P0 | BA-02, FC-01 |
+| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
+| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
 | [ ] | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
-| [ ] | FI-01 | EntryForm nhiều dòng + validation inline + dialog trùng ngày | frontend-input | Trường | P0 | DATA-01, DATA-04 |
-| [ ] | FI-02 | EntryTable (sửa/xoá/hoàn tác) — bản thường, ảo hoá ở FI-02b | frontend-input | Trường | P0 | DATA-04 |
-| [ ] | FI-05 | DataManager: dữ liệu mẫu, backup xuất/nhập, xoá hết | frontend-input | Trường | P0 | DATA-04 |
-| [ ] | FD-01 | DashboardShell responsive + header + tabs | frontend-dashboard | Trường | P0 | TL-03 |
-| [ ] | FD-02 | KpiCards (delta, màu ngữ nghĩa, tooltip, "—") | frontend-dashboard | Trường | P0 | DATA-02 |
-| [ ] | FD-03 | TrendChart + KpiRatioChart (ECharts, lazy) | frontend-dashboard | Trường | P0 | BA-05 |
-| [ ] | FD-05 | AiInsightCard (5 trạng thái) | frontend-dashboard | Trường | P0 | AI-06 |
-| [ ] | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
+| [~] (Trường · làm local, chưa push) | FI-01 | EntryForm nhiều dòng + validation inline + dialog trùng ngày | frontend-input | Trường | P0 | DATA-01, DATA-04 |
+| [~] (Trường · làm local, chưa push) | FI-02 | EntryTable (sửa/xoá/hoàn tác) — bản thường, ảo hoá ở FI-02b | frontend-input | Trường | P0 | DATA-04 |
+| [~] (Trường · làm local, chưa push) | FI-05 | DataManager: dữ liệu mẫu, backup xuất/nhập, xoá hết | frontend-input | Trường | P0 | DATA-04 |
+| [~] (Trường · làm local, chưa push) | FD-01 | DashboardShell responsive + header + tabs | frontend-dashboard | Trường | P0 | TL-03 |
+| [~] (Trường · làm local, chưa push) | FD-02 | KpiCards (delta, màu ngữ nghĩa, tooltip, "—") | frontend-dashboard | Trường | P0 | DATA-02 |
+| [~] (Trường · làm local, chưa push) | FD-03 | TrendChart + KpiRatioChart (ECharts, lazy) | frontend-dashboard | Trường | P0 | BA-05 |
+| [~] (Trường · làm local, chưa push) | FD-05 | AiInsightCard (5 trạng thái) | frontend-dashboard | Trường | P0 | AI-06 |
+| [~] (Trường · làm local, chưa push) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
 | [ ] | QA-01 | Test ca biên + property-based từ contracts | qa-engineer | Nhân | P0 | BA-01, TL-02 |
-| [ ] | TL-05 | Review PR liên tục (`/review`) | techlead | Thắng+Claude | P0 | — |
+| [~] (Thắng+Claude · bot review + review tích hợp) | TL-05 | Review PR liên tục (`/review`) | techlead | Thắng+Claude | P0 | — |
 | [ ] | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
 
 ## Wave 4 — P1 (Dữ liệu lớn · Tháng/Quý · Dự báo)
 | | ID | Task | Owner | Người | P | Phụ thuộc |
 |---|---|---|---|---|---|---|
-| [ ] | DATA-05 | RollupIndex day/week/month/quarter + applyDelta + like-for-like | data-engineer | Huy | P1 | DATA-02 |
-| [ ] | DATA-06 | Analytics Worker (Comlink) + useAnalytics + fallback main thread | data-engineer | Huy | P1 | DATA-05 |
-| [ ] | DATA-07 | parseCsv (worker, chunk) + parsePastedTable + autoMapHeaders | data-engineer | Huy | P1 | DATA-01 |
-| [ ] | FC-02 | Baselines naive / seasonal naive / moving avg | forecast-engineer | Thắng 2 | P1 | FC-01 |
-| [ ] | FC-03 | Holt + Holt-Winters (damped) + grid fit | forecast-engineer | Thắng 2 | P1 | FC-02 |
-| [ ] | FC-04 | Backtest rolling-origin + chọn mô hình + confidence | forecast-engineer | Thắng 2 | P1 | FC-03 |
-| [ ] | FC-05 | Khoảng dự báo 80/95 | forecast-engineer | Thắng 2 | P1 | FC-03 |
-| [ ] | FC-06 | Nowcast tháng/quý + projectedKpis | forecast-engineer | Thắng 2 | P1 | FC-05, DATA-05 |
-| [ ] | FC-09 | `docs/forecast-validation.md` (sMAPE từng mô hình trên campaign-2y) | forecast-engineer | Thắng 2 | P1 | FC-04, BA-05 |
+| [x] | DATA-05 | RollupIndex day/week/month/quarter + applyDelta + like-for-like | data-engineer | Huy | P1 | DATA-02 |
+| [x] | DATA-06 | Analytics Worker (Comlink) + useAnalytics + fallback main thread | data-engineer | Huy | P1 | DATA-05 |
+| [x] | DATA-07 | parseCsv (worker, chunk) + parsePastedTable + autoMapHeaders | data-engineer | Huy | P1 | DATA-01 |
+| [ ] | DATA-FIX-02 | Nowcast rỗng: horizon dự báo đủ tới cuối quý, tách try tháng/quý, không nuốt lỗi im lặng (R-07, `handoffs/REVIEW-INTEGRATION-2026-11-04.md`) | data-engineer | Huy | P1 | DATA-06, FC-06 |
+| [x] | FC-02 | Baselines naive / seasonal naive / moving avg | forecast-engineer | Thắng 2 | P1 | FC-01 |
+| [x] | FC-03 | Holt + Holt-Winters (damped) + grid fit | forecast-engineer | Thắng 2 | P1 | FC-02 |
+| [x] | FC-04 | Backtest rolling-origin + chọn mô hình + confidence | forecast-engineer | Thắng 2 | P1 | FC-03 |
+| [x] | FC-05 | Khoảng dự báo 80/95 | forecast-engineer | Thắng 2 | P1 | FC-03 |
+| [x] | FC-06 | Nowcast tháng/quý + projectedKpis | forecast-engineer | Thắng 2 | P1 | FC-05, DATA-05 |
+| [x] | FC-09 | `docs/forecast-validation.md` (sMAPE từng mô hình trên campaign-2y) | forecast-engineer | Thắng 2 | P1 | FC-04, BA-05 |
 | [ ] | FI-02b | Ảo hoá bảng (100k dòng) + lọc/sort | frontend-input | Trường | P1 | FI-02 |
 | [ ] | FI-03 | CsvImportDialog + PasteImportDialog (preview, mapping, tiến độ, báo lỗi) | frontend-input | Trường | P1 | DATA-07 |
 | [ ] | FI-04 | Quản lý chiến dịch + bộ chọn chiến dịch | frontend-input | Trường | P1 | DATA-04 |
 | [ ] | FI-06 | Form mobile (thẻ dọc, inputMode, format khi gõ) | frontend-input | Trường | P1 | FI-01 |
 | [ ] | FD-04 | GrainSwitcher + ForecastPanel + vùng dự báo trên biểu đồ | frontend-dashboard | Trường | P1 | FC-06, DATA-06 |
 | [ ] | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
-| [ ] | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
+| [~] (Nhân · đặc tả đã merge, chưa có 8 fixture) | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
 | [ ] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
 | [ ] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |
 | [ ] | QA-03 | Test API + guardrails với provider giả (8 lỗi) | qa-engineer | Nhân | P1 | AI-04 |
@@ -102,7 +103,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [ ] | QA-06 | Phiên test vai Marketer + `docs/bugs.md` | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-07 | Kiểm tra bảo mật nhanh | qa-engineer | Nhân | P0* | G1 |
 | [ ] | TL-08 | Tài liệu kiến trúc cuối + **Gate G3** | techlead | Thắng+Claude | P0* | — |
-| [ ] | PM-01 | Duy trì TASKS + `docs/STATUS.md` hằng ngày | pm-release | Thắng+Claude | P0 | — |
+| [~] | PM-01 | Duy trì TASKS + `docs/STATUS.md` hằng ngày | pm-release | Thắng+Claude | P0 | — |
 | [ ] | PM-02 | README đầy đủ | pm-release | Thắng+Claude | P0 | G1 |
 | [ ] | PM-03 | Deploy production + smoke test | pm-release | Thắng+Claude | P0 | G3 |
 | [ ] | PM-04 | Tổng hợp `docs/11_AI_USAGE_LOG.md` (bằng chứng vibe coding) | pm-release | Thắng+Claude | P0 | — |

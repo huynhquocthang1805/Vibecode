@@ -105,6 +105,15 @@ if (isTechlead) {
   role = m[1];
   // "DATA-01-DATA-04-FC-01" → [DATA-01, DATA-04, FC-01]; "DATA-FIX-01" → [DATA-FIX-01]; "DATA-05-lite" → [DATA-05-lite]
   taskIds = m[2].match(/[A-Z]+(?:-[A-Z]+)*-\d+[a-z]*(?:-lite)?/g) ?? [m[2]];
+  // Đúng 2 mã cùng tiền tố = dải: "DATA-05-DATA-07" → DATA-05, DATA-06, DATA-07 (bot đã bỏ sót DATA-06 ở PR #4).
+  // Từ 3 mã trở lên = danh sách liệt kê, giữ nguyên (VD FC-02-…-FC-06-FC-09 không thêm FC-07/08).
+  const a = taskIds.length === 2 ? taskIds[0].match(/^([A-Z]+)-(\d+)$/) : null;
+  const b = taskIds.length === 2 ? taskIds[1].match(/^([A-Z]+)-(\d+)$/) : null;
+  if (a && b && a[1] === b[1] && Number(b[2]) > Number(a[2]) + 1) {
+    const mid = [];
+    for (let n = Number(a[2]) + 1; n < Number(b[2]); n++) mid.push(`${a[1]}-${String(n).padStart(a[2].length, '0')}`);
+    taskIds = [taskIds[0], ...mid, taskIds[1]];
+  }
 }
 
 const person = role ? Object.entries(PEOPLE).find(([, rs]) => rs.includes(role))?.[0] : null;

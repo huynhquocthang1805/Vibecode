@@ -7,6 +7,7 @@ name: Claude review
 # Hỏi/nhờ Claude trong PR: bình luận có "@claude".
 #
 # Cần secret: CLAUDE_CODE_OAUTH_TOKEN (chạy `claude setup-token`) hoặc ANTHROPIC_API_KEY.
+# Cũng nhận secret BOT_CHECK: tự nhận loại theo tiền tố (sk-ant-oat… = OAuth, sk-ant-api… = API key).
 
 on:
   pull_request:
@@ -16,18 +17,25 @@ on:
     types: [created]
   pull_request_review_comment:
     types: [created]
+  # Chạy lại review bằng tay: Actions → Claude review → Run workflow → nhập số PR
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Số PR cần review lại (VD 3)'
+        required: true
 
 concurrency:
-  group: claude-${{ github.event_name == 'pull_request' && 'review' || 'mention' }}-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: claude-${{ (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && 'review' || 'mention' }}-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   review:
     name: Claude review
     if: >-
-      github.event_name == 'pull_request' &&
-      !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       !github.event.pull_request.draft &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -37,14 +45,39 @@ jobs:
       actions: write
       id-token: write
     env:
-      PR: ${{ github.event.pull_request.number }}
-      HEAD_REF: ${{ github.head_ref }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
+      - name: Kiểm tra secret Claude
+        env:
+          # chỉ truyền true/false — không đưa giá trị secret vào shell
+          HAS_OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' || startsWith(secrets.BOT_CHECK, 'sk-ant-oat') }}
+          HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' || startsWith(secrets.BOT_CHECK, 'sk-ant-api') }}
+          HAS_BOT_CHECK: ${{ secrets.BOT_CHECK != '' }}
+        run: |
+          if [ "$HAS_OAUTH" != "true" ] && [ "$HAS_KEY" != "true" ]; then
+            if [ "$HAS_BOT_CHECK" = "true" ]; then
+              echo "::error::Secret BOT_CHECK có nhưng không phải token Claude (phải bắt đầu bằng sk-ant-oat… từ 'claude setup-token' hoặc sk-ant-api… từ console.anthropic.com)."
+            else
+              echo "::error::Chưa có secret CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / BOT_CHECK (Settings → Secrets and variables → Actions → Repository secrets). Xem TEAM.md §8."
+            fi
+            exit 1
+          fi
+          echo "Đã có token Claude ($([ "$HAS_OAUTH" = "true" ] && echo OAuth || echo API key))." 
+
+      - name: Xác định PR
+        id: pr
+        env:
+          PR_INPUT: ${{ inputs.pr || github.event.pull_request.number }}
+        run: |
+          gh pr view "$PR_INPUT" --repo "${{ github.repository }}" --json number,headRefName,title,isDraft,headRepositoryOwner \
+            --jq '"number=\(.number)\nhead=\(.headRefName)\ndraft=\(.isDraft)"' >> "$GITHUB_OUTPUT"
+          gh pr view "$PR_INPUT" --repo "${{ github.repository }}" --json title --jq .title > /tmp/pr-title.txt
+          cat "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ steps.pr.outputs.head }}
           fetch-depth: 0
       - run: git fetch --no-tags origin main
       - uses: actions/setup-node@v4
@@ -56,19 +89,19 @@ jobs:
       - name: PR guard (kết quả đưa cho Claude)
         id: guard
         continue-on-error: true
-        run: node scripts/pr-guard.mjs "$HEAD_REF" origin/main | tee /tmp/guard.md
+        run: node scripts/pr-guard.mjs "${{ steps.pr.outputs.head }}" origin/main | tee /tmp/guard.md
 
       - name: Claude review
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN || (startsWith(secrets.BOT_CHECK, 'sk-ant-oat') && secrets.BOT_CHECK) || '' }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY || (startsWith(secrets.BOT_CHECK, 'sk-ant-api') && secrets.BOT_CHECK) || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           track_progress: false
           prompt: |
-            Bạn là techlead (Claude) của dự án trong repo này. Review PR #${{ github.event.pull_request.number }}
-            — nhánh `${{ github.head_ref }}` vào `main` — tiêu đề: "${{ github.event.pull_request.title }}".
+            Bạn là techlead (Claude) của dự án trong repo này. Review PR #${{ steps.pr.outputs.number }}
+            — nhánh `${{ steps.pr.outputs.head }}` vào `main` — tiêu đề ở file /tmp/pr-title.txt.
 
             Đọc trước: CLAUDE.md, TEAM.md, docs/10_CONTRACTS.md, src/types/domain.ts, .claude/commands/review.md,
             handoff của task trong handoffs/, và /tmp/guard.md (kết quả PR guard — lỗi ở đó là lỗi chặn).
@@ -84,6 +117,8 @@ jobs:
                Cấu trúc: tiêu đề + verdict · bảng kiểm tra (hạng mục | kết quả) · lỗi phải sửa đánh mã R-xx
                (mức Cao/Trung bình/Thấp, file, cách sửa) · lưu ý không chặn · điểm tốt.
             5. Nếu verdict = APPROVE: trong `TASKS.md` đổi trạng thái các task của PR thành `[x]` (chỉ dòng đó).
+               Danh sách task lấy từ dòng "Task:" trong /tmp/guard.md (đã mở rộng dải, VD DATA-05-DATA-07 gồm DATA-06),
+               đối chiếu thêm các `handoffs/<TASK-ID>.md` có trong PR.
             6. KHÔNG sửa file nào khác, KHÔNG commit, KHÔNG push, KHÔNG merge — workflow làm phần đó.
 
             Quy tắc verdict: APPROVE chỉ khi PR guard không có lỗi, check + build xanh, đúng hợp đồng, có test
@@ -94,11 +129,15 @@ jobs:
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(npm run check:*),Bash(npm run build:*),Bash(npm run lint:*),Bash(npm run typecheck:*),Bash(npm run test:*),Bash(npx vitest:*),Bash(node scripts/pr-guard.mjs:*),Bash(cat:*),Bash(ls:*),mcp__github_inline_comment__create_inline_comment"
             --json-schema '{"type":"object","required":["verdict","reviewFile","summary"],"properties":{"verdict":{"type":"string","enum":["APPROVE","REQUEST_CHANGES"]},"reviewFile":{"type":"string"},"summary":{"type":"string"}}}'
 
+      # Chỉ chạy khi Claude xong + có kết quả JSON (success() giữ điều kiện mặc định "bước trước thành công")
       - name: Commit biên bản review vào nhánh PR + chạy lại CI
-        if: steps.claude.outputs.structured_output != ''
+        if: success() && steps.claude.outputs.structured_output != ''
         env:
-          REVIEW_FILE: ${{ fromJSON(steps.claude.outputs.structured_output).reviewFile }}
+          PR: ${{ steps.pr.outputs.number }}
+          HEAD_REF: ${{ steps.pr.outputs.head }}
+          RESULT: ${{ steps.claude.outputs.structured_output }}
         run: |
+          REVIEW_FILE=$(printf '%s' "$RESULT" | jq -r '.reviewFile // empty')
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Chỉ nhận biên bản + TASKS.md; mọi thay đổi khác của Claude bị bỏ
@@ -113,11 +152,13 @@ jobs:
           gh workflow run ci.yml --ref "$HEAD_REF"
 
       - name: Đăng biên bản lên PR + xử lý verdict
-        if: steps.claude.outputs.structured_output != ''
+        if: success() && steps.claude.outputs.structured_output != ''
         env:
-          VERDICT: ${{ fromJSON(steps.claude.outputs.structured_output).verdict }}
-          REVIEW_FILE: ${{ fromJSON(steps.claude.outputs.structured_output).reviewFile }}
+          PR: ${{ steps.pr.outputs.number }}
+          RESULT: ${{ steps.claude.outputs.structured_output }}
         run: |
+          VERDICT=$(printf '%s' "$RESULT" | jq -r '.verdict // "REQUEST_CHANGES"')
+          REVIEW_FILE=$(printf '%s' "$RESULT" | jq -r '.reviewFile // empty')
           gh label create claude-approved --color 2EA043 --description "Claude review: APPROVE" --force
           gh label create changes-requested --color D93F0B --description "Claude review: cần sửa" --force
           { echo "## 🤖 Claude review: **$VERDICT**"; echo; cat "$REVIEW_FILE" 2>/dev/null || true; echo; echo "---"; echo "_Generated by [Claude Code](https://claude.ai/code)_"; } > /tmp/comment.md
@@ -151,7 +192,7 @@ jobs:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN || (startsWith(secrets.BOT_CHECK, 'sk-ant-oat') && secrets.BOT_CHECK) || '' }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY || (startsWith(secrets.BOT_CHECK, 'sk-ant-api') && secrets.BOT_CHECK) || '' }}
           claude_args: |
             --max-turns 40

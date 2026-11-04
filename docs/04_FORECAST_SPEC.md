@@ -74,3 +74,17 @@ var ≈ Σ σ²·h   (cộng phương sai theo ngày, giả định độc lập
 - `forecastAll` cho 365 điểm × 4 chỉ số < 100ms (grid 343 × 365 × 4 ≈ 500k bước — OK). Nếu chậm: giảm grid hoặc tối ưu golden-section.
 - Test bắt buộc: chuỗi hằng số → dự báo hằng số; chuỗi tuyến tính → Holt bám đúng; chuỗi mùa vụ tuần tổng hợp (sin + noise seed cố định) → HW sMAPE < 10%; chuỗi toàn 0 → không NaN; 7 điểm → baseline; dữ liệu có ngày thiếu.
 - Viết `docs/forecast-validation.md`: bảng sMAPE từng mô hình trên dataset `campaign-2y` (bằng chứng cho phần phản biện).
+
+## 7. Quy ước triển khai FC-02–06, FC-09 (2026-11-04)
+
+- Giữ nguyên mọi chữ ký contracts v1. Baseline trả `fitted` cùng độ dài input; điểm khởi tạo bằng quan sát thật và không tính vào SD phần dư. Moving average dự báo nhiều bước bằng trung bình k quan sát cuối cố định.
+- Model cấp thấp từ chối chuỗi rỗng, giá trị âm/không hữu hạn, horizon hoặc tham số sai bằng `RangeError`. Horizon 0 hợp lệ, trả mảng dự báo rỗng. Chuỗi ngắn hơn k được moving average dùng toàn bộ lịch sử; seasonal naive cần ít nhất m điểm.
+- `forecastMetric` kiểm ngày ISO tăng nghiêm ngặt, số giá trị bằng số ngày, giới hạn theo ngày lịch bằng `LIMITS.FORECAST_WINDOW_DAYS`. Dưới 7 quan sát thật: points=[], horizonDays=0, số đo null, confidence=low. `forecastAll` nhận grain day và chỉ dùng bucket có dữ liệu, không partial.
+- Nội suy chỉ phục vụ fit; giữ mask quan sát thật. Mỗi fold nội suy lại riêng train, thiếu ở đuôi train thì giữ quan sát cuối; không nhìn giá trị tương lai. Holdout chỉ chấm ngày có quan sát thật.
+- Chỉ so model trên cùng các fold hợp lệ. Model phải đủ số ngày train tối thiểu ở từng fold; vì vậy HW cần ít nhất 35 ngày để có một fold 7 ngày, 49 ngày để có ba fold. Không đủ fold thì giảm số fold, không cắt bớt horizon; chưa có fold thì dùng baseline và số đo null. Confidence luôn low nếu chưa đủ 3 fold × 7 quan sát chấm điểm.
+- Ngưỡng thắng baseline 5% là tương đối: `(baselineSmape - candidateSmape) / baselineSmape >= 0.05`, phép chia dùng safeDiv; baseline=0 hoặc hòa điểm giữ baseline. sMAPE bỏ cặp 0/0, toàn 0 trả 0.
+- Grid SSE dùng cùng kernel với dự báo, chỉ ngừng một ứng viên khi SSE không âm đã vượt kết quả tốt nhất. Bỏ 2 điểm đầu Holt và 2m điểm đầu HW do khởi tạo nhìn hai tuần; không dùng phần khởi tạo để ước lượng sai số.
+- `nowcast` không fit lại; nhận forecast phủ đủ mọi ngày còn lại. Thiếu ngày/metric: `NOWCAST_INCOMPLETE_FORECAST`, caller hiển thị chưa đủ dự báo. Ngày hôm nay partial dùng phần bù `max(0, forecastToday - actualToday)` để không đếm hai lần. Chưa thêm `hourFraction` ngoài contract.
+- Khoảng nowcast suy SD từng ngày từ phía hi80 chưa bị clamp, cộng phương sai, kẹp lo80 tối thiểu bằng actualToDate. Target được sao chép; pacing chờ FC-08, không gọi stub của owner khác.
+- Cấu hình tạm theo kế hoạch đã duyệt đặt tại `analytics/forecastConfig.ts`, chờ BA-02/techlead đưa về `config/thresholds.ts`; các giới hạn dữ liệu vẫn lấy từ LIMITS. FC-07/08 và FC-10 nằm ngoài đợt triển khai này.
+- Bảng số đo, điều kiện tái lập và giới hạn đánh giá: `docs/forecast-validation.md`.
