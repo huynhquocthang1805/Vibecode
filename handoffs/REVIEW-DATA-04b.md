@@ -44,3 +44,26 @@ Test `edge-cases` chỉ kiểm `length > 0` và `checksum.rows === entries.lengt
 - Bỏ hẳn `toISOString` và dữ liệu tạm.
 - `MOCK_CAMPAIGNS` export rõ ràng, merge theo `id` nên không trùng lặp.
 - Giữ `clearUndo()` (R-01 cũ) và luồng delta/revision/checksum.
+
+## Vòng 2 — Verdict: ✅ APPROVE
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ Không có lỗi chặn (4 file, đúng ownership data-engineer) |
+| `npm run check` (lint + typecheck + test) | ✅ 42 file pass, 3782 test pass, 11 expected-fail, 0 fail |
+| `npm run build` | ✅ Xanh |
+| Chữ ký `loadMock` / `domain.ts` | ✅ Giữ nguyên |
+| Không `any` / `ts-ignore` / `console.log` | ✅ |
+| R-01 (edge-cases nạp bản ghi không hợp lệ) | ✅ Đã sửa: chạy `validateEntry(input, { today })`, chỉ giữ `ok`, dùng `value` chuẩn hoá, dedupe `campaignId\|date` (`store.ts`) |
+| R-02 (test edge-cases lỏng) | ✅ Test kiểm đúng 4 entry, `clicks <= reach`, các chỉ số >= 0 |
+| `validateBatch` trên demo-30d / campaign-2y | ✅ Thêm test: 0 rejected |
+| Handoff + dòng log AI | ✅ Đã cập nhật khớp code |
+
+### Lưu ý không chặn
+- Assert "không có ID từ ca lỗi" so `e.id` (dạng `campaignId|date`) với `id` mục fixture (dạng `E04`) nên luôn đúng, không kiểm thật. Assert đếm 4 entry và `clicks <= reach` đã đủ bắt R-01; nên đổi sang so khoá `campaignId|date` của các input `ok === false`.
+- `loadMock` chỉ merge chiến dịch, không dọn chiến dịch cũ — đúng ý, nên ghi vào handoff.
+
+### Điểm tốt
+- Sửa đúng nguyên nhân gốc, dùng lại `validateEntry` thay vì lọc thủ công.
+- Dynamic `import()` fixture, không phình bundle ban đầu.
+- Giữ `clearUndo()` và luồng delta/revision/checksum.

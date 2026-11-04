@@ -31,7 +31,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | DATA-03 | StorageAdapter localStorage + codec cột + migrate + quota/corrupt | data-engineer | Huy | P0 | DATA-01 |
 | [x] | DATA-04 | Zustand store CRUD + duplicate policy + undo + loadMock | data-engineer | Huy | P0 | DATA-03 |
 | [x] | DATA-FIX-01 | Sửa R-01..R-05 + hydrate tăng revision (`handoffs/REVIEW-DATA-01-04-FC-01.md`) | data-engineer | Huy | P0 | DATA-04 |
-| [ ] | DATA-04b | `loadMock` dùng fixture thật của BA-05 (`demo-30d`, `campaign-2y`) + đăng ký 3 chiến dịch mẫu; bỏ dữ liệu tạm dùng `toISOString` | data-engineer | Huy | P0 | BA-05 |
+| [x] | DATA-04b | `loadMock` dùng fixture thật của BA-05 (`demo-30d`, `campaign-2y`) + đăng ký 3 chiến dịch mẫu; bỏ dữ liệu tạm dùng `toISOString` | data-engineer | Huy | P0 | BA-05 |
 | [x] (thay bằng DATA-05 + DATA-06 thật) | DATA-05-lite | Snapshot P0 trên main thread: `buildRollups`/`getSeries` (không incremental) + `comparePeriods` + `useAnalytics` thật (không Worker) → mở khoá KPI/biểu đồ/AI cho G1 | data-engineer | Huy | P0 | DATA-FIX-01 |
 | [x] | FC-01 | analyzeTrend + comparePeriods consumer (TrendSummary) | forecast-engineer | Huy | P0 | TL-03 |
 | [ ] | BA-02 | `config/thresholds.ts`, `bannedPhrases.ts`, `ruleSuggestions.ts`, `glossary.ts` | ba-analyst | Nhân | P0 | BA-01 |
