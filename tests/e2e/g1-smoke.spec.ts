@@ -41,8 +41,13 @@ test('F1 + F3: nhập 3 ngày → KPI tính đúng tỉ số của tổng; reloa
   await expect(kpi).toContainText('2,19%');
   await expect(kpi).toContainText('5.441');
   await expect(kpi).toContainText('132.143');
+  // Theo review PR #13: chờ 350 ms, vượt debounce persist 300 ms, trước khi reload.
+  await page.waitForTimeout(350);
   await page.reload();
   await expect(page.getByText(/^3 dòng$/)).toBeVisible();
+  await expect(kpi).toContainText('2,19%');
+  await expect(kpi).toContainText('5.441');
+  await expect(kpi).toContainText('132.143');
 });
 
 test('F1: validation chặn click > reach ngay dưới ô', async ({ page }) => {
