@@ -1,7 +1,8 @@
 'use client';
 
-import { Check, ChevronLeft, ChevronRight, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Check, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'sonner';
 
 import { DeferredDialog } from '@/components/dashboard/DeferredDialog';
@@ -13,15 +14,20 @@ import { validateEntry } from '@/lib/domain/validation';
 import type { DailyEntry, ValidationIssue } from '@/types/domain';
 
 import { EntryFields, type DraftValues } from './EntryFields';
+import './input.css';
 
-const PAGE_SIZE = 25;
+type SortKey = 'date' | 'campaignId' | 'reach' | 'clicks' | 'cost' | 'orders';
 
 export function EntryTable() {
   const entries = useDataStore((s) => s.entries);
   const campaigns = useDataStore((s) => s.campaigns);
   const activeCampaignId = useDataStore((s) => s.settings.activeCampaignId);
   const hydrated = useDataStore((s) => s.hydrated);
-  const [page, setPage] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [sortKey, setSortKey] = useState<SortKey>('date');
+  const [source, setSource] = useState('all');
+  const [campaign, setCampaign] = useState(activeCampaignId);
+  const [jumpDate, setJumpDate] = useState('');
   const [ascending, setAscending] = useState(false);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -34,16 +40,34 @@ export function EntryTable() {
       entries
         .filter(
           (e) =>
-            (activeCampaignId === 'all' || e.campaignId === activeCampaignId) &&
+            (campaign === 'all' || e.campaignId === campaign) &&
+            (source === 'all' || e.source === source) &&
             (!from || e.date >= from) &&
             (!to || e.date <= to),
         )
-        .sort((a, b) => (ascending ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date))),
-    [entries, activeCampaignId, from, to, ascending],
+        .sort((a, b) => {
+          const av = a[sortKey];
+          const bv = b[sortKey];
+          const order =
+            typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv));
+          return ascending ? order : -order;
+        }),
+    [entries, campaign, source, from, to, ascending, sortKey],
   );
-  const lastPage = Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1);
-  const currentPage = Math.min(page, lastPage);
-  const visible = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  // TanStack Virtual manages its own mutable measurements; React Compiler must skip this hook.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 57,
+    overscan: 8,
+    initialRect: { width: 1000, height: 480 },
+    getItemKey: (index) => filtered[index]?.id ?? index,
+  });
+  const virtualRows = virtualizer.getVirtualItems();
+  const visible = virtualRows.flatMap((item) => (filtered[item.index] ? [filtered[item.index]!] : []));
+  const topSpace = virtualRows[0]?.start ?? 0;
+  const bottomSpace = virtualizer.getTotalSize() - (virtualRows.at(-1)?.end ?? 0);
   const selectedIds = filtered.filter((e) => selected.has(e.id)).map((e) => e.id);
   const allVisibleSelected = visible.length > 0 && visible.every((e) => selected.has(e.id));
 
@@ -103,7 +127,7 @@ export function EntryTable() {
             max={to || undefined}
             onChange={(e) => {
               setFrom(e.target.value);
-              setPage(0);
+              scrollRef.current?.scrollTo?.({ top: 0 });
             }}
           />
           <label className="field-label mb-0" htmlFor="table-to">
@@ -117,9 +141,59 @@ export function EntryTable() {
             min={from || undefined}
             onChange={(e) => {
               setTo(e.target.value);
-              setPage(0);
+              scrollRef.current?.scrollTo?.({ top: 0 });
             }}
           />
+        </div>
+        <div className="toolbar">
+          <label>
+            Chiến dịch bảng{' '}
+            <select className="mvp-select" value={campaign} onChange={(e) => setCampaign(e.target.value)}>
+              <option value="all">Tất cả</option>
+              {campaigns.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Nguồn{' '}
+            <select className="mvp-select" value={source} onChange={(e) => setSource(e.target.value)}>
+              <option value="all">Tất cả nguồn</option>
+              <option value="manual">Nhập tay</option>
+              <option value="csv">CSV</option>
+              <option value="paste">Dán bảng</option>
+              <option value="live">Live</option>
+              <option value="mock">Dữ liệu mẫu</option>
+            </select>
+          </label>
+          <label>
+            Sắp xếp{' '}
+            <select className="mvp-select" value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}>
+              <option value="date">Ngày</option>
+              <option value="campaignId">Chiến dịch</option>
+              <option value="reach">Reach</option>
+              <option value="clicks">Click</option>
+              <option value="cost">Chi phí</option>
+              <option value="orders">Đơn</option>
+            </select>
+          </label>
+          <label>
+            Đi tới ngày{' '}
+            <input className="mvp-input" type="date" value={jumpDate} onChange={(e) => setJumpDate(e.target.value)} />
+          </label>
+          <button
+            className="mvp-button"
+            onClick={() => {
+              const index = filtered.findIndex((row) => row.date === jumpDate);
+              if (index < 0) toast.info('Không có dòng trong ngày đã chọn.');
+              else virtualizer.scrollToIndex(index, { align: 'start' });
+            }}
+            disabled={!jumpDate}
+          >
+            Đi tới ngày
+          </button>
         </div>
         {selectedIds.length > 0 && (
           <button className="mvp-button danger" onClick={() => remove(selectedIds)}>
@@ -137,16 +211,22 @@ export function EntryTable() {
           <p>Thêm dòng ở tab Nhập số liệu hoặc chọn khoảng ngày khác.</p>
         </div>
       ) : (
-        <div className="table-scroll">
-          <table className="entry-table" data-testid="entry-table">
+        <div
+          className="table-scroll"
+          ref={scrollRef}
+          style={{ maxHeight: 480, overflow: 'auto' }}
+          tabIndex={0}
+          aria-label="Cuộn bảng dữ liệu"
+        >
+          <table className="entry-table" data-testid="entry-table" aria-rowcount={filtered.length + 1}>
             <caption className="sr-only">Số liệu quảng cáo theo ngày và chỉ số hiệu quả</caption>
-            <thead>
+            <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
               <tr>
                 <th>
                   <input
                     type="checkbox"
                     className="size-5 accent-blue-600"
-                    aria-label="Chọn tất cả dòng trên trang"
+                    aria-label="Chọn tất cả dòng đang hiển thị"
                     checked={allVisibleSelected}
                     onChange={() =>
                       setSelected((prev) => {
@@ -178,10 +258,20 @@ export function EntryTable() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((entry) => {
+              {topSpace > 0 && (
+                <tr aria-hidden="true">
+                  <td colSpan={11} style={{ height: topSpace, padding: 0, border: 0 }} />
+                </tr>
+              )}
+              {visible.map((entry, visibleIndex) => {
                 const kpis = computeKpis(entry);
                 return (
-                  <tr key={entry.id}>
+                  <tr
+                    className="virtual-entry-row"
+                    key={entry.id}
+                    ref={virtualizer.measureElement}
+                    data-index={virtualRows[visibleIndex]?.index}
+                  >
                     <td>
                       <input
                         type="checkbox"
@@ -198,15 +288,17 @@ export function EntryTable() {
                         }
                       />
                     </td>
-                    <td>{entry.date.split('-').reverse().join('/')}</td>
-                    <td>{campaigns.find((c) => c.id === entry.campaignId)?.name ?? entry.campaignId}</td>
-                    <td>{fmtInt(entry.reach)}</td>
-                    <td>{fmtInt(entry.clicks)}</td>
-                    <td>{fmtVnd(entry.cost)}</td>
-                    <td>{fmtInt(entry.orders)}</td>
-                    <td>{fmtPct(kpis.ctr)}</td>
-                    <td>{fmtVnd(kpis.cpc)}</td>
-                    <td>{fmtVnd(kpis.cpa)}</td>
+                    <td data-label="Ngày">{entry.date.split('-').reverse().join('/')}</td>
+                    <td data-label="Chiến dịch">
+                      {campaigns.find((c) => c.id === entry.campaignId)?.name ?? entry.campaignId}
+                    </td>
+                    <td data-label="Reach">{fmtInt(entry.reach)}</td>
+                    <td data-label="Click">{fmtInt(entry.clicks)}</td>
+                    <td data-label="Chi phí">{fmtVnd(entry.cost)}</td>
+                    <td data-label="Đơn">{fmtInt(entry.orders)}</td>
+                    <td data-label="CTR">{fmtPct(kpis.ctr)}</td>
+                    <td data-label="CPC">{fmtVnd(kpis.cpc)}</td>
+                    <td data-label="CPA">{fmtVnd(kpis.cpa)}</td>
                     <td>
                       <div className="toolbar flex-nowrap">
                         <button
@@ -228,32 +320,20 @@ export function EntryTable() {
                   </tr>
                 );
               })}
+              {bottomSpace > 0 && (
+                <tr aria-hidden="true">
+                  <td colSpan={11} style={{ height: bottomSpace, padding: 0, border: 0 }} />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       )}
       <div className="table-pagination">
         <p>
-          {fmtInt(filtered.length)} dòng · Trang {currentPage + 1}/{lastPage + 1}
+          {fmtInt(filtered.length)} dòng · Đang hiển thị {filtered.length ? (virtualRows[0]?.index ?? 0) + 1 : 0}–
+          {(virtualRows.at(-1)?.index ?? -1) + 1}
         </p>
-        <div className="toolbar">
-          <button
-            className="mvp-button icon-button"
-            aria-label="Trang trước"
-            disabled={currentPage === 0}
-            onClick={() => setPage(currentPage - 1)}
-          >
-            <ChevronLeft />
-          </button>
-          <button
-            className="mvp-button icon-button"
-            aria-label="Trang sau"
-            disabled={currentPage === lastPage}
-            onClick={() => setPage(currentPage + 1)}
-          >
-            <ChevronRight />
-          </button>
-        </div>
       </div>
       <DeferredDialog
         open={!!editing}

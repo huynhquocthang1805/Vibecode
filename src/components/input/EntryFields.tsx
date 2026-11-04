@@ -2,6 +2,7 @@
 
 import { METRIC_META } from '@/config/metricMeta';
 import { todayVN } from '@/lib/domain/dates';
+import { fmtInt } from '@/lib/domain/format';
 import { LIMITS, type ValidationIssue } from '@/types/domain';
 
 export type DraftValues = { date: string; reach: string; clicks: string; cost: string; orders: string };
@@ -47,7 +48,49 @@ export function EntryFields({
               placeholder={field === 'cost' ? 'VD: 1.500.000' : '0'}
               aria-invalid={invalid}
               aria-describedby={messages.length ? `${inputId}-messages` : undefined}
-              onChange={(e) => onChange(field, e.target.value)}
+              onChange={(e) => {
+                const input = e.currentTarget;
+                const raw = input.value;
+                // Chỉ định dạng số nguyên không âm; giữ nguyên chuỗi lỗi cho validator.
+                const inputType = 'inputType' in e.nativeEvent ? String(e.nativeEvent.inputType) : '';
+                const groupedTyping =
+                  field !== 'date' &&
+                  /^\d{1,3}(?:\.\d{3})+$/.test(value[field]) &&
+                  /^(insertText|deleteContentBackward|deleteContentForward)$/.test(inputType) &&
+                  /^[\d.]+$/.test(raw);
+                if (field !== 'date' && (/^\d+(?:\.\d{3})*$/.test(raw) || groupedTyping)) {
+                  const number = Number(raw.replaceAll('.', ''));
+                  if (Number.isSafeInteger(number)) {
+                    const digitsBefore = raw.slice(0, input.selectionStart ?? raw.length).replaceAll('.', '').length;
+                    const formatted = fmtInt(number);
+                    onChange(field, formatted);
+                    requestAnimationFrame(() => {
+                      let cursor = 0;
+                      let digits = 0;
+                      while (cursor < formatted.length && digits < digitsBefore) {
+                        if (/\d/.test(formatted[cursor]!)) digits++;
+                        cursor++;
+                      }
+                      if (document.activeElement === input) input.setSelectionRange(cursor, cursor);
+                    });
+                    return;
+                  }
+                }
+                onChange(field, raw);
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' || e.shiftKey) return;
+                const inputs = Array.from(
+                  e.currentTarget.form?.querySelectorAll<HTMLInputElement>(
+                    'input:not([type="hidden"]):not(:disabled)',
+                  ) ?? [],
+                );
+                const next = inputs[inputs.indexOf(e.currentTarget) + 1];
+                if (next) {
+                  e.preventDefault();
+                  next.focus();
+                }
+              }}
               onBlur={() => onBlur?.(field)}
             />
             {messages.length > 0 && (

@@ -12,6 +12,7 @@ import { validateBatch } from '@/lib/domain/validation';
 import { LIMITS, type DuplicatePolicy, type ImportReport } from '@/types/domain';
 
 import { assertEntriesCanBeSaved, downloadText } from './entryActions';
+import { importErrorCsv } from './importErrorCsv';
 
 const FIELDS = [
   ['date', 'Ngày'],
@@ -43,6 +44,7 @@ export function ImportDialog({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const [report, setReport] = useState<ImportReport | null>(null);
+  const [importRevision, setImportRevision] = useState<number | null>(null);
   const controller = useRef<AbortController | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const hydrated = useDataStore((s) => s.hydrated);
@@ -62,6 +64,10 @@ export function ImportDialog({
 
   async function parse(file?: File) {
     if (mode === 'csv' && !file) return;
+    if (file && !file.name.toLowerCase().endsWith('.csv')) {
+      setError('Hãy chọn file có đuôi .csv.');
+      return;
+    }
     if (file && file.size > LIMITS.MAX_IMPORT_FILE_BYTES) {
       setError('File vượt giới hạn 20 MB.');
       return;
@@ -114,8 +120,10 @@ export function ImportDialog({
       const store = useDataStore.getState();
       assertEntriesCanBeSaved(checked.valid, policy);
       const result = store.importBatch(checked.valid, mode === 'csv' ? 'csv' : 'paste', policy);
+      setImportRevision(useDataStore.getState().revision);
       setReport({ ...checked.report, accepted: result.accepted, aborted: result.aborted });
-      if (result.aborted) setError('Đã huỷ nhập. Dữ liệu hiện có được giữ nguyên.');
+      if (result.aborted)
+        setError('Không đủ sức chứa hoặc lần nhập đã bị huỷ. Hãy lọc khoảng ngày hoặc lưu trữ năm cũ rồi thử lại.');
       else {
         toast.success(`Đã nhập ${result.accepted} dòng`);
         setPreview(null);
@@ -233,7 +241,8 @@ export function ImportDialog({
           {preview && (
             <>
               <p className="muted text-xs">
-                {preview.rows.length} dòng · {preview.encoding ?? 'Văn bản'} · hiển thị tối đa 20 dòng
+                {preview.rows.length} dòng · {preview.encoding ?? 'Văn bản'} · phân cách{' '}
+                {preview.delimiter === '\t' ? 'Tab' : preview.delimiter || 'tự nhận'} · hiển thị tối đa 20 dòng
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {FIELDS.map(([field, label]) => (
@@ -308,6 +317,36 @@ export function ImportDialog({
                 </p>
               ))}
               {report.detailsTruncated && <p>Danh sách lỗi đã được rút gọn.</p>}
+              {report.aborted && <p>Lần nhập bị huỷ, chưa ghi thêm dữ liệu.</p>}
+              <div className="toolbar">
+                {report.accepted > 0 && !report.aborted && (
+                  <button
+                    className="mvp-button"
+                    onClick={() => {
+                      if (useDataStore.getState().revision !== importRevision) {
+                        toast.error('Số liệu đã thay đổi sau lần import. Không thể hoàn tác import này.');
+                        return;
+                      }
+                      if (useDataStore.getState().undoLast()) {
+                        toast.success('Đã hoàn tác thao tác gần nhất');
+                        setReport(null);
+                      } else toast.error('Đã hết thời gian hoàn tác.');
+                    }}
+                  >
+                    Hoàn tác import
+                  </button>
+                )}
+                {report.rejected.length > 0 && (
+                  <button
+                    className="mvp-button"
+                    onClick={() => {
+                      downloadText(importErrorCsv(report), 'kpi-dong-loi.csv', 'text/csv;charset=utf-8');
+                    }}
+                  >
+                    Tải danh sách lỗi CSV
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>

@@ -12,6 +12,8 @@ import { safeDiv } from '@/lib/domain/kpi';
 import { LIMITS } from '@/types/domain';
 
 import { downloadText } from './entryActions';
+import { ArchiveManager } from './ArchiveManager';
+import { CampaignManager } from './CampaignManager';
 
 export function DataManager() {
   const storage = useDataStore((s) => s.storage);
@@ -22,6 +24,7 @@ export function DataManager() {
   const [confirmation, setConfirmation] = useState('');
   const [busy, setBusy] = useState(false);
   const [newName, setNewName] = useState('');
+  const [mockName, setMockName] = useState<'demo-30d' | 'campaign-2y'>('demo-30d');
   const fileInput = useRef<HTMLInputElement>(null);
   const usage = safeDiv(storage.usedBytes, storage.quotaBytes) ?? 0;
 
@@ -29,7 +32,7 @@ export function DataManager() {
     setBusy(true);
     try {
       if (confirm === 'clear') await useDataStore.getState().clearAll();
-      else await useDataStore.getState().loadMock('demo-30d');
+      else await useDataStore.getState().loadMock(mockName);
       toast.success(confirm === 'clear' ? 'Đã xoá toàn bộ số liệu' : 'Đã nạp dữ liệu mẫu');
       setConfirm(null);
       setConfirmation('');
@@ -76,7 +79,11 @@ export function DataManager() {
           <h3>Dung lượng thiết bị</h3>
           <p>
             {fmtInt(rowCount)} / {fmtInt(LIMITS.MAX_ROWS_TOTAL)} dòng ·{' '}
-            {storage.kind === 'memory' ? 'Lưu tạm trong tab' : 'Lưu trong trình duyệt'}
+            {storage.kind === 'memory'
+              ? 'Lưu tạm trong tab'
+              : storage.kind === 'indexedDB'
+                ? 'IndexedDB'
+                : 'localStorage'}
           </p>
           <div className="quota-track">
             <div
@@ -93,6 +100,11 @@ export function DataManager() {
           {storage.kind === 'memory' && (
             <p role="alert" className="field-error">
               Xuất sao lưu trước khi đóng tab để giữ dữ liệu.
+            </p>
+          )}
+          {usage >= 0.7 && (
+            <p className={usage >= 0.9 ? 'field-error' : 'field-warning'}>
+              Dung lượng gần đầy. Xuất backup hoặc lưu trữ năm cũ bên dưới trước khi nhập thêm.
             </p>
           )}
         </div>
@@ -130,7 +142,18 @@ export function DataManager() {
         <div className="manage-tile">
           <Sparkles size={22} className="mb-4" style={{ color: 'var(--blue)' }} />
           <h3>Khám phá với dữ liệu mẫu</h3>
-          <p>Nạp 30 ngày số liệu để thử bảng và các thao tác nhập liệu. Dữ liệu mẫu sẽ thay thế số liệu hiện tại.</p>
+          <p>Dữ liệu mẫu sẽ thay thế số liệu hiện tại. Hãy xuất backup trước khi nạp.</p>
+          <label>
+            Bộ dữ liệu mẫu{' '}
+            <select
+              className="mvp-select"
+              value={mockName}
+              onChange={(e) => setMockName(e.target.value as typeof mockName)}
+            >
+              <option value="demo-30d">Demo 30 ngày</option>
+              <option value="campaign-2y">Chiến dịch 2 năm</option>
+            </select>
+          </label>
           <button className="mvp-button" onClick={() => setConfirm('mock')}>
             <RotateCcw />
             Dùng dữ liệu mẫu
@@ -154,7 +177,7 @@ export function DataManager() {
         </div>
         <div className="manage-tile sm:col-span-2">
           <h3>Chiến dịch của bạn</h3>
-          <p>{campaigns.map((c) => c.name).join(' · ')}</p>
+          <CampaignManager />
           <form
             className="toolbar"
             onSubmit={(e) => {
@@ -186,6 +209,7 @@ export function DataManager() {
             </button>
           </form>
         </div>
+        <ArchiveManager />
       </div>
       <DeferredDialog
         open={confirm !== null}
