@@ -30,15 +30,50 @@ function isLocalStorageAvailable(): boolean {
   }
 }
 
+/**
+ * DATA-HOTFIX-01: navigator.locks.request chạy callback ở task sau → khi trang đang đóng (pagehide/reload)
+ * callback không kịp chạy, bản ghi cuối bị mất (E2E F3 trên CI). Thân các hàm chạy trong lock không có `await`
+ * nên gọi thẳng fn() là ghi xong localStorage ngay trong lời gọi. Vì vậy lúc unload:
+ *  1. các thao tác đang xếp hàng chờ lock được chạy ngay, đồng bộ, theo thứ tự gọi (bản save mới nhất ghi sau cùng);
+ *  2. lời gọi mới bỏ qua lock. Ghi 2 pha vẫn giữ manifest an toàn nếu có tab khác ghi cùng lúc.
+ */
+let unloading = false;
+const queued = new Set<() => unknown>();
+
+export function setUnloading(v: boolean): void {
+  unloading = v;
+  if (!v) return;
+  for (const run of [...queued]) {
+    const r = run();
+    if (r instanceof Promise) r.catch(() => undefined); // lỗi đã được caller gốc xử lý nếu lock còn chạy
+  }
+}
+if (typeof window !== 'undefined') {
+  // capture: chạy trước listener pagehide của store (store flush dữ liệu còn chờ debounce sau đó)
+  window.addEventListener('pagehide', () => setUnloading(true), { capture: true });
+  // quay lại từ bfcache → dùng lock như bình thường
+  window.addEventListener('pageshow', () => setUnloading(false));
+}
+
 async function runWithLock<T>(lockName: string, fn: () => Promise<T>): Promise<T> {
   if (
-    typeof navigator !== 'undefined' &&
-    navigator.locks &&
-    typeof navigator.locks.request === 'function'
+    unloading ||
+    typeof navigator === 'undefined' ||
+    !navigator.locks ||
+    typeof navigator.locks.request !== 'function'
   ) {
-    return navigator.locks.request(lockName, fn);
+    return fn();
   }
-  return fn();
+  let result: Promise<T> | null = null;
+  const runOnce = (): Promise<T> => {
+    if (!result) {
+      queued.delete(runOnce);
+      result = fn();
+    }
+    return result;
+  };
+  queued.add(runOnce);
+  return navigator.locks.request(lockName, runOnce);
 }
 
 export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): StorageAdapter {
