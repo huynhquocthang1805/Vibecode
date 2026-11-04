@@ -95,8 +95,8 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 ## Wave 5 — P2 (Realtime nâng cao) + Hardening + Release
 | | ID | Task | Owner | Người | P | Phụ thuộc |
 |---|---|---|---|---|---|---|
-| [ ] | DATA-08 | Event bus + BroadcastChannel + Live simulator | data-engineer | Huy | P2 | DATA-06 |
-| [ ] | DATA-09 | IndexedDB adapter + tự chuyển khi vượt ngưỡng | data-engineer | Huy | P2 | DATA-03 |
+| [x] | DATA-08 | Event bus + BroadcastChannel + Live simulator | data-engineer | Huy | P2 | DATA-06 |
+| [x] | DATA-09 | IndexedDB adapter + tự chuyển khi vượt ngưỡng | data-engineer | Huy | P2 | DATA-03 |
 | [ ] | FC-07 | detectAnomalies + detectLiveAnomaly (`anomaly.ts`) | ai-engineer | Hoàng Anh | P2 | FC-05 |
 | [ ] | FC-08 | Target pacing (`pacing.ts`) | ai-engineer | Hoàng Anh | P2 | FC-06 |
 | [ ] | FD-07 | LiveModeToggle + AnomalyFeed + animation thẻ | frontend-dashboard | Trường | P2 | DATA-08, FC-07 |

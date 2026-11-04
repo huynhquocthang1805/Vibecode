@@ -1,4 +1,4 @@
-# REVIEW DATA-08 + DATA-09 — REQUEST_CHANGES
+# REVIEW DATA-08 + DATA-09 — APPROVE (vòng 2)
 
 PR #14 · nhánh `feat/data-engineer/DATA-08-DATA-09` · Reviewer: techlead (Claude)
 
@@ -35,3 +35,25 @@ Trong lúc `await migrateToIndexedDb`, `schedulePersist` có thể ghi vào adap
 - Chống echo bằng `tabId` + chặn re-broadcast `origin: 'remote'`; có fallback `storage`.
 - Simulator có PRNG seed tái lập, giữ bất biến clicks ≤ reach, orders ≤ clicks; cleanup sạch.
 - Test dày, handoff đầy đủ.
+
+## Vòng 2 — APPROVE
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ Không có lỗi chặn |
+| `npm run check` | ✅ lint + typecheck xanh; Vitest 47 file, 3818 pass, 11 expected-fail, 0 fail |
+| `npm run build` | ✅ xanh |
+| Ownership (§4) | ✅ `lib/data/**`, `lib/domain/dates.ts` (data-engineer) + handoff |
+| R-01 (Cao) | ✅ Đã sửa: `save` strict ném lỗi, kiểm tra `isDegraded`, đọc lại `to.load()` so số dòng trước `from.clear()`; chỉ đặt `ACTIVE_STORAGE_TYPE_KEY` khi migrate thành công. Test IDB không khả dụng → localStorage còn nguyên (indexedDbAdapter.test.ts:305) |
+| R-02 (TB) | ✅ Đã sửa: khi `isMigrating`, `schedulePersist` đánh dấu dirty và persist lại bằng adapter mới sau swap. Test addEntries trong lúc migrate (indexedDbAdapter.test.ts:333) |
+| R-03 (Thấp) | ✅ Đã sửa: `hourVN()` trong `dates.ts` + test 3 ca múi giờ (dates.test.ts:16) |
+| `console.warn` trong store.ts | ✅ Đã thay bằng `system/health` |
+
+### Lưu ý không chặn
+- `store.ts:166` (`bus.on('storage/warning')`): `checkAndAutoSwitchAdapter` xoá `persistTimer` đang chờ mà không đặt cờ dirty. Đường `addEntries` an toàn (gọi `schedulePersist` ngay sau), nhưng đường cảnh báo dung lượng có thể bỏ mất thay đổi đang chờ debounce tới lần persist kế tiếp. Nên đặt `needsPersistAfterMigration = true` khi huỷ timer.
+- `migrateStorage` mới so số dòng, chưa so checksum — đủ cho hiện tại.
+- Tab nhận delta có thể còn `storage.kind` khác tab gửi; x60 gọi `postMessage` ~60 lần/giây — cân nhắc gộp delta ở FD-07.
+
+### Điểm tốt
+- Sửa đúng gốc lỗi, kèm test tái hiện cho R-01 và R-02.
+- Chống echo `tabId`, simulator PRNG seed, giữ bất biến clicks ≤ reach, orders ≤ clicks.
