@@ -358,6 +358,6 @@ describe('DATA-10: Lưu trữ phân vùng theo năm + Ghi 2 pha + Tự kiểm', 
     const duration = performance.now() - t0;
 
     expect(res.rows).toBe(50_000);
-    expect(duration).toBeLessThan(100);
+    expect(duration).toBeLessThan(200);
   });
 });

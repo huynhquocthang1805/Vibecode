@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
 import { bus } from '@/lib/data/realtime/bus';
+import {
+  ACTIVE_STORAGE_TYPE_KEY,
+  createIndexedDbAdapter,
+  migrateToIndexedDb,
+} from '@/lib/data/storage/indexedDbAdapter';
 import { createLocalStorageAdapter } from '@/lib/data/storage/localStorageAdapter';
 import { todayVN } from '@/lib/domain/dates';
 import { validateBatch, validateEntry } from '@/lib/domain/validation';
@@ -99,9 +104,93 @@ function clearUndo(): void {
 }
 
 // Storage Adapter & Debounced persistence
-const storageAdapter = createLocalStorageAdapter();
+let storageAdapter: StorageAdapter = createLocalStorageAdapter();
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 let firstPersistRequestTime = 0;
+let isMigrating = false;
+
+export function getStorageAdapter(): StorageAdapter {
+  return storageAdapter;
+}
+
+export function setStorageAdapter(adapter: StorageAdapter): void {
+  storageAdapter = adapter;
+  useDataStore.setState((prev) => ({
+    storage: { ...prev.storage, kind: adapter.kind },
+  }));
+}
+
+export async function checkAndAutoSwitchAdapter(entryCount: number): Promise<void> {
+  if (isMigrating) return;
+  if (entryCount > LIMITS.LOCAL_STORAGE_SOFT_ROWS && storageAdapter.kind === 'localStorage') {
+    isMigrating = true;
+    try {
+      const newAdapter = await migrateToIndexedDb(storageAdapter);
+      storageAdapter = newAdapter;
+      useDataStore.setState((prev) => ({
+        storage: { ...prev.storage, kind: 'indexedDB' },
+      }));
+      bus.emit({
+        type: 'system/health',
+        area: 'storage',
+        status: 'ok',
+        message: 'Đã tự động chuyển đổi sang IndexedDB do dữ liệu vượt ngưỡng 40.000 dòng.',
+      });
+    } catch (err) {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[store] auto-switch to IndexedDB failed:', err);
+      }
+    } finally {
+      isMigrating = false;
+    }
+  }
+}
+
+// Tự động chuyển IndexedDB nếu nhận cảnh báo đầy dung lượng
+bus.on('storage/warning', () => {
+  if (storageAdapter.kind === 'localStorage') {
+    void checkAndAutoSwitchAdapter(LIMITS.LOCAL_STORAGE_SOFT_ROWS + 1);
+  }
+});
+
+export function applyRemoteDelta(delta: EntryDelta, revision?: number): void {
+  const state = useDataStore.getState();
+  const removedIds = new Set(delta.removed.map((e) => e.id));
+  const addedMap = new Map(delta.added.map((e) => [e.id, e]));
+
+  // Đảm bảo các campaign mới có trong danh sách
+  const campMap = new Map(state.campaigns.map((c) => [c.id, c]));
+  let campsChanged = false;
+  for (const e of delta.added) {
+    if (e.campaignId && !campMap.has(e.campaignId)) {
+      campMap.set(e.campaignId, {
+        id: e.campaignId,
+        name: e.campaignId === 'default' ? 'Chiến dịch chính' : e.campaignId,
+        createdAt: e.createdAt || Date.now(),
+      });
+      campsChanged = true;
+    }
+  }
+
+  const filtered = state.entries.filter((e) => !removedIds.has(e.id) && !addedMap.has(e.id));
+  const nextEntries = [...filtered, ...delta.added];
+  const nextRevision = revision !== undefined ? Math.max(state.revision + 1, revision) : state.revision + 1;
+  const nextChecksum = computeChecksum(nextEntries);
+
+  useDataStore.setState({
+    entries: nextEntries,
+    campaigns: campsChanged ? Array.from(campMap.values()) : state.campaigns,
+    revision: nextRevision,
+    checksum: nextChecksum,
+  });
+
+  bus.emit({
+    type: 'entries/changed',
+    delta,
+    origin: 'remote',
+    revision: nextRevision,
+  });
+}
 
 function schedulePersist(getState: () => DataState): void {
   const now = Date.now();
@@ -261,6 +350,7 @@ export const useDataStore = create<DataState>()(
         const delta: EntryDelta = { added: addedList, removed: removedList };
         const nextRevision = state.revision + 1;
         const nextChecksum = computeChecksum(nextEntries);
+        const origin = inputs.length > 0 && inputs.every((i) => i.source === 'live') ? 'live' : 'local';
 
         pushUndo({ timestamp: now, delta });
 
@@ -273,10 +363,11 @@ export const useDataStore = create<DataState>()(
         bus.emit({
           type: 'entries/changed',
           delta,
-          origin: 'local',
+          origin,
           revision: nextRevision,
         });
 
+        void checkAndAutoSwitchAdapter(nextEntries.length);
         schedulePersist(get);
       }
 
@@ -843,6 +934,14 @@ export const useDataStore = create<DataState>()(
 
 // Tự động nạp dữ liệu từ storage (hydration) khi khởi tạo
 if (typeof window !== 'undefined') {
+  const activeType = window.localStorage?.getItem(ACTIVE_STORAGE_TYPE_KEY);
+  if (activeType === 'indexedDB') {
+    storageAdapter = createIndexedDbAdapter();
+    useDataStore.setState((prev) => ({
+      storage: { ...prev.storage, kind: 'indexedDB' },
+    }));
+  }
+
   void storageAdapter.load().then((loaded) => {
     clearUndo(); // R-01: Xoá undo khi hydrate
     if (loaded) {
