@@ -29,7 +29,21 @@ const PEOPLE = {
 const OWNED = {
   techlead: ['*'],
   'pm-release': ['*'],
-  'data-engineer': ['src/lib/domain/', 'src/lib/data/', 'src/lib/workers/', 'docs/02_DATA_SCHEMA.md'],
+  'data-engineer': [
+    'src/lib/domain/',
+    'src/lib/data/',
+    'src/lib/workers/',
+    'docs/02_DATA_SCHEMA.md',
+    // CR-005 tài khoản & database (ACC-01..06)
+    'src/lib/server/',
+    'src/lib/auth-client.ts',
+    'src/app/api/auth/',
+    'src/app/api/account/',
+    'src/components/account/',
+    'drizzle/',
+    'drizzle.config.ts',
+    'tests/e2e/account.spec.ts',
+  ],
   'forecast-engineer': [
     'src/lib/analytics/',
     'docs/04_FORECAST_SPEC.md',

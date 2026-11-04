@@ -18,6 +18,20 @@ export function todayVN(now?: Date): ISODate {
   return formatVN(target);
 }
 
+const vnHourFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Ho_Chi_Minh',
+  hour: 'numeric',
+  hour12: false,
+});
+
+/** Giờ hiện tại (0–23) theo múi giờ Asia/Ho_Chi_Minh */
+export function hourVN(now?: Date): number {
+  const target = now ?? new Date();
+  const raw = vnHourFormatter.format(target);
+  const h = Number(raw) % 24;
+  return Number.isNaN(h) ? target.getHours() : h;
+}
+
 /** Nhận 'YYYY-MM-DD', 'DD/MM/YYYY', 'D/M/YYYY', số serial Excel → ISODate hoặc null */
 export function parseISODate(s: string): ISODate | null {
   if (!s || typeof s !== 'string') return null;

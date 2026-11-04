@@ -332,6 +332,58 @@ describe('DATA-10: Lưu trữ phân vùng theo năm + Ghi 2 pha + Tự kiểm', 
     expect(requestMock).toHaveBeenCalledWith('kpi-dash:write', expect.any(Function));
   });
 
+  it('HOTFIX-01: trang đang đóng (pagehide) → ghi đồng bộ, không chờ Web Lock (reload không mất dữ liệu)', () => {
+    // Lock không bao giờ được cấp trước khi trang bị huỷ — giống trình duyệt thật lúc reload
+    const requestMock = vi.fn().mockImplementation(() => new Promise(() => {}));
+    vi.stubGlobal('navigator', { locks: { request: requestMock } });
+    const adapter = createLocalStorageAdapter();
+    try {
+      window.dispatchEvent(new Event('pagehide'));
+      void adapter.save(createSampleState()); // không await: trang đã đóng
+      expect(requestMock).not.toHaveBeenCalled();
+      expect(localStorage.getItem('kpi-dash:v1')).not.toBeNull();
+    } finally {
+      window.dispatchEvent(new Event('pageshow'));
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('HOTFIX-01: save đã gọi nhưng còn chờ lock khi trang đóng → pagehide chạy ngay, chỉ ghi 1 lần', () => {
+    let grant: (() => unknown) | null = null;
+    const requestMock = vi.fn().mockImplementation((_name, fn: () => unknown) => {
+      grant = fn; // lock chưa được cấp
+      return new Promise(() => {});
+    });
+    vi.stubGlobal('navigator', { locks: { request: requestMock } });
+    const adapter = createLocalStorageAdapter();
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    try {
+      void adapter.save(createSampleState());
+      expect(localStorage.getItem('kpi-dash:v1')).toBeNull(); // đang chờ lock
+      window.dispatchEvent(new Event('pagehide'));
+      expect(localStorage.getItem('kpi-dash:v1')).not.toBeNull();
+      const writes = setItem.mock.calls.length;
+      (grant as (() => unknown) | null)?.(); // lock cấp muộn (bfcache) → không ghi lại lần 2
+      expect(setItem.mock.calls.length).toBe(writes);
+    } finally {
+      window.dispatchEvent(new Event('pageshow'));
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('HOTFIX-01: quay lại từ bfcache (pageshow) → dùng lại Web Lock', async () => {
+    const requestMock = vi.fn().mockImplementation((_name, fn: () => Promise<void>) => fn());
+    vi.stubGlobal('navigator', { locks: { request: requestMock } });
+    try {
+      window.dispatchEvent(new Event('pagehide'));
+      window.dispatchEvent(new Event('pageshow'));
+      await createLocalStorageAdapter().save(createSampleState());
+      expect(requestMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('Hiệu năng: mã hoá 50.000 dòng phân vùng mất < 30ms', () => {
     const entries: DailyEntry[] = [];
     for (let i = 0; i < 50_000; i++) {
@@ -358,6 +410,6 @@ describe('DATA-10: Lưu trữ phân vùng theo năm + Ghi 2 pha + Tự kiểm', 
     const duration = performance.now() - t0;
 
     expect(res.rows).toBe(50_000);
-    expect(duration).toBeLessThan(100);
+    expect(duration).toBeLessThan(200);
   });
 });

@@ -398,3 +398,56 @@ export interface ReportInput {
   format: 'short' | 'full';
   generatedAt: Date;
 }
+
+/* ───────────────────────── Tài khoản & đồng bộ (CR-005, docs/14) ───────────────────────── */
+/** Hồ sơ người dùng trả về client — không bao giờ chứa mật khẩu/token */
+export interface UserProfile {
+  id: string;
+  email: string;
+  displayName: string; // ≤ LIMITS_ACCOUNT.MAX_DISPLAY_NAME
+  company: string | null;
+  jobTitle: string | null;
+  /** URL cùng origin `/api/account/avatar/<id>?v=<version>`; null = chưa có ảnh */
+  avatarUrl: string | null;
+  createdAt: number; // epoch ms
+}
+
+/** Trường người dùng được sửa (PUT /api/account/profile) */
+export type ProfilePatch = Partial<Pick<UserProfile, 'displayName' | 'company' | 'jobTitle'>>;
+
+/** Bản sao dữ liệu KPI trên server (1 bản / người dùng, ghi đè có kiểm revision) */
+export interface CloudSnapshotMeta {
+  revision: number; // tăng mỗi lần ghi thành công; client gửi kèm để phát hiện xung đột
+  updatedAt: number; // epoch ms
+  rows: number;
+  bytes: number;
+}
+
+export type AccountErrorCode =
+  | 'UNAUTHORIZED'
+  | 'BAD_REQUEST'
+  | 'PAYLOAD_TOO_LARGE'
+  | 'UNSUPPORTED_MEDIA'
+  | 'CONFLICT' // revision cloud mới hơn revision client gửi
+  | 'RATE_LIMITED'
+  | 'NOT_CONFIGURED' // server chưa có DATABASE_URL/BETTER_AUTH_SECRET → app chạy chế độ khách
+  | 'INTERNAL';
+
+export interface AccountError {
+  code: AccountErrorCode;
+  message: string; // tiếng Việt
+  /** CONFLICT: meta của bản trên server để UI hỏi "giữ bản máy / lấy bản tài khoản" */
+  server?: CloudSnapshotMeta;
+}
+
+export const LIMITS_ACCOUNT = {
+  MAX_DISPLAY_NAME: 60,
+  MAX_COMPANY: 80,
+  MAX_JOB_TITLE: 60,
+  AVATAR_MAX_BYTES: 200 * 1024, // sau khi client nén về 256×256 WebP/JPEG
+  AVATAR_SIZE_PX: 256,
+  AVATAR_TYPES: ['image/webp', 'image/jpeg', 'image/png'],
+  CLOUD_MAX_BYTES: 4 * 1024 * 1024, // chuỗi encodeState; ~ LIMITS.MAX_ROWS_TOTAL dòng
+  PASSWORD_MIN: 8,
+  LOGIN_RATE_PER_MIN: 10,
+} as const;
