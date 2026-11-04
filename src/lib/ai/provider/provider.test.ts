@@ -47,4 +47,9 @@ describe('AI-03 Provider Adapters', () => {
     const gemini = getProvider('gemini');
     expect(gemini.name).toBe('gemini');
   });
+
+  it('getProvider ném lỗi rõ ràng khi tên provider sai chính tả hoặc không hỗ trợ (R-03)', () => {
+    expect(() => getProvider('gemni' as never)).toThrow(/Nhà cung cấp AI không được hỗ trợ/);
+    expect(() => getProvider('claude' as never)).toThrow(/Nhà cung cấp AI không được hỗ trợ/);
+  });
 });

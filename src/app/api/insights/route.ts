@@ -4,44 +4,17 @@ import { fallbackInsight } from '@/lib/ai/fallback';
 import { enforceGuardrails } from '@/lib/ai/guardrails';
 import { buildUserPrompt, SYSTEM_PROMPT_VI } from '@/lib/ai/prompts';
 import { getProvider } from '@/lib/ai/provider';
+import { defaultRateLimiter } from '@/lib/ai/rateLimit';
 import { INSIGHT_JSON_SCHEMA, insightRequestSchema } from '@/lib/ai/schemas';
 import type { InsightError, InsightRequest, InsightResponse } from '@/types/domain';
 
-export const runtime = 'nodejs';
-
 const MAX_BODY_BYTES = 32 * 1024; // 32KB
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 phút
-const RATE_LIMIT_MAX_REQUESTS = 10;
 const CACHE_MAX_ITEMS = 100;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 giờ
 const TOTAL_BUDGET_MS = 20_000; // 20s theo RISK-04
 const INITIAL_TIMEOUT_MS = 15_000; // 15s cho lần gọi đầu
 
-/* ───────────────────────── Bộ nhớ tạm & Rate Limit ───────────────────────── */
-interface RateLimitBucket {
-  tokens: number;
-  lastRefill: number;
-}
-const rateLimitMap = new Map<string, RateLimitBucket>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const bucket = rateLimitMap.get(ip) ?? { tokens: RATE_LIMIT_MAX_REQUESTS, lastRefill: now };
-
-  const elapsed = now - bucket.lastRefill;
-  if (elapsed > RATE_LIMIT_WINDOW_MS) {
-    bucket.tokens = RATE_LIMIT_MAX_REQUESTS;
-    bucket.lastRefill = now;
-  }
-
-  if (bucket.tokens > 0) {
-    bucket.tokens -= 1;
-    rateLimitMap.set(ip, bucket);
-    return true;
-  }
-
-  return false;
-}
+/* ───────────────────────── Bộ nhớ tạm & Cache LRU ───────────────────────── */
 
 interface CacheEntry {
   value: InsightResponse;
@@ -145,7 +118,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // 4. Rate Limiting (10 req/phút/IP)
-  if (!checkRateLimit(clientIp)) {
+  if (!defaultRateLimiter.check(clientIp)) {
     const errorBody: InsightError = {
       code: 'RATE_LIMITED',
       message: 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau ít giây.',

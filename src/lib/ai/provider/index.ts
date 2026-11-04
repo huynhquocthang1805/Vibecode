@@ -25,6 +25,8 @@ export function getProvider(name?: ProviderName): LlmProvider {
     case 'stub':
       return new StubProvider();
     default:
-      return new GeminiProvider();
+      throw new Error(
+        `Nhà cung cấp AI không được hỗ trợ: "${String(providerName)}". Chỉ hỗ trợ: gemini, openai, stub.`,
+      );
   }
 }

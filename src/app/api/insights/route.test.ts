@@ -117,4 +117,51 @@ describe('AI-02 Route POST /api/insights', () => {
 
     expect(data1.generatedAt).toBe(data2.generatedAt);
   });
+
+  it('trả về 429 RATE_LIMITED kèm fallback khi vượt quá 10 requests/phút (R-02)', async () => {
+    const payload = makeValidRequest();
+    payload.campaignName = 'Rate Limit Test Campaign';
+
+    // Gửi 10 requests thành công
+    for (let i = 0; i < 10; i++) {
+      const req = new Request('http://localhost:3000/api/insights', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': '10.0.0.99' },
+        body: JSON.stringify({ ...payload, campaignName: `Rate Limit Test ${i}` }),
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+    }
+
+    // Request thứ 11 từ cùng IP bị 429
+    const req11 = new Request('http://localhost:3000/api/insights', {
+      method: 'POST',
+      headers: { 'x-forwarded-for': '10.0.0.99' },
+      body: JSON.stringify({ ...payload, campaignName: 'Rate Limit Test 11' }),
+    });
+    const res11 = await POST(req11);
+    expect(res11.status).toBe(429);
+    const data11 = await res11.json();
+    expect(data11.code).toBe('RATE_LIMITED');
+    expect(data11.fallback).toBeDefined();
+    expect(data11.fallback.source).toBe('fallback');
+  });
+
+  it('trả về 502 PROVIDER_ERROR kèm fallback khi provider cấu hình sai (R-03)', async () => {
+    process.env.AI_PROVIDER = 'unknown-provider';
+    const payload = makeValidRequest();
+    payload.campaignName = 'Provider Error Campaign';
+
+    const req = new Request('http://localhost:3000/api/insights', {
+      method: 'POST',
+      headers: { 'x-forwarded-for': '10.0.0.100' },
+      body: JSON.stringify(payload),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(502);
+    const data = await res.json();
+    expect(data.code).toBe('PROVIDER_ERROR');
+    expect(data.fallback).toBeDefined();
+    expect(data.fallback.source).toBe('fallback');
+  });
 });
