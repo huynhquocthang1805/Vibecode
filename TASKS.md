@@ -37,13 +37,13 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [ ] | BA-02 | `config/thresholds.ts`, `bannedPhrases.ts`, `ruleSuggestions.ts`, `glossary.ts` | ba-analyst | Nhân | P0 | BA-01 |
 | [~] (Nhân · code ở nhánh BA-03-code, 9/9 test xanh — chờ mở PR) | BA-03 | System prompt v1 + user template + few-shot | ba-analyst | Nhân | P0 | TL-02 |
 | [ ] | BA-04 | `lib/report/templates.ts` (ngắn + đầy đủ) | ba-analyst | Nhân | P0 | TL-02 |
-| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-01 | Zod request/response + JSON schema provider | ai-engineer | Hoàng Anh | P0 | TL-02 |
-| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-02 | Route `/api/insights` (validate, size, rate limit, timeout, error map) | ai-engineer | Hoàng Anh | P0 | AI-01 |
-| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-03 | Provider adapter Gemini (+ OpenAI, + stub cho test) | ai-engineer | Hoàng Anh | P0 | AI-01 |
-| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-04 | enforceGuardrails (7 bước) | ai-engineer | Hoàng Anh | P0 | AI-01, BA-02 |
-| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-05 | fallbackInsight rule-based | ai-engineer | Hoàng Anh | P0 | BA-02, FC-01 |
-| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
-| [~] (Hoàng Anh · PR #3 cần sửa R-01..R-03) | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
+| [x] | AI-01 | Zod request/response + JSON schema provider | ai-engineer | Hoàng Anh | P0 | TL-02 |
+| [x] | AI-02 | Route `/api/insights` (validate, size, rate limit, timeout, error map) | ai-engineer | Hoàng Anh | P0 | AI-01 |
+| [x] | AI-03 | Provider adapter Gemini (+ OpenAI, + stub cho test) | ai-engineer | Hoàng Anh | P0 | AI-01 |
+| [x] | AI-04 | enforceGuardrails (7 bước) | ai-engineer | Hoàng Anh | P0 | AI-01, BA-02 |
+| [x] | AI-05 | fallbackInsight rule-based | ai-engineer | Hoàng Anh | P0 | BA-02, FC-01 |
+| [x] | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
+| [x] | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
 | [ ] | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
 | [~] (Trường · làm local, chưa push) | FI-01 | EntryForm nhiều dòng + validation inline + dialog trùng ngày | frontend-input | Trường | P0 | DATA-01, DATA-04 |
 | [~] (Trường · làm local, chưa push) | FI-02 | EntryTable (sửa/xoá/hoàn tác) — bản thường, ảo hoá ở FI-02b | frontend-input | Trường | P0 | DATA-04 |

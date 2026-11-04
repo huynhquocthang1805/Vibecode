@@ -27,3 +27,24 @@ Nhánh `feat/ai-engineer/AI-01-AI-07` → **REQUEST_CHANGES** (1 lỗi chặn: `
 ## Điểm tốt
 - Phủ test rộng, route xử lý đủ nhánh lỗi và luôn có fallback; guardrails/`forecastConfidence` theo đúng quyết định BA-03.
 - Handoff chia theo từng task, rõ ràng.
+
+## Vòng 2 — techlead · 2026-11-04
+
+**Verdict: APPROVE** (R-01..R-03 đã sửa; PR guard không lỗi).
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ không có lỗi chặn (28 file, role ai-engineer) |
+| `npm run check` | ✅ lint + typecheck xanh; vitest 35 file, 3746 pass, 9 expected fail (`it.fails` có sẵn), 0 fail |
+| `npm run build` | ✅ xanh; `/api/insights` là route động (ƒ) |
+| R-01 | ✅ đã bỏ `export const runtime`; build qua |
+| R-02 | ✅ `rateLimit.ts` giới hạn `maxEntries` (LRU) + `cleanup` bucket hết hạn; test `rateLimit.test.ts:21,40` |
+| R-03 | ✅ `getProvider` ném lỗi rõ khi tên sai; route bắt thành `PROVIDER_ERROR` + fallback; test `provider.test.ts:51` |
+| Bảo mật/quy ước | ✅ không `any`/`console`/`ts-ignore`/`NEXT_PUBLIC_`; key chỉ ở server |
+| Handoff | ✅ AI-01..AI-07 đủ |
+
+### Lưu ý không chặn
+- Trên Vercel cân nhắc dùng `x-real-ip` thay `x-forwarded-for` cho rate limit.
+
+### Điểm tốt
+- Sửa đủ cả 3 lỗi kèm test; phủ test rộng, route luôn trả fallback khi lỗi.
