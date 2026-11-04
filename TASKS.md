@@ -34,9 +34,9 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | DATA-04b | `loadMock` dùng fixture thật của BA-05 (`demo-30d`, `campaign-2y`) + đăng ký 3 chiến dịch mẫu; bỏ dữ liệu tạm dùng `toISOString` | data-engineer | Huy | P0 | BA-05 |
 | [x] (thay bằng DATA-05 + DATA-06 thật) | DATA-05-lite | Snapshot P0 trên main thread: `buildRollups`/`getSeries` (không incremental) + `comparePeriods` + `useAnalytics` thật (không Worker) → mở khoá KPI/biểu đồ/AI cho G1 | data-engineer | Huy | P0 | DATA-FIX-01 |
 | [x] | FC-01 | analyzeTrend + comparePeriods consumer (TrendSummary) | forecast-engineer | Huy | P0 | TL-03 |
-| [ ] | BA-02 | `config/thresholds.ts`, `bannedPhrases.ts`, `ruleSuggestions.ts`, `glossary.ts` | ba-analyst | Nhân | P0 | BA-01 |
-| [~] (Nhân · code ở nhánh BA-03-code, 9/9 test xanh — chờ mở PR) | BA-03 | System prompt v1 + user template + few-shot | ba-analyst | Nhân | P0 | TL-02 |
-| [ ] | BA-04 | `lib/report/templates.ts` (ngắn + đầy đủ) | ba-analyst | Nhân | P0 | TL-02 |
+| [x] | BA-02 | `config/thresholds.ts`, `bannedPhrases.ts`, `ruleSuggestions.ts`, `glossary.ts` | ba-analyst | Nhân | P0 | BA-01 |
+| [x] | BA-03 | System prompt v1 + user template + few-shot | ba-analyst | Nhân | P0 | TL-02 |
+| [x] | BA-04 | `lib/report/templates.ts` (ngắn + đầy đủ) | ba-analyst | Nhân | P0 | TL-02 |
 | [x] | AI-01 | Zod request/response + JSON schema provider | ai-engineer | Hoàng Anh | P0 | TL-02 |
 | [x] | AI-02 | Route `/api/insights` (validate, size, rate limit, timeout, error map) | ai-engineer | Hoàng Anh | P0 | AI-01 |
 | [x] | AI-03 | Provider adapter Gemini (+ OpenAI, + stub cho test) | ai-engineer | Hoàng Anh | P0 | AI-01 |
