@@ -100,10 +100,40 @@ describe('DATA-04: Zustand Data Store', () => {
     expect(useDataStore.getState().entries.length).toBe(2);
   });
 
-  it('loadMock loads predefined mock dataset', async () => {
+  it('DATA-04b: loadMock demo-30d loads fixture and registers default campaign', async () => {
     await useDataStore.getState().loadMock('demo-30d');
-    const entries = useDataStore.getState().entries;
-    expect(entries.length).toBe(30);
-    expect(useDataStore.getState().checksum.rows).toBe(30);
+    const state = useDataStore.getState();
+    expect(state.entries.length).toBe(30);
+    expect(state.checksum.rows).toBe(30);
+    expect(state.campaigns.some((c) => c.id === 'default')).toBe(true);
+    expect(state.entries[0]?.source).toBe('mock');
+  });
+
+  it('DATA-04b: loadMock campaign-2y loads 2190 rows and registers 3 sample campaigns', async () => {
+    await useDataStore.getState().loadMock('campaign-2y');
+    const state = useDataStore.getState();
+    expect(state.entries.length).toBe(2190);
+    expect(state.checksum.rows).toBe(2190);
+
+    const campIds = state.campaigns.map((c) => c.id);
+    expect(campIds).toContain('thoi-trang');
+    expect(campIds).toContain('my-pham');
+    expect(campIds).toContain('do-gia-dung');
+
+    const thoiTrang = state.campaigns.find((c) => c.id === 'thoi-trang');
+    expect(thoiTrang?.name).toBe('Thời trang');
+
+    const myPham = state.campaigns.find((c) => c.id === 'my-pham');
+    expect(myPham?.name).toBe('Mỹ phẩm');
+
+    const doGiaDung = state.campaigns.find((c) => c.id === 'do-gia-dung');
+    expect(doGiaDung?.name).toBe('Đồ gia dụng');
+  });
+
+  it('DATA-04b: loadMock edge-cases loads valid edge cases', async () => {
+    await useDataStore.getState().loadMock('edge-cases');
+    const state = useDataStore.getState();
+    expect(state.entries.length).toBeGreaterThan(0);
+    expect(state.checksum.rows).toBe(state.entries.length);
   });
 });
