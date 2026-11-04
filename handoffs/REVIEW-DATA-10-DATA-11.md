@@ -52,3 +52,30 @@ Cách sửa: bổ sung các test trên (dùng fake worker/engine).
 - Codec cột + delta ngày + RLE gọn; test round-trip (bất biến #8) và hiệu năng 50.000 dòng.
 - Tách `completedVersion` khỏi dữ liệu hôm nay để live mode không tính lại dự báo; có test `forecastCached`.
 - Check + build xanh, không đụng file ngoài phạm vi sở hữu.
+
+---
+
+## Vòng 2 — Verdict: **APPROVE**
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ Không có lỗi chặn |
+| `npm run check` | ✅ lint + typecheck xanh; Vitest 44 file, 3799 pass, 11 expected fail, 0 fail |
+| `npm run build` | ✅ |
+| R-01 quota/ghi lỗi | ✅ `save` bắt lỗi pha 1/2, rollback key mới, giữ state trong RAM, phát `system/health` degraded, không reject; store thêm `.catch`. Có test quota |
+| R-02 partition bẩn | ✅ thêm hash FNV-1a vào `PartitionMeta`; test sửa giữ nguyên rows/tổng |
+| R-03 race dọn rác | ✅ bọc lock + chỉ xoá key `gen` < gen manifest; có test |
+| R-04 restart mất delta | ✅ `applyDelta` cập nhật snapshot; engine tương thích bọc supervisor, `init` nền có `.catch`; có test |
+| R-05 test supervisor | ✅ có test pack >500 dòng, vượt `WORKER_MAX_RESTARTS`, `REVISION_GAP`, lệch checksum (chưa có test riêng cho retry `SNAPSHOT_TIMEOUT` — không chặn) |
+| Ownership / `any` / `ts-ignore` | ✅ |
+| Handoff + log AI | ✅ `DATA-10.md`, `DATA-11.md` đã cập nhật |
+
+### Lưu ý không chặn
+- **N-01** `client.ts` `applyDelta`: chỉ cập nhật snapshot khi `lastEntriesSnapshot.length > 0` → nếu `init([])` rồi mới nhập dữ liệu, restart worker mất delta; mỗi delta còn tốn O(n) (filter + Map toàn bộ) — live mode 50k dòng nên giữ sẵn Map theo id.
+- **N-02** `simulateWorkerFailure` export trong code production chỉ để test; nên đánh dấu `@internal`.
+- **N-03** Sau khi `isDegraded`, các lần `save` sau chỉ ghi RAM, không thử lại localStorage — nên thử lại định kỳ.
+- Còn từ vòng 1: L-01 (ghi CHANGE_REQUESTS mở rộng `AnalyticsWorkerApi`/manifest), L-02 (đưa `q.today` vào khoá cache dự báo), L-05.
+
+### Điểm tốt
+- Sửa đủ R-01…R-05 kèm test; ghi 2 pha + rollback + fallback RAM không làm mất dữ liệu.
+- Prefix partition suy ra từ `key` (xử lý L-04), cảnh báo rõ ở nhánh tự cứu (L-03).
