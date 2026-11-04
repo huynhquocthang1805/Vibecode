@@ -12,6 +12,7 @@ import { validateBatch } from '@/lib/domain/validation';
 import { LIMITS, type DuplicatePolicy, type ImportReport } from '@/types/domain';
 
 import { assertEntriesCanBeSaved, downloadText } from './entryActions';
+import { importErrorCsv } from './importErrorCsv';
 
 const FIELDS = [
   ['date', 'Ngày'],
@@ -339,17 +340,7 @@ export function ImportDialog({
                   <button
                     className="mvp-button"
                     onClick={() => {
-                      const cell = (value: string) =>
-                        `"${(/^[=+@\-]/.test(value) ? "'" : '') + value.replaceAll('"', '""')}"`;
-                      const csv = [
-                        'Dòng,Lỗi,Dữ liệu',
-                        ...report.rejected.map((r) =>
-                          [String(r.row), r.issues.map((i) => i.message).join('; '), JSON.stringify(r.raw)]
-                            .map(cell)
-                            .join(','),
-                        ),
-                      ].join('\r\n');
-                      downloadText('\uFEFF' + csv, 'kpi-dong-loi.csv', 'text/csv;charset=utf-8');
+                      downloadText(importErrorCsv(report), 'kpi-dong-loi.csv', 'text/csv;charset=utf-8');
                     }}
                   >
                     Tải danh sách lỗi CSV

@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS, useDataStore } from '@/lib/data/store';
 
 import { ArchiveManager } from './ArchiveManager';
 import { CampaignManager } from './CampaignManager';
+import { DataManager } from './DataManagerContent';
 import { EntryTable } from './EntryTableContent';
 import { ImportDialog } from './ImportDialog';
 import { downloadText } from './entryActions';
@@ -116,8 +117,43 @@ describe('Nhập liệu nâng cao của Trường', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Nhập dữ liệu' }));
     expect(useDataStore.getState().entries.find((e) => e.date === '2026-11-01')?.reach).toBe(300);
     expect(screen.getByRole('button', { name: 'Tải danh sách lỗi CSV' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tải danh sách lỗi CSV' }));
+    const exported = vi.mocked(downloadText).mock.calls.at(-1);
+    expect(exported?.[0]).toMatch(/^\uFEFFDòng,Lỗi,Dữ liệu\r\n/);
+    expect(exported?.[0]).toContain('""reach"":""-1""');
+    expect(exported?.slice(1)).toEqual(['kpi-dong-loi.csv', 'text/csv;charset=utf-8']);
     expect(screen.getByText(/gộp trong file 1/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Hoàn tác import' }));
     expect(useDataStore.getState().entries).toHaveLength(1);
+  });
+
+  it('R-02 từ chối file không có đuôi CSV trước khi đọc', () => {
+    render(<ImportDialog mode="csv" initiallyOpen />);
+    fireEvent.change(screen.getByLabelText('Chọn file CSV'), {
+      target: { files: [new File(['invalid'], 'số-liệu.txt', { type: 'text/plain' })] },
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent('Hãy chọn file có đuôi .csv.');
+    expect(useDataStore.getState().entries).toHaveLength(1);
+  });
+
+  it('R-04 nạp đúng bộ mẫu campaign-2y sau xác nhận', async () => {
+    const load = vi.spyOn(useDataStore.getState(), 'loadMock').mockResolvedValue();
+    render(<DataManager />);
+    fireEvent.change(screen.getByLabelText('Bộ dữ liệu mẫu'), { target: { value: 'campaign-2y' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Dùng dữ liệu mẫu' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(load).not.toHaveBeenCalled();
+    await act(async () => fireEvent.click(within(dialog).getByRole('button', { name: 'Nạp dữ liệu mẫu' })));
+    expect(load).toHaveBeenCalledWith('campaign-2y');
+  });
+
+  it.each([
+    [700, 'field-warning'],
+    [900, 'field-error'],
+  ])('R-04 quota %i / 1000 cảnh báo đúng màu và có gợi ý', (usedBytes, className) => {
+    useDataStore.setState({ storage: { kind: 'localStorage', usedBytes: usedBytes as number, quotaBytes: 1000 } });
+    render(<DataManager />);
+    expect(screen.getByText(/Dung lượng gần đầy/)).toHaveClass(String(className));
+    expect(screen.getByText(/Dung lượng gần đầy/)).toHaveTextContent('Xuất backup hoặc lưu trữ năm cũ');
   });
 });

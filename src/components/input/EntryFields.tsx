@@ -52,7 +52,13 @@ export function EntryFields({
                 const input = e.currentTarget;
                 const raw = input.value;
                 // Chỉ định dạng số nguyên không âm; giữ nguyên chuỗi lỗi cho validator.
-                if (field !== 'date' && /^\d+(?:\.\d{3})*$/.test(raw)) {
+                const inputType = 'inputType' in e.nativeEvent ? String(e.nativeEvent.inputType) : '';
+                const groupedTyping =
+                  field !== 'date' &&
+                  /^\d{1,3}(?:\.\d{3})+$/.test(value[field]) &&
+                  /^(insertText|deleteContentBackward|deleteContentForward)$/.test(inputType) &&
+                  /^[\d.]+$/.test(raw);
+                if (field !== 'date' && (/^\d+(?:\.\d{3})*$/.test(raw) || groupedTyping)) {
                   const number = Number(raw.replaceAll('.', ''));
                   if (Number.isSafeInteger(number)) {
                     const digitsBefore = raw.slice(0, input.selectionStart ?? raw.length).replaceAll('.', '').length;
