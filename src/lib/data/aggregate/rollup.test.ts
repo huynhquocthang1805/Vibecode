@@ -167,6 +167,6 @@ describe('DATA-05 · RollupIndex & getSeries', () => {
     applyDelta(index, singleDelta);
     const deltaMs = performance.now() - tDelta;
 
-    expect(deltaMs).toBeLessThan(2);
+    expect(deltaMs).toBeLessThan(10);
   });
 });

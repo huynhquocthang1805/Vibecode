@@ -164,10 +164,44 @@ describe('DATA-10: Lưu trữ phân vùng theo năm + Ghi 2 pha + Tự kiểm', 
     expect(loaded?.entries.length).toBe(5);
   });
 
-  it('Bất biến #9: Ghi 2 pha — lỗi QuotaExceededError ở pha 1 không bao giờ làm hỏng dữ liệu cũ', async () => {
+  it('R-02 (Cao): Xác định partition bẩn bằng hash nội dung khi sửa đổi giữ nguyên rows và tổng', async () => {
     const adapter = createLocalStorageAdapter();
     const state = createSampleState();
     await adapter.save(state);
+
+    // Năm 2024 có 2 dòng:
+    // Dòng 1: date: '2024-06-01', reach: 1000, clicks: 50, cost: 200000, orders: 5
+    // Dòng 2: date: '2024-06-02', reach: 1200, clicks: 60, cost: 240000, orders: 6
+    // Hoán đổi số liệu giữa 2 dòng (rows = 2 không đổi, tổng r=2200, k=110, s=440000, o=11 giữ nguyên 100%)
+    const swappedEntries = state.entries.map((e) => {
+      if (e.id === 'camp-a|2024-06-01') {
+        return { ...e, reach: 1200, clicks: 60, cost: 240000, orders: 6 };
+      }
+      if (e.id === 'camp-a|2024-06-02') {
+        return { ...e, reach: 1000, clicks: 50, cost: 200000, orders: 5 };
+      }
+      return e;
+    });
+
+    await adapter.save({ ...state, entries: swappedEntries });
+
+    // Partition 2024 phải tăng lên gen 2 nhờ phát hiện lệch hash nội dung
+    expect(localStorage.getItem(partitionKey('2024', 2))).not.toBeNull();
+
+    // Load lại và kiểm tra số liệu đã hoán đổi được lưu trữ chính xác
+    const reloaded = await adapter.load();
+    const e1 = reloaded?.entries.find((e) => e.id === 'camp-a|2024-06-01');
+    expect(e1?.reach).toBe(1200);
+    expect(e1?.clicks).toBe(60);
+  });
+
+  it('R-01 (Cao) & Bất biến #9: QuotaExceededError được xử lý an toàn, không reject, dữ liệu chuyển vào memory', async () => {
+    const adapter = createLocalStorageAdapter();
+    const state = createSampleState();
+    await adapter.save(state);
+
+    const healthEvents: Array<{ area: string; status: string }> = [];
+    const unsub = bus.on('system/health', (e) => healthEvents.push(e));
 
     // Giả lập lỗi QuotaExceededError khi ghi partition mới
     const originalSetItem = Storage.prototype.setItem;
@@ -199,15 +233,34 @@ describe('DATA-10: Lưu trữ phân vùng theo năm + Ghi 2 pha + Tự kiểm', 
       ],
     };
 
-    // Khi ghi bị lỗi
-    await expect(adapter.save(dirtyState)).rejects.toThrow();
+    // R-01: save KHÔNG được reject, giải quyết gracefully
+    await expect(adapter.save(dirtyState)).resolves.toBeUndefined();
+    unsub();
 
-    // Khôi phục setItem bình thường
+    // Phát hiện sự kiện health degraded
+    expect(healthEvents.some((e) => e.area === 'storage' && e.status === 'degraded')).toBe(true);
+
+    // Khôi phục setItem
     vi.restoreAllMocks();
 
-    // Nạp lại: Trạng thái cũ (4 dòng) vẫn nguyên vẹn 100%, không bị trạng thái lai
+    // Dữ liệu trong adapter vẫn nạp được đầy đủ 5 dòng từ in-memory cache
     const reloaded = await adapter.load();
-    expect(reloaded?.entries.length).toBe(4);
+    expect(reloaded?.entries.length).toBe(5);
+  });
+
+  it('R-03 (Trung bình): load() không xoá partition thế hệ mới (gen tương lai) của tab khác đang ghi', async () => {
+    const adapter = createLocalStorageAdapter();
+    const state = createSampleState();
+    await adapter.save(state);
+
+    // Giả lập Tab A đang ghi Phase 1: ghi partition 2026 gen 2, chưa commit manifest (manifest vẫn đang ở gen 1)
+    localStorage.setItem(partitionKey('2026', 2), '{"c":[],"d":[1],"r":[100],"k":[10],"s":[1000],"o":[1],"src":[]}');
+
+    // Tab B gọi load()
+    await adapter.load();
+
+    // Key gen 2 của Tab A KHÔNG bị xoá nhầm
+    expect(localStorage.getItem(partitionKey('2026', 2))).not.toBeNull();
   });
 
   it('E49 & Tự kiểm: Xoá hoặc hỏng 1 key partition thì vẫn nạp các năm khác và phát tín hiệu cảnh báo', async () => {
@@ -235,18 +288,35 @@ describe('DATA-10: Lưu trữ phân vùng theo năm + Ghi 2 pha + Tự kiểm', 
     expect(healthEvents.some((e) => e.area === 'storage' && e.message.includes('2024'))).toBe(true);
   });
 
-  it('Dọn rác key mồ côi: loại bỏ các partition cũ không còn tham chiếu trong manifest', async () => {
+  it('Dọn rác key mồ côi: loại bỏ các partition cũ (gen < gen manifest)', async () => {
     const adapter = createLocalStorageAdapter();
     const state = createSampleState();
     await adapter.save(state);
 
-    // Tạo key mồ côi
-    localStorage.setItem(partitionKey('2020', 99), '{"c":[],"d":[]}');
-    expect(localStorage.getItem(partitionKey('2020', 99))).not.toBeNull();
+    // Cập nhật để năm 2026 lên gen 2
+    await adapter.save({
+      ...state,
+      entries: [...state.entries, {
+        id: 'camp-a|2026-11-01',
+        date: '2026-11-01',
+        campaignId: 'camp-a',
+        reach: 100,
+        clicks: 5,
+        cost: 10000,
+        orders: 1,
+        source: 'manual',
+        createdAt: 0,
+        updatedAt: 0,
+      }],
+    });
 
-    // Khi load, adapter tự động quét và dọn rác
+    // Tạo key mồ côi gen 0 cũ
+    localStorage.setItem(partitionKey('2026', 0), '{"c":[],"d":[]}');
+    expect(localStorage.getItem(partitionKey('2026', 0))).not.toBeNull();
+
+    // Khi load, adapter tự động quét và dọn rác các key có gen cũ hơn
     await adapter.load();
-    expect(localStorage.getItem(partitionKey('2020', 99))).toBeNull();
+    expect(localStorage.getItem(partitionKey('2026', 0))).toBeNull();
   });
 
   it('Web Locks: gọi navigator.locks.request khi có sẵn trong môi trường', async () => {
@@ -288,6 +358,6 @@ describe('DATA-10: Lưu trữ phân vùng theo năm + Ghi 2 pha + Tự kiểm', 
     const duration = performance.now() - t0;
 
     expect(res.rows).toBe(50_000);
-    expect(duration).toBeLessThan(100); // Rất nhanh, < 100ms trên CPU test
+    expect(duration).toBeLessThan(100);
   });
 });

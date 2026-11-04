@@ -119,13 +119,20 @@ function schedulePersist(getState: () => DataState): void {
       entries: s.entries,
       settings: s.settings,
     };
-    void storageAdapter.save(persisted).then(() => {
-      void storageAdapter.usage().then((u) => {
-        useDataStore.setState((prev) => ({
-          storage: { ...prev.storage, usedBytes: u.usedBytes, quotaBytes: u.quotaBytes },
-        }));
+    void storageAdapter
+      .save(persisted)
+      .then(() => {
+        void storageAdapter.usage().then((u) => {
+          useDataStore.setState((prev) => ({
+            storage: { ...prev.storage, usedBytes: u.usedBytes, quotaBytes: u.quotaBytes },
+          }));
+        });
+      })
+      .catch((err) => {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[store] persistence warning:', err);
+        }
       });
-    });
   };
 
   if (persistTimer) {
@@ -148,12 +155,14 @@ if (typeof window !== 'undefined') {
       persistTimer = null;
       firstPersistRequestTime = 0;
       const s = useDataStore.getState();
-      void storageAdapter.save({
-        v: CONTRACT_VERSION,
-        campaigns: s.campaigns,
-        entries: s.entries,
-        settings: s.settings,
-      });
+      void storageAdapter
+        .save({
+          v: CONTRACT_VERSION,
+          campaigns: s.campaigns,
+          entries: s.entries,
+          settings: s.settings,
+        })
+        .catch(() => {});
     }
   });
 }

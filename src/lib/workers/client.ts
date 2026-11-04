@@ -122,9 +122,9 @@ function handleWorkerFailure(reason: string): void {
       message: 'Worker gặp sự cố liên tục. Đã chuyển sang Chế độ tương thích trên main thread.',
       detail: reason,
     });
-    singletonClient = createAnalyticsEngine({ isCompatibilityMode: true });
+    singletonClient = createSupervisedClient(createAnalyticsEngine({ isCompatibilityMode: true }));
     if (lastEntriesSnapshot.length > 0) {
-      void singletonClient.init(lastEntriesSnapshot);
+      void singletonClient.init(lastEntriesSnapshot).catch(() => {});
     }
     return;
   }
@@ -145,7 +145,7 @@ function handleWorkerFailure(reason: string): void {
 
   singletonClient = createSupervisedClient(spawnWorker());
   if (lastEntriesSnapshot.length > 0) {
-    void singletonClient.init(lastEntriesSnapshot);
+    void singletonClient.init(lastEntriesSnapshot).catch(() => {});
   }
 }
 
@@ -162,7 +162,7 @@ function createSupervisedClient(baseApi: AnalyticsWorkerApi): AnalyticsWorkerApi
 
     async init(entries: DailyEntry[] | PackedEntries): Promise<number> {
       if (Array.isArray(entries)) {
-        lastEntriesSnapshot = entries;
+        lastEntriesSnapshot = [...entries];
         if (entries.length > 500 && !isCompatibilityMode) {
           const packed = packEntries(entries);
           return activeApi.init(packed);
@@ -172,7 +172,17 @@ function createSupervisedClient(baseApi: AnalyticsWorkerApi): AnalyticsWorkerApi
     },
 
     async applyDelta(delta: EntryDelta, revision: number): Promise<number> {
-      return activeApi.applyDelta(delta, revision);
+      const res = await activeApi.applyDelta(delta, revision);
+      // R-04: Cập nhật lastEntriesSnapshot khi applyDelta để khi worker restart không mất dữ liệu
+      if (lastEntriesSnapshot.length > 0) {
+        const removedIds = new Set(delta.removed.map((e) => e.id));
+        const remaining = lastEntriesSnapshot.filter((e) => !removedIds.has(e.id));
+        const map = new Map<string, DailyEntry>();
+        for (const e of remaining) map.set(e.id, e);
+        for (const e of delta.added) map.set(e.id, e);
+        lastEntriesSnapshot = Array.from(map.values());
+      }
+      return res;
     },
 
     async snapshot(q: AnalyticsQuery): Promise<AnalyticsSnapshot> {
@@ -225,4 +235,11 @@ export function resetAnalyticsClient(): void {
   isCompatibilityMode = false;
   restartTimestamps.length = 0;
   lastEntriesSnapshot = [];
+}
+
+/**
+ * Giả lập lỗi worker cho supervisor test (R-04, R-05).
+ */
+export function simulateWorkerFailure(reason: string = 'SIMULATED_FAILURE'): void {
+  handleWorkerFailure(reason);
 }

@@ -5,21 +5,18 @@ import { CONTRACT_VERSION } from '@/types/domain';
 import { decodeState } from './codec';
 import { migrate } from './migrate';
 import {
+  computePayloadHash,
   decodePartition,
   encodePartition,
   MANIFEST_KEY,
   parsePartitionKey,
   partitionKey,
-  PARTITION_PREFIX,
   type ManifestPayload,
   type PartitionMeta,
   type PartitionPayload,
 } from './partitionCodec';
 
 export const DEFAULT_STORAGE_KEY = MANIFEST_KEY;
-
-// In-memory fallback cache khi localStorage bị chặn hoặc dính quota
-const inMemoryStore: Map<string, string> = new Map();
 
 function isLocalStorageAvailable(): boolean {
   try {
@@ -45,6 +42,8 @@ async function runWithLock<T>(lockName: string, fn: () => Promise<T>): Promise<T
 }
 
 export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): StorageAdapter {
+  const partitionPrefix = `${key}:p:`;
+  const inMemoryStore: Map<string, string> = new Map();
   const hasStorage = isLocalStorageAvailable();
   let isDegraded = !hasStorage;
 
@@ -58,20 +57,25 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
   }
 
   function getRaw(k: string): string | null {
+    const memVal = inMemoryStore.get(k);
+    if (memVal !== undefined) return memVal;
+
     if (hasStorage) {
       try {
-        return window.localStorage.getItem(k);
+        const item = window.localStorage.getItem(k);
+        if (item !== null) return item;
       } catch {
         // Fallback to memory
       }
     }
-    return inMemoryStore.get(k) ?? null;
+    return null;
   }
 
   function setRaw(k: string, val: string): void {
     if (hasStorage && !isDegraded) {
       try {
         window.localStorage.setItem(k, val);
+        return;
       } catch (err) {
         isDegraded = true;
         inMemoryStore.set(k, val);
@@ -85,7 +89,7 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
           type: 'system/health',
           area: 'storage',
           status: 'degraded',
-          message: 'Vượt hạn ngạch bộ nhớ hoặc bị chặn ghi localStorage. Chuyển sang lưu tạm trong bộ nhớ.',
+          message: 'Vượt hạn ngạch bộ nhớ hoặc bị chặn ghi localStorage. Dữ liệu đang lưu tạm trong bộ nhớ RAM.',
           detail: String(err),
         });
         throw err;
@@ -161,11 +165,11 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
           return migrate(manifestRaw);
         } catch {
           // Tự cứu: quét các partition có sẵn trong storage để dựng lại
-          const allKeys = getAllKeys().filter((k) => k.startsWith(PARTITION_PREFIX));
+          const allKeys = getAllKeys().filter((k) => k.startsWith(partitionPrefix));
           if (allKeys.length > 0) {
             const reconstructedEntries: DailyEntry[] = [];
             for (const pKey of allKeys) {
-              const info = parsePartitionKey(pKey);
+              const info = parsePartitionKey(pKey, partitionPrefix);
               if (!info) continue;
               const pRaw = getRaw(pKey);
               if (!pRaw) continue;
@@ -183,7 +187,7 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
                 type: 'system/health',
                 area: 'storage',
                 status: 'recovered',
-                message: 'Đã tự động phục hồi dữ liệu từ các phân vùng còn nguyên vẹn sau khi manifest bị hỏng.',
+                message: 'Đã tự động phục hồi dữ liệu từ các phân vùng còn nguyên vẹn sau khi manifest bị hỏng. Cần kiểm tra lại tên chiến dịch.',
               });
               return {
                 v: CONTRACT_VERSION,
@@ -223,7 +227,7 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
       const activePartitionKeys = new Set<string>();
 
       for (const [year, meta] of Object.entries(manifest.parts)) {
-        const pKey = partitionKey(year, meta.gen);
+        const pKey = partitionKey(year, meta.gen, partitionPrefix);
         activePartitionKeys.add(pKey);
         const pRaw = getRaw(pKey);
 
@@ -292,13 +296,23 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
         healthyParts[year] = meta;
       }
 
-      // 4. Dọn rác key mồ côi (các key partition không nằm trong manifest)
-      const storageKeys = getAllKeys();
-      for (const k of storageKeys) {
-        if (k.startsWith(PARTITION_PREFIX) && !activePartitionKeys.has(k)) {
-          removeRaw(k);
+      // 4. Dọn rác key mồ côi (R-03: bọc trong lock và chỉ dọn key thế hệ cũ gen < active gen để tránh race với tab khác)
+      await runWithLock('kpi-dash:write', async () => {
+        const storageKeys = getAllKeys();
+        for (const k of storageKeys) {
+          if (!k.startsWith(partitionPrefix)) continue;
+          const info = parsePartitionKey(k, partitionPrefix);
+          if (!info) continue;
+
+          const currentPartMeta = manifest.parts[info.year];
+          if (currentPartMeta) {
+            // Chỉ xoá nếu gen cũ hơn gen đang kích hoạt trong manifest
+            if (info.gen < currentPartMeta.gen) {
+              removeRaw(k);
+            }
+          }
         }
-      }
+      });
 
       return {
         v: CONTRACT_VERSION,
@@ -339,11 +353,11 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
           list.push(e);
         }
 
-        // Xác định các partition bẩn (chỉ mã hoá lại partition bẩn)
+        // Xác định các partition bẩn (R-02: dùng rows + sum + hash nội dung FNV-1a)
         const dirtyYears = new Set<string>();
         const encodedPartitions = new Map<
           string,
-          { raw: string; rows: number; sum: [number, number, number, number]; newGen: number }
+          { raw: string; rows: number; sum: [number, number, number, number]; hash: number; newGen: number }
         >();
         const updatedParts: Record<string, PartitionMeta> = {};
 
@@ -351,11 +365,14 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
           const epoch = `${year}-01-01`;
           const prevMeta = currentManifest?.parts[year];
 
-          // Tính rows và sums để so sánh
           const encoded = encodePartition(entries, epoch, campaignIndexMap);
+          const raw = JSON.stringify(encoded.payload);
+          const hash = computePayloadHash(raw);
+
           const isDirty =
             !prevMeta ||
             prevMeta.rows !== encoded.rows ||
+            prevMeta.hash !== hash ||
             prevMeta.sum[0] !== encoded.sum[0] ||
             prevMeta.sum[1] !== encoded.sum[1] ||
             prevMeta.sum[2] !== encoded.sum[2] ||
@@ -365,15 +382,17 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
             dirtyYears.add(year);
             const newGen = (prevMeta?.gen ?? 0) + 1;
             encodedPartitions.set(year, {
-              raw: JSON.stringify(encoded.payload),
+              raw,
               rows: encoded.rows,
               sum: encoded.sum,
+              hash,
               newGen,
             });
             updatedParts[year] = {
               gen: newGen,
               rows: encoded.rows,
               sum: encoded.sum,
+              hash,
             };
           } else {
             // Giữ nguyên partition cũ
@@ -382,62 +401,80 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
         }
 
         // ── Ghi 2 pha ─────────────────────────────────────────────────────
-        // Pha 1: Ghi từng partition bẩn sang key thế hệ mới
         const writtenNewKeys: string[] = [];
         try {
+          // Pha 1: Ghi từng partition bẩn sang key thế hệ mới
           for (const [year, data] of encodedPartitions.entries()) {
-            const nextKey = partitionKey(year, data.newGen);
+            const nextKey = partitionKey(year, data.newGen, partitionPrefix);
             setRaw(nextKey, data.raw);
             writtenNewKeys.push(nextKey);
           }
-        } catch (err) {
-          // Lỗi / Quota ở bước 1 -> xoá các key mới ghi dở, giữ nguyên manifest cũ
-          for (const k of writtenNewKeys) {
-            removeRaw(k);
-          }
-          throw err;
-        }
 
-        // Pha 2: Commit - Ghi manifest trỏ sang thế hệ mới
-        const nextManifestGen = currentGen + 1;
-        const newManifest: ManifestPayload = {
-          v: CONTRACT_VERSION,
-          gen: nextManifestGen,
-          savedAt: Date.now(),
-          epoch: state.entries[0]?.date ?? '2024-01-01',
-          campaigns,
-          settings: state.settings,
-          parts: updatedParts,
-        };
+          // Pha 2: Commit - Ghi manifest trỏ sang thế hệ mới
+          const nextManifestGen = currentGen + 1;
+          const newManifest: ManifestPayload = {
+            v: CONTRACT_VERSION,
+            gen: nextManifestGen,
+            savedAt: Date.now(),
+            epoch: state.entries[0]?.date ?? '2024-01-01',
+            campaigns,
+            settings: state.settings,
+            parts: updatedParts,
+          };
 
-        const manifestString = JSON.stringify(newManifest);
-        try {
+          const manifestString = JSON.stringify(newManifest);
           setRaw(key, manifestString);
-        } catch (err) {
-          // Nếu commit manifest thất bại -> rollback các key mới
-          for (const k of writtenNewKeys) {
-            removeRaw(k);
-          }
-          throw err;
-        }
 
-        // Pha 3: Xoá key thế hệ cũ của các partition bẩn và các năm bị xoá
-        for (const year of dirtyYears) {
-          const oldGen = currentManifest?.parts[year]?.gen;
-          if (oldGen !== undefined) {
-            removeRaw(partitionKey(year, oldGen));
+          // Pha 3: Xoá key thế hệ cũ của các partition bẩn và các năm bị xoá
+          for (const year of dirtyYears) {
+            const oldGen = currentManifest?.parts[year]?.gen;
+            if (oldGen !== undefined) {
+              removeRaw(partitionKey(year, oldGen, partitionPrefix));
+            }
           }
-        }
-        // Xoá các năm không còn tồn tại trong dữ liệu mới
-        if (currentManifest?.parts) {
-          for (const oldYear of Object.keys(currentManifest.parts)) {
-            if (!entriesByYear.has(oldYear)) {
-              const oldGen = currentManifest.parts[oldYear]?.gen;
-              if (oldGen !== undefined) {
-                removeRaw(partitionKey(oldYear, oldGen));
+          if (currentManifest?.parts) {
+            for (const oldYear of Object.keys(currentManifest.parts)) {
+              if (!entriesByYear.has(oldYear)) {
+                const oldGen = currentManifest.parts[oldYear]?.gen;
+                if (oldGen !== undefined) {
+                  removeRaw(partitionKey(oldYear, oldGen, partitionPrefix));
+                }
               }
             }
           }
+        } catch (err) {
+          // R-01 (Cao): Lỗi / QuotaExceededError ở pha 1 hoặc pha 2
+          // 1. Rollback: Xoá các key mới ghi dở
+          for (const k of writtenNewKeys) {
+            removeRaw(k);
+          }
+
+          // 2. Fallback in-memory: Lưu giữ toàn bộ state vào inMemoryStore để không bao giờ mất dữ liệu
+          isDegraded = true;
+          inMemoryStore.set(key, JSON.stringify({
+            v: CONTRACT_VERSION,
+            gen: currentGen + 1,
+            savedAt: Date.now(),
+            epoch: state.entries[0]?.date ?? '2024-01-01',
+            campaigns,
+            settings: state.settings,
+            parts: updatedParts,
+          }));
+          for (const [year, data] of encodedPartitions.entries()) {
+            inMemoryStore.set(partitionKey(year, data.newGen, partitionPrefix), data.raw);
+          }
+
+          // 3. Phát cảnh báo sức khoẻ
+          bus.emit({
+            type: 'system/health',
+            area: 'storage',
+            status: 'degraded',
+            message: 'Vượt hạn ngạch bộ nhớ localStorage khi lưu. Dữ liệu đã được chuyển sang lưu tạm trong RAM an toàn.',
+            detail: String(err),
+          });
+
+          // R-01: KHÔNG rethrow ra ngoài để tránh unhandled rejection làm trắng trang / đơ ứng dụng
+          return;
         }
       });
     },
@@ -446,7 +483,7 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
       removeRaw(key);
       const allKeys = getAllKeys();
       for (const k of allKeys) {
-        if (k.startsWith(PARTITION_PREFIX) || k.startsWith('kpi-dash:corrupt:')) {
+        if (k.startsWith(partitionPrefix) || k.startsWith('kpi-dash:corrupt:')) {
           removeRaw(k);
         }
       }
@@ -456,7 +493,7 @@ export function createLocalStorageAdapter(key: string = DEFAULT_STORAGE_KEY): St
       let totalBytes = 0;
       const allKeys = getAllKeys();
       for (const k of allKeys) {
-        if (k === key || k.startsWith(PARTITION_PREFIX)) {
+        if (k === key || k.startsWith(partitionPrefix)) {
           const val = getRaw(k) ?? '';
           totalBytes += new Blob([val]).size;
         }

@@ -18,6 +18,19 @@ export interface PartitionMeta {
   gen: number;
   rows: number;
   sum: [number, number, number, number]; // [reach, clicks, cost, orders]
+  hash?: number; // FNV-1a hash nội dung payload để phát hiện partition bẩn chính xác (R-02)
+}
+
+/**
+ * FNV-1a 32-bit hash tính toán nhanh trên chuỗi payload.
+ */
+export function computePayloadHash(str: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
 }
 
 export interface ManifestPayload {
@@ -43,13 +56,13 @@ export interface PartitionPayload {
   src: [number, number][];
 }
 
-export function partitionKey(year: string, gen: number): string {
-  return `${PARTITION_PREFIX}${year}:${gen}`;
+export function partitionKey(year: string, gen: number, prefix: string = PARTITION_PREFIX): string {
+  return `${prefix}${year}:${gen}`;
 }
 
-export function parsePartitionKey(key: string): { year: string; gen: number } | null {
-  if (!key.startsWith(PARTITION_PREFIX)) return null;
-  const parts = key.slice(PARTITION_PREFIX.length).split(':');
+export function parsePartitionKey(key: string, prefix: string = PARTITION_PREFIX): { year: string; gen: number } | null {
+  if (!key.startsWith(prefix)) return null;
+  const parts = key.slice(prefix.length).split(':');
   if (parts.length !== 2) return null;
   const year = parts[0];
   const gen = Number(parts[1]);
@@ -71,7 +84,7 @@ export function encodePartition(
     const cA = campaignIndexMap.get(a.campaignId) ?? 0;
     const cB = campaignIndexMap.get(b.campaignId) ?? 0;
     if (cA !== cB) return cA - cB;
-    return a.date.localeCompare(b.date);
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
   });
 
   const n = sorted.length;

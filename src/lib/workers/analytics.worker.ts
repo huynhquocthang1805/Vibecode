@@ -188,8 +188,8 @@ export function createAnalyticsEngine(options?: { isCompatibilityMode?: boolean 
       const checksum = getRollupChecksum(rollupIndex);
       const forecastStatus = computeForecastStatus(dataSpan, daily, q.today, checksum.rows, isCompat);
 
-      // Cache theo phần cho forecast: chỉ tính lại khi completedVersion đổi
-      const fcKey = `${q.campaignId}:${forecastHorizon}`;
+      // Cache theo phần cho forecast: tính lại khi completedVersion hoặc today đổi (L-02)
+      const fcKey = `${q.campaignId}:${forecastHorizon}:${q.today}`;
       let forecasts: MetricForecast[] = [];
 
       if (forecastStatus === 'ok') {
