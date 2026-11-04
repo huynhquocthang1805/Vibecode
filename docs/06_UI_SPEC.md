@@ -75,3 +75,7 @@ Label cho mọi input, tương phản ≥ 4.5:1, không chỉ dùng màu để b
 - Biểu đồ dùng ECharts tải động, lấy mẫu LTTB, dataZoom khi hơn 90 kỳ, tắt animation khi giảm chuyển động hoặc hơn 2.000 kỳ. Ba metric khối lượng dùng ba trục đơn vị riêng; CTR/CPC/CPA dùng hai trục. Màu tập trung ở `chartTheme.ts`.
 - AI, nhập CSV/dán Excel, dự báo và báo cáo có giao diện chờ/lỗi rõ ràng khi module phụ thuộc còn stub. Không hiển thị nội dung AI hoặc kết quả dự báo giả.
 - Bằng chứng review và hướng dẫn kỹ thuật: `handoffs/FD-01-MVP.md`, `handoffs/FD-01-MVP/screens/`, `handoffs/FD-01-MVP/browser-checks.json`.
+
+### Cập nhật 04/11/2026
+
+Nhánh UI đã cập nhật main `2c48866`. DATA-05/06/07 và mô hình FC-02..06 hiện đã triển khai; kiểm tra bằng trình duyệt xác nhận nhập Excel cập nhật KPI thật. Các ghi chú §9 về analytics/CSV còn stub là trạng thái ngày 02/11. AI/báo cáo vẫn chờ task tương ứng; nowcast rỗng là lỗi DATA-FIX-02 đã được techlead ghi nhận.

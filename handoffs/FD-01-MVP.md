@@ -114,3 +114,15 @@ node handoffs/FD-01-MVP/verify.mjs
 | Thời gian | Role | Task | AI đã làm | Loại | AI sai / đội sửa | File |
 |---|---|---|---|---|---|---|
 | 2026-11-02 | frontend-dashboard + frontend-input | FD-01-MVP | Bento responsive sáng/tối, KPI/ECharts, form/bảng/backup, trạng thái phụ thuộc, test và ảnh review | Tạo code + kiểm thử + tự phản biện | Browser tìm ra prerender/hydration và blur làm mất click; đã sửa. Người dùng chưa review. | src/components/dashboard/**; src/components/input/**; docs/06_UI_SPEC.md |
+
+## Cập nhật theo main ngày 2026-11-04
+
+- Đã đọc lại AGENTS.md, CLAUDE.md, TEAM.md, handoff/review và `scripts/pr-guard.mjs` mới trên `origin/main` (`2c48866`). Nhánh frontend rebase thành công, không xung đột; PR guard xác nhận đúng ownership của Trường (frontend-dashboard + frontend-input), không có lỗi chặn.
+- DATA-05/06/07 và FC-02..06/09 đã có trên main. Các ghi chú trước đây nói analytics/CSV/dự báo còn stub là trạng thái của bản bàn giao 02/11, được thay thế bằng kết quả kiểm tra tích hợp dưới đây.
+- `npm run check`: PASS — 33 file, 3.736 test pass + 9 expected-fail đã có trên main (ca lỗi được đội ghi nhận). Không thay đổi module dữ liệu/AI hoặc test của owner khác.
+- `npm run build`: PASS. Chrome production: 16 kiểm tra PASS, không pageerror/hydration mismatch, không tràn ngang ở 375/768/1280/1440px.
+- Đã cập nhật script browser để kiểm tra dán Excel thành công, mapping header, import qua DATA-07 và cập nhật KPI thật qua DATA-06. Nhập 12 đơn rồi import thêm 1 đơn → thẻ đơn hàng cập nhật thành 13.
+- Nowcast tháng/quý còn phụ thuộc DATA-FIX-02/R-07 do Huy phụ trách (đã được techlead ghi ở handoffs/REVIEW-INTEGRATION-2026-11-04.md). Không sửa thay owner.
+- AI và báo cáo text vẫn chờ các task AI/BA tương ứng; AI-08 hiện thuộc Thắng 2 theo TEAM.md mới. Live, bảng ảo hoá và các phần P1/P2 khác vẫn giữ giới hạn đã ghi.
+- Vấn đề CRLF của các test fixture BA-05 đã được main xử lý; không còn yêu cầu sửa riêng trên nhánh UI.
+- Quy trình review mới: mở PR Ready vào main → CI + PR guard + Claude review bot; Thắng review/Approve theo TEAM.md §3.1. Người dùng yêu cầu tự thực hiện push; nhánh và nội dung PR đã chuẩn bị sẵn.

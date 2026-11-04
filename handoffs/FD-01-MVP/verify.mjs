@@ -113,11 +113,17 @@ try {
   await page.getByRole('button', { name: 'Dán từ Excel / Google Sheets', exact: true }).click();
   await page
     .getByLabel('Nội dung bảng', { exact: true })
-    .fill('Ngày\tReach\tClick\tChi phí\tĐơn hàng\n2026-11-01\t1000\t10\t10000\t1');
+    .fill('Ngày\tReach\tClick\tChi phí\tĐơn hàng\n2026-10-31\t1000\t10\t10000\t1');
   await page.getByRole('button', { name: 'Xem trước bảng', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('chưa sẵn sàng');
-  checks.push('Unavailable import dependency handled without crash');
+  await expect(page.getByRole('dialog').locator('tbody tr')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Nhập dữ liệu', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Đã nhận 1 dòng');
+  checks.push('Excel paste preview, header mapping and import use DATA-07');
   await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Bảng dữ liệu', exact: true }).click();
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.getByTestId('kpi-cards').locator('.metric-value').first()).toHaveText('13');
+  checks.push('Imported data updates real KPI snapshot through DATA-06');
   await page.getByRole('button', { name: 'Xem báo cáo', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Sao chép', exact: true })).toBeDisabled();
   checks.push('Unavailable report dependency handled without fabricated report');
