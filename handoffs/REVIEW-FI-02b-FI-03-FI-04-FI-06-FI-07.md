@@ -30,3 +30,27 @@
 - Ảo hoá dùng `@tanstack/react-virtual` đúng stack, có spacer row, `aria-rowcount`, thẻ dọc trên 375px.
 - Luồng lưu trữ an toàn: bắt buộc tải file + tick xác nhận + kiểm revision trước khi xoá, hoàn tác qua `undoLast`.
 - Hoàn tác import có kiểm revision, thông báo lỗi dung lượng rõ ràng, tiếng Việt.
+
+---
+
+# Vòng 2 — sau commit c1b6bbc
+
+**Verdict: APPROVE**
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ không có lỗi chặn (18 file, role frontend-input) |
+| `npm run check` | ✅ lint + typecheck + 59 file test, 3909 pass, 2 expected fail (có sẵn) |
+| `npm run build` | ✅ xanh |
+| R-01 format số khi gõ / Enter | ✅ `EntryFields.test.tsx`: gõ liên tục, chuỗi lỗi (`12,5`, `-3`, `abc`, vượt safe int, `1.2345`) giữ nguyên, Enter/Shift+Enter |
+| R-02 từ chối file không phải CSV, CSV lỗi chống công thức | ✅ tách `importErrorCsv.ts` + test (escape `"`, BOM, CRLF) |
+| R-03 regex mở rộng `\t` `\r` | ✅ có test `\t=1`, `\r=1` |
+| R-04 bộ mẫu `campaign-2y` + cảnh báo dung lượng 70%/90% | ✅ `InputAdvanced.test.tsx` |
+| Ownership, hợp đồng, không `any`/`console.log` | ✅ |
+
+## Lưu ý không chặn (giữ từ vòng 1)
+- Validate/`importBatch` còn chạy trên main thread → import ~200k dòng có thể vượt ngân sách; cần API worker từ data-engineer (techlead chuyển vào `CHANGE_REQUESTS`).
+- FI-03/FI-07 có tiêu chí hiệu năng chưa đo; QA bổ sung số đo ở perf-report.
+
+## Điểm tốt
+- Sửa đúng từng mục R-xx, test bám theo ca biên; logic CSV tách thành hàm thuần dễ test.
