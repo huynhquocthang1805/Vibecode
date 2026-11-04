@@ -681,42 +681,49 @@ export const useDataStore = create<DataState>()(
       } else if (name === 'edge-cases') {
         const mod = await import('@/fixtures/edge-cases.json');
         const raw = mod.default as Array<{
+          id?: string;
           kind: string;
-          input?: {
-            date?: string;
-            campaignId?: string;
-            reach?: number;
-            clicks?: number;
-            cost?: number;
-            orders?: number;
-          };
+          context?: { today?: string };
+          input?: unknown;
+          expect?: { ok?: boolean; value?: Record<string, unknown> };
         }>;
-        const seenDates = new Set<string>();
+        const seenKeys = new Set<string>();
         entries = [];
         for (const item of raw) {
-          if (item.kind === 'validate' && item.input && item.input.date) {
-            const date = item.input.date;
-            const campaignId = item.input.campaignId ?? 'default';
-            const id = `${campaignId}|${date}`;
-            if (!seenDates.has(id)) {
-              seenDates.add(id);
-              entries.push({
-                id,
-                date,
-                campaignId,
-                reach: item.input.reach ?? 0,
-                clicks: item.input.clicks ?? 0,
-                cost: item.input.cost ?? 0,
-                orders: item.input.orders ?? 0,
-                source: 'mock',
-                createdAt: 0,
-                updatedAt: 0,
-              });
-            }
+          if (item.kind !== 'validate' || !item.input) continue;
+
+          // R-01: Chạy qua validateEntry và chỉ giữ bản ghi hợp lệ (ok === true)
+          const today = item.context?.today ?? '2026-10-20';
+          const res = validateEntry(item.input, { today });
+          if (!res.ok || !res.value) continue;
+
+          // Sử dụng value đã được chuẩn hoá từ validation
+          const val = res.value;
+          const id = `${val.campaignId}|${val.date}`;
+          if (!seenKeys.has(id)) {
+            seenKeys.add(id);
+            entries.push({
+              id,
+              date: val.date,
+              campaignId: val.campaignId,
+              reach: val.reach,
+              clicks: val.clicks,
+              cost: val.cost,
+              orders: val.orders,
+              source: 'mock',
+              createdAt: 0,
+              updatedAt: 0,
+            });
           }
         }
-        if (!campaignMap.has('default')) {
-          campaignMap.set('default', DEFAULT_CAMPAIGN);
+        for (const e of entries) {
+          if (!campaignMap.has(e.campaignId)) {
+            campaignMap.set(e.campaignId, {
+              id: e.campaignId,
+              name: e.campaignId === 'default' ? 'Chiến dịch chính' : e.campaignId,
+              createdAt: 0,
+            });
+          }
         }
       }
 

@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import campaign2yFixture from '@/fixtures/campaign-2y.json';
+import demo30dFixture from '@/fixtures/demo-30d.json';
+import edgeCasesFixture from '@/fixtures/edge-cases.json';
+import { validateBatch } from '@/lib/domain/validation';
+
 import { useDataStore } from './store';
 
 describe('DATA-04: Zustand Data Store', () => {
@@ -130,10 +135,38 @@ describe('DATA-04: Zustand Data Store', () => {
     expect(doGiaDung?.name).toBe('Đồ gia dụng');
   });
 
-  it('DATA-04b: loadMock edge-cases loads valid edge cases', async () => {
+  it('DATA-04b: loadMock edge-cases chỉ nạp bản ghi hợp lệ (R-01, R-02)', async () => {
     await useDataStore.getState().loadMock('edge-cases');
     const state = useDataStore.getState();
-    expect(state.entries.length).toBeGreaterThan(0);
-    expect(state.checksum.rows).toBe(state.entries.length);
+
+    // 1. Số entry khớp số mục hợp lệ sau dedupe (4 mục)
+    expect(state.entries.length).toBe(4);
+    expect(state.checksum.rows).toBe(4);
+
+    // 2. Mọi entry thoả clicks <= reach và các chỉ số >= 0
+    for (const e of state.entries) {
+      expect(e.clicks).toBeLessThanOrEqual(e.reach);
+      expect(e.reach).toBeGreaterThanOrEqual(0);
+      expect(e.clicks).toBeGreaterThanOrEqual(0);
+      expect(e.cost).toBeGreaterThanOrEqual(0);
+      expect(e.orders).toBeGreaterThanOrEqual(0);
+    }
+
+    // 3. Không có entry nào từ các ca lỗi (E04, E03...) hay chứa ID lỗi
+    const rawFixture = edgeCasesFixture as Array<{ id?: string; expect?: { ok?: boolean } }>;
+    const invalidIds = new Set(rawFixture.filter((item) => item.expect?.ok === false).map((item) => item.id));
+    for (const e of state.entries) {
+      expect(invalidIds.has(e.id)).toBe(false);
+    }
+  });
+
+  it('DATA-04b: validateBatch vượt qua toàn bộ demo-30d và campaign-2y', () => {
+    const res30d = validateBatch(demo30dFixture, { today: '2026-11-02' });
+    expect(res30d.valid.length).toBe(30);
+    expect(res30d.report.rejected.length).toBe(0);
+
+    const res2y = validateBatch(campaign2yFixture, { today: '2026-11-02' });
+    expect(res2y.valid.length).toBe(2190);
+    expect(res2y.report.rejected.length).toBe(0);
   });
 });
