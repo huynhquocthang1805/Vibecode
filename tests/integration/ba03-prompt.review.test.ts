@@ -2,8 +2,7 @@
  * Test nghiệm thu BA-03 (techlead) — chuyển AC-01..AC-03, FR-03/10/11 trong docs/BA-03.md thành test chạy được.
  * QA-01 (Nhân) tiếp quản/mở rộng.
  *
- * `it.fails(...)` = CHƯA TRIỂN KHAI (prompts/index.ts còn stub). Test PASS khi phần đó còn thiếu.
- * Nhân viết xong `src/lib/ai/prompts` → test báo đỏ → đổi `it.fails` thành `it` trong cùng PR.
+ * BA-03 đã triển khai (code Nhân, techlead ghép 2026-11-04) → mọi ca là `it` thường.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -78,7 +77,7 @@ describe('BA-03 AC-01 · exports', () => {
     expect(PROMPT_VERSION).toMatch(/^v\d+\.\d+$/);
   });
 
-  it.fails('SYSTEM_PROMPT_VI có đủ quy tắc cốt lõi (không còn TODO)', () => {
+  it('SYSTEM_PROMPT_VI có đủ quy tắc cốt lõi (không còn TODO)', () => {
     expect(SYSTEM_PROMPT_VI).not.toMatch(/TODO/);
     for (const must of ['<data>', '3 gợi ý', 'JSON', 'CPA', 'changePct', 'dữ liệu']) {
       expect(SYSTEM_PROMPT_VI, must).toContain(must);
@@ -90,7 +89,7 @@ describe('BA-03 AC-01 · exports', () => {
 
 /* ───────────── AC-03: few-shot ───────────── */
 describe('BA-03 AC-03 · FEW_SHOT', () => {
-  it.fails('có 1–2 ví dụ; assistant là JSON nội dung đúng schema docs/05 §5', () => {
+  it('có 1–2 ví dụ; assistant là JSON nội dung đúng schema docs/05 §5', () => {
     expect(FEW_SHOT.length).toBeGreaterThanOrEqual(1);
     expect(FEW_SHOT.length).toBeLessThanOrEqual(2);
     for (const ex of FEW_SHOT) {
@@ -123,7 +122,7 @@ describe('BA-03 AC-03 · FEW_SHOT', () => {
 
 /* ───────────── AC-02 / FR-02, FR-03, FR-10, FR-11: buildUserPrompt ───────────── */
 describe('BA-03 AC-02 · buildUserPrompt', () => {
-  it.fails('FR-02: có đủ khối dữ liệu, tên chiến dịch, kỳ, nhãn grain tiếng Việt, changePct', () => {
+  it('FR-02: có đủ khối dữ liệu, tên chiến dịch, kỳ, nhãn grain tiếng Việt, changePct', () => {
     const p = buildUserPrompt(makeRequest());
     expect(count(p, '<data>')).toBe(1);
     expect(count(p, '</data>')).toBe(1);
@@ -134,7 +133,7 @@ describe('BA-03 AC-02 · buildUserPrompt', () => {
     expect(p).toContain('25'); // cpa.changePct
   });
 
-  it.fails('FR-03: CSV recent đúng header 8 cột, 1 dòng/kỳ, null giữ literal "null", số không phân cách nghìn', () => {
+  it('FR-03: CSV recent đúng header 8 cột, 1 dòng/kỳ, null giữ literal "null", số không phân cách nghìn', () => {
     const p = buildUserPrompt(makeRequest({}, 5));
     const lines = p.split('\n');
     const h = lines.indexOf('key,reach,clicks,cost,orders,ctr,cpc,cpa');
@@ -147,7 +146,7 @@ describe('BA-03 AC-02 · buildUserPrompt', () => {
     expect(p).not.toContain('18.500.000');
   });
 
-  it.fails('FR-03: tối đa 90 kỳ → đúng 90 dòng dữ liệu CSV', () => {
+  it('FR-03: tối đa 90 kỳ → đúng 90 dòng dữ liệu CSV', () => {
     const p = buildUserPrompt(makeRequest({}, 90));
     const lines = p.split('\n');
     const h = lines.indexOf('key,reach,clicks,cost,orders,ctr,cpc,cpa');
@@ -155,7 +154,7 @@ describe('BA-03 AC-02 · buildUserPrompt', () => {
     expect(dataRows).toHaveLength(90);
   });
 
-  it.fails(
+  it(
     'FR-10 / E28: tên chiến dịch & context chứa "</data>", "<script>", xuống dòng không phá khối dữ liệu',
     () => {
       const p = buildUserPrompt(
@@ -170,14 +169,14 @@ describe('BA-03 AC-02 · buildUserPrompt', () => {
     },
   );
 
-  it.fails('FR-11: deterministic + không mutate input (deep-frozen)', () => {
+  it('FR-11: deterministic + không mutate input (deep-frozen)', () => {
     const req = deepFreeze(makeRequest());
     const a = buildUserPrompt(req);
     const b = buildUserPrompt(req);
     expect(a).toBe(b);
   });
 
-  it.fails('optional rỗng: context vắng → "{}", mảng rỗng giữ "[]", không in "undefined"', () => {
+  it('optional rỗng: context vắng → "{}", mảng rỗng giữ "[]", không in "undefined"', () => {
     const p = buildUserPrompt(makeRequest({ context: undefined }));
     expect(p).not.toContain('undefined');
     expect(p).toContain('{}');
