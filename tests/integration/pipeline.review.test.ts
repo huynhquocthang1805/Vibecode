@@ -43,9 +43,8 @@ describe('pipeline engine · fixture thật', () => {
     expect(small!.forecasts.every((f) => f.confidence === 'low')).toBe(true);
   });
 
-  // R-07: engine dự báo đúng q.horizonDays (30) nhưng nowcast quý cần tới cuối quý (~60 ngày) →
-  // NOWCAST_INCOMPLETE_FORECAST; tháng + quý chung 1 try → mất cả 2; catch rỗng → không ai biết.
-  it.fails('R-07 snapshot có nowcast tháng (2026-11) và quý (2026-Q4)', async () => {
+  // R-07 (DATA-FIX-02): engine dự báo đủ tới cuối quý -> snapshot có cả nowcast tháng và quý
+  it('R-07 snapshot có nowcast tháng (2026-11) và quý (2026-Q4)', async () => {
     const [s] = await snapshots(campaign2y);
     expect(s!.nowcasts.map((n) => n.periodKey)).toEqual(['2026-11', '2026-Q4']);
     for (const n of s!.nowcasts) expect(n.projected.orders.mean).toBeGreaterThanOrEqual(n.actualToDate.orders);
