@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AnalyticsSnapshot, InsightResponse } from '@/types/domain';
 
-import { useInsights } from './useInsights';
+import { _resetInflightState, useInsights } from './useInsights';
 
 function makeMockSnapshot(): AnalyticsSnapshot {
   return {
@@ -52,11 +52,13 @@ const mockAiResponse: InsightResponse = {
 describe('AI-06 Hook useInsights', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    _resetInflightState();
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
     window.localStorage.clear();
+    _resetInflightState();
   });
 
   it('trả về status idle khi snapshot là null', () => {
@@ -132,5 +134,84 @@ describe('AI-06 Hook useInsights', () => {
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('R-02 (E26): không gọi fetch và giữ status idle khi sufficient = false', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const snap = makeMockSnapshot();
+    snap.trend!.dataQuality.sufficient = false;
+
+    const { result } = renderHook(() => useInsights(snap));
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('idle');
+    expect(result.current.data).toBeNull();
+  });
+
+  it('R-02: refresh() không gọi fetch khi sufficient = false', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const snap = makeMockSnapshot();
+    snap.trend!.dataQuality.sufficient = false;
+
+    const { result } = renderHook(() => useInsights(snap));
+    act(() => {
+      result.current.refresh();
+    });
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('R-03: gộp request trùng khi 2 hook gọi useInsights cùng lúc', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              ok: true,
+              json: async () => mockAiResponse,
+            } as Response);
+          }, 30);
+        }),
+    );
+
+    const snap = makeMockSnapshot();
+    const { result: hook1 } = renderHook(() => useInsights(snap));
+    const { result: hook2 } = renderHook(() => useInsights(snap));
+
+    await waitFor(() => {
+      expect(hook1.current.status).toBe('success');
+      expect(hook2.current.status).toBe('success');
+    });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(hook1.current.data?.headline).toBe('Chiến dịch tăng trưởng tốt.');
+    expect(hook2.current.data?.headline).toBe('Chiến dịch tăng trưởng tốt.');
+  });
+
+  it('R-04: caller re-render nhiều lần tạo object mới cùng cacheKey và revision không gọi lại fetch', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => mockAiResponse,
+    } as Response);
+
+    const baseSnap = makeMockSnapshot();
+    const { rerender } = renderHook(({ s }) => useInsights(s), {
+      initialProps: { s: baseSnap },
+    });
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    // Re-render 10 lần với object mới nhưng cùng nội dung/revision
+    for (let i = 0; i < 10; i++) {
+      const clonedSnap = structuredClone(baseSnap);
+      rerender({ s: clonedSnap });
+    }
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 });

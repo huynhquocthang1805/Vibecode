@@ -75,7 +75,6 @@ test('F4: AI nhận xét có đúng 3 gợi ý (provider stub ở E2E, fallback 
 });
 
 test('F4 · E26: trang chưa có dữ liệu không được gọi /api/insights', async ({ page }) => {
-  test.fail(true, 'R-02 (AI-FIX-01): useInsights tự gọi khi trang trống → 400 BAD_REQUEST');
   const calls: number[] = [];
   page.on('request', (r) => {
     if (r.url().includes('/api/insights')) calls.push(Date.now());
