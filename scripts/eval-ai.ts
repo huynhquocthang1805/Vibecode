@@ -6,11 +6,12 @@ import { resolve } from 'node:path';
 
 import { fallbackInsight } from '../src/lib/ai/fallback';
 import { enforceGuardrails } from '../src/lib/ai/guardrails';
-import { buildUserPrompt, PROMPT_VERSION, SYSTEM_PROMPT_VI } from '../src/lib/ai/prompts';
+import { buildUserPrompt, PROMPT_VERSION } from '../src/lib/ai/prompts';
 import { GeminiProvider } from '../src/lib/ai/provider/gemini';
 import { OpenAiProvider } from '../src/lib/ai/provider/openai';
 import type { LlmProvider } from '../src/lib/ai/provider/types';
 import { INSIGHT_JSON_SCHEMA, insightRequestSchema, rawInsightOutputSchema } from '../src/lib/ai/schemas';
+import { AI_TEMPERATURE, buildSystemPrompt, modelLabel } from '../src/lib/ai/systemPrompt';
 import type { RawInsightOutput } from '../src/lib/ai/schemas';
 import {
   calculatePercentile,
@@ -473,7 +474,8 @@ async function runEvaluation(): Promise<void> {
     providerName = 'eval-mock';
   }
 
-  const systemPrompt = SYSTEM_PROMPT_VI;
+  // TL-06c: đúng system prompt production gửi (kèm few-shot) — trước đây thiếu few-shot
+  const systemPrompt = buildSystemPrompt();
   const runsCount = 1; // Mặc định N = 8 ca × 1 lượt = 8 mẫu theo docs/BA-06 §9.2
   const results: EvalRunResult[] = [];
 
@@ -500,7 +502,7 @@ async function runEvaluation(): Promise<void> {
       try {
         rawOutput = await provider.generateJson(systemPrompt, userPrompt, INSIGHT_JSON_SCHEMA, {
           timeoutMs: 15_000,
-          temperature: 0.2,
+          temperature: AI_TEMPERATURE, // = production (trước 0.2)
         });
 
         // Kiểm tra schema raw
@@ -542,7 +544,7 @@ async function runEvaluation(): Promise<void> {
       let warnings: string[] = [];
 
       const guardrailResult = enforceGuardrails(rawOutput, fixture.request, {
-        modelName: `${providerName}@${PROMPT_VERSION}`,
+        modelName: providerName === 'eval-mock' ? `eval-mock@${PROMPT_VERSION}` : modelLabel(provider),
       });
 
       if (guardrailResult.ok) {

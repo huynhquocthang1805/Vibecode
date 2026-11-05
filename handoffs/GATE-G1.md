@@ -41,3 +41,23 @@ FD-02 R-01 (giá trị ↔ delta) · FD-10 bundle 297 KB > 250 KB · BA-02 (bann
 | 7 | Link Vercel | ✅ | ✅ | https://vibecode-three-xi.vercel.app/ |
 
 Ký G1 khi: AI-08 merge → bỏ `test.fail` F5 → Thắng thử trên điện thoại (Gemini thật, copy dán Zalo).
+
+---
+
+# Gate G1 — lần chấm 3 · techlead · 2026-11-05
+
+**Kết luận: ĐẠT 7/7 phần tự động** — chờ 1 bước tay của Thắng rồi ký.
+
+| # | Tiêu chí | Lần 3 | Bằng chứng |
+|---|---|---|---|
+| 1 | Nhập + validation + reload | ✅ | E2E F1+F3, F1 validation |
+| 2 | Biểu đồ | ✅ | E2E F2 |
+| 3 | CTR/CPC/CPA đúng | ✅ | E2E KPI 2,19% · 5.441 ₫ · 132.143 ₫ |
+| 4 | AI 3 gợi ý + fallback | ✅ code · ⏳ thử thật | E2E F4 (stub) + E26; prompt BA-03 + few-shot (TL-06b/06c) |
+| 5 | Copy báo cáo | ✅ | **AI-08 (#28)** — E2E F5 chạy thật, đã gỡ `test.fail` (TL-06c) |
+| 6 | CI xanh | ✅ | 4.050+ test · E2E 20/20, 0 `test.fail` |
+| 7 | Link Vercel | ✅ | https://vibecode-three-xi.vercel.app/ |
+
+**Bước còn lại (Thắng, ~3 phút):** đặt `AI_PROVIDER/AI_API_KEY/AI_MODEL` trên Vercel → Redeploy → trên điện thoại: nhập 3 ngày → thẻ AI có nhãn **AI** `gemini-flash-latest@v1.2` → Xuất báo cáo → Sao chép → dán Zalo. Đạt → ghi "G1 ĐẠT" + ngày vào đây, TL-06 → `[x]`.
+
+Phát hiện khi chấm: PR #28 merge khi job **e2e đỏ** (F5 "expected to fail but passed") vì branch protection chỉ bắt buộc `lint · typecheck · test · build` + `PR guard` → đề nghị thêm `e2e (Playwright · desktop + iPhone 12)` vào required checks.

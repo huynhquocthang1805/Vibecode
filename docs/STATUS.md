@@ -1,6 +1,9 @@
-# STATUS — 2026-11-05
+# STATUS — 2026-11-05 (cập nhật chiều)
 
-Owner: pm-release (Thắng + Claude). Mục tiêu: **Gate G1 — 5 tính năng P0 chạy xuyên suốt** → còn đúng **1 việc: AI-08**.
+> **Mới:** AI-08 merge (#28) → G1 lần 3 **đạt 7/7 phần tự động**, chờ Thắng thử Gemini thật trên điện thoại. TL-06c gỡ `test.fail` F5 + eval dùng đúng prompt production. AI-10 chỉ còn thiếu key.
+
+
+Owner: pm-release (Thắng + Claude). Mục tiêu: **Gate G1 — 5 tính năng P0 chạy xuyên suốt** → AI-08 đã xong; còn **bước thử tay của Thắng** (Gemini thật trên điện thoại).
 
 ## Sức khoẻ `main` (8845ec2 + TL-06b)
 | Kiểm tra | Kết quả |

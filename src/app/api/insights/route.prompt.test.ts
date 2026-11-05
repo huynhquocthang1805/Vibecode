@@ -12,6 +12,7 @@ let output: unknown = null;
 vi.mock('@/lib/ai/provider', () => ({
   getProvider: () => ({
     name: 'gemini',
+    model: 'gemini-flash-latest',
     generateJson: async (system: string, user: string) => {
       calls.push({ system, user });
       return output;
@@ -20,6 +21,7 @@ vi.mock('@/lib/ai/provider', () => ({
 }));
 
 import { FEW_SHOT, PROMPT_VERSION, SYSTEM_PROMPT_VI } from '@/lib/ai/prompts';
+import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { GeminiProvider } from '@/lib/ai/provider/gemini';
 import type { InsightRequest, MetricTrend } from '@/types/domain';
 
@@ -67,6 +69,7 @@ describe('TL-06b · /api/insights gửi prompt BA-03 cho provider', () => {
     expect(calls).toHaveLength(1);
     const { system } = calls[0]!;
     expect(system.startsWith(SYSTEM_PROMPT_VI)).toBe(true);
+    expect(system).toBe(buildSystemPrompt()); // TL-06c: cùng nguồn với eval-ai
     expect(system).toContain('VÍ DỤ 1');
     expect(system).toContain(FEW_SHOT[0]!.assistant);
     expect(system).not.toMatch(/TODO/);
@@ -79,7 +82,7 @@ describe('TL-06b · /api/insights gửi prompt BA-03 cho provider', () => {
     expect(user).not.toContain('<script>');
   });
 
-  it('response.model = AI_MODEL@PROMPT_VERSION (không còn "@v1.0" viết cứng)', async () => {
+  it('response.model = <model provider đang gọi>@PROMPT_VERSION (không còn "@v1.0" viết cứng)', async () => {
     const res = await post(makeRequest('Chiến dịch C'), '10.0.0.3');
     expect(res.status).toBe(200);
     const data = (await res.json()) as { model: string; suggestions: unknown[] };
