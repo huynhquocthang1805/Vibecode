@@ -1,8 +1,13 @@
 # Báo cáo đánh giá mô hình AI (AI Evaluation Report)
 
-- **Mã đợt đánh giá (Run ID):** `eval-mw306226`
-- **Thời gian thực hiện:** `2026-11-05T03:45:25.998Z`
-- **Git Commit:** `813b21b`
+> [!WARNING]
+> **CẢNH BÁO — CHẠY OFFLINE VỚI MOCK (CHƯA CÓ AI_API_KEY):**
+> Đợt đánh giá được thực hiện ở chế độ OFFLINE VỚI MOCK nhằm kiểm chứng **tính toàn vẹn của đường ống (pipeline integrity)**, tính hợp lệ của 8 kịch bản và cơ chế kiểm soát đầu ra Guardrails/Fallback.
+> Kết quả dưới đây **KHÔNG** đại diện cho chất lượng mô hình LLM thật. Cột "Đánh giá" ghi nhận `n/a (mock)`. Để đánh giá LLM thật, hãy cấu hình `AI_API_KEY` và chạy lại `npm run eval:ai`.
+
+- **Mã đợt đánh giá (Run ID):** `eval-mw30gw7q`
+- **Thời gian thực hiện:** `2026-11-05T03:53:51.638Z`
+- **Git Commit:** `4b0545e`
 - **Bộ hợp đồng:** `CONTRACTS v1.0 + CR-004`
 - **Phiên bản Prompt:** `v1.2`
 - **Nhà cung cấp / Mô hình:** `eval-mock` (nhiệt độ: 0.2, timeout: 15.000ms)
@@ -14,15 +19,15 @@
 
 | Chỉ tiêu đo lường | Định nghĩa | Kết quả đạt được | Mục tiêu chuẩn | Đánh giá |
 |---|---|:---:|:---:|:---:|
-| **Initial Schema Pass** | % phản hồi thô qua schema JSON ngay lần đầu | **100.0%** | ≥ 90.0% | ✅ ĐẠT |
-| **Raw Overall Accuracy** | % hướng `overall` từ LLM khớp kỳ vọng oracle | **100.0%** | ≥ 90.0% | ✅ ĐẠT |
-| **Raw Banned-Phrase Gate** | % lượt không vi phạm cụm cấm nói chung chung | **100.0%** | 100.0% | ✅ ĐẠT |
+| **Initial Schema Pass** | % phản hồi thô qua schema JSON ngay lần đầu | **100.0%** | ≥ 90.0% | n/a (mock) |
+| **Raw Overall Accuracy** | % hướng `overall` từ LLM khớp kỳ vọng oracle | **100.0%** | ≥ 90.0% | n/a (mock) |
+| **Raw Banned-Phrase Gate** | % lượt không vi phạm cụm cấm nói chung chung | **100.0%** | 100.0% | n/a (mock) |
 | **Repair Rate** | % lượt cần gửi prompt sửa lỗi schema (retry) | **0.0%** | Thống kê | ℹ️ THÔNG TIN |
 | **Corrected Rate** | % phản hồi được guardrail hiệu chỉnh số/hướng | **25.0%** | Thống kê | ℹ️ THÔNG TIN |
-| **Đúng 3 gợi ý (Final)** | % phản hồi cuối cùng có đúng 3 gợi ý hành động | **100.0%** | **100.0%** | ✅ ĐẠT |
-| **mustMention Coverage** | % phản hồi nhắc đủ các chỉ số nghiệp vụ trọng tâm | **100.0%** | 100.0% | ✅ ĐẠT |
-| **Độ trễ p50** | Thời gian phản hồi trung vị | **642 ms** | ≤ 5.000 ms | ✅ ĐẠT |
-| **Độ trễ p95** | Thời gian phản hồi phân vị 95 | **816 ms** | ≤ 15.000 ms | ✅ ĐẠT |
+| **Đúng 3 gợi ý (Final)** | % phản hồi cuối cùng có đúng 3 gợi ý hành động | **100.0%** | **100.0%** | n/a (mock) |
+| **mustMention Coverage** | % phản hồi nhắc đủ các chỉ số nghiệp vụ trọng tâm | **100.0%** | 100.0% | n/a (mock) |
+| **Độ trễ p50** | Thời gian phản hồi trung vị | **513 ms** | ≤ 5.000 ms | n/a (mock) |
+| **Độ trễ p95** | Thời gian phản hồi phân vị 95 | **765 ms** | ≤ 15.000 ms | n/a (mock) |
 
 ---
 
@@ -30,14 +35,14 @@
 
 | ID | Kịch bản kiểm thử | Hash SHA-256 | Overall Raw / Expect | mustMention | Cụm cấm | Corrected | Gợi ý Final | Độ trễ | Kết quả |
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **01-growth** | 01-growth | `3742d82c9742` | `up` / `up` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 448ms | ✅ PASS |
-| **02-cpa-spike** | 02-cpa-spike | `db3fd79c48cd` | `down` / `down` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 792ms | ✅ PASS |
-| **03-ctr-fatigue** | 03-ctr-fatigue | `e64aae61e624` | `flat` / `flat` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 816ms | ✅ PASS |
-| **04-three-days** | 04-three-days | `fda78ff8d4a4` | `flat` / `flat` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 435ms | ✅ PASS |
-| **05-zero-cost** | 05-zero-cost | `69550fa527c1` | `down` / `down` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 734ms | ✅ PASS |
-| **06-volatile** | 06-volatile | `2befaffd7462` | `volatile` / `volatile` | ✅ Đủ | ✅ Sạch | Có | 3/3 | 797ms | ✅ PASS |
-| **07-injection** | 07-injection | `2860fab51f9a` | `up` / `up` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 472ms | ✅ PASS |
-| **08-two-years** | 08-two-years | `9c4f8d822723` | `down` / `down` | ✅ Đủ | ✅ Sạch | Có | 3/3 | 642ms | ✅ PASS |
+| **01-growth** | 01-growth | `3742d82c9742` | `up` / `up` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 511ms | ℹ️ MOCK PASS |
+| **02-cpa-spike** | 02-cpa-spike | `db3fd79c48cd` | `down` / `down` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 528ms | ℹ️ MOCK PASS |
+| **03-ctr-fatigue** | 03-ctr-fatigue | `e64aae61e624` | `flat` / `flat` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 517ms | ℹ️ MOCK PASS |
+| **04-three-days** | 04-three-days | `fda78ff8d4a4` | `flat` / `flat` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 457ms | ℹ️ MOCK PASS |
+| **05-zero-cost** | 05-zero-cost | `69550fa527c1` | `down` / `down` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 483ms | ℹ️ MOCK PASS |
+| **06-volatile** | 06-volatile | `2befaffd7462` | `volatile` / `volatile` | ✅ Đủ | ✅ Sạch | Có | 3/3 | 628ms | ℹ️ MOCK PASS |
+| **07-injection** | 07-injection | `2860fab51f9a` | `up` / `up` | ✅ Đủ | ✅ Sạch | Không | 3/3 | 513ms | ℹ️ MOCK PASS |
+| **08-two-years** | 08-two-years | `9c4f8d822723` | `down` / `down` | ✅ Đủ | ✅ Sạch | Có | 3/3 | 765ms | ℹ️ MOCK PASS |
 
 ---
 
@@ -114,7 +119,7 @@ Hai trường hợp điển hình dưới đây thể hiện hiệu quả của 
 {
   "source": "ai",
   "model": "eval-mock@v1.2",
-  "generatedAt": 1793850321261,
+  "generatedAt": 1793850827698,
   "overall": "up",
   "headline": "Chiến dịch tăng trưởng rất tích cực với lượng đơn hàng tăng 25% trong ngày cuối và CPA giảm 20%.",
   "metricComments": [
@@ -248,7 +253,7 @@ Hai trường hợp điển hình dưới đây thể hiện hiệu quả của 
 {
   "source": "ai",
   "model": "eval-mock@v1.2",
-  "generatedAt": 1793850325308,
+  "generatedAt": 1793850830824,
   "overall": "up",
   "headline": "Chiến dịch tăng trưởng rất tích cực với lượng đơn hàng tăng 25% trong ngày cuối và CPA giảm 20%.",
   "metricComments": [
@@ -318,4 +323,4 @@ Hai trường hợp điển hình dưới đây thể hiện hiệu quả của 
 ## 4. Kết luận nghiệm thu task AI-09
 
 - Pipeline đánh giá AI hoạt động tự động hóa hoàn toàn qua câu lệnh `npm run eval:ai`.
-- Tất cả 8 kịch bản kiểm thử trong `src/fixtures/ai-eval/` đều đạt 100% về chuẩn Zod schema, đảm bảo đúng 3 gợi ý thực thi và duy trì độ trễ ổn định.
+- Đợt chạy mock đã kiểm chứng tính toàn vẹn của đường ống (pipeline integrity): toàn bộ 8 kịch bản trong `src/fixtures/ai-eval/` đều hợp lệ 100% với Zod schema, đảm bảo đúng 3 gợi ý thực thi và cơ chế Guardrails hoạt động chính xác.

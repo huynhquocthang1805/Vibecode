@@ -12,22 +12,19 @@ import { OpenAiProvider } from '../src/lib/ai/provider/openai';
 import type { LlmProvider } from '../src/lib/ai/provider/types';
 import { INSIGHT_JSON_SCHEMA, insightRequestSchema, rawInsightOutputSchema } from '../src/lib/ai/schemas';
 import type { RawInsightOutput } from '../src/lib/ai/schemas';
+import {
+  calculatePercentile,
+  checkBannedPhrases,
+  checkMustMention,
+} from '../src/lib/ai/evalMetrics';
+import type { AiEvalFixture } from '../src/lib/ai/evalMetrics';
 import type {
-  InsightRequest,
   InsightResponse,
   Metric,
   TrendDirection,
 } from '../src/types/domain';
 
-export interface AiEvalFixture {
-  name: string;
-  request: InsightRequest;
-  expect: {
-    overall: TrendDirection;
-    mustMention: Metric[];
-    forbidden: string[];
-  };
-}
+export type { AiEvalFixture };
 
 interface EvalRunResult {
   fixtureName: string;
@@ -51,50 +48,6 @@ interface EvalRunResult {
   finalResponse: InsightResponse | null;
 }
 
-function removeVietnameseDiacritics(str: string): string {
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D');
-}
-
-function checkBannedPhrases(
-  suggestions: Array<{ title?: string; action?: string }>,
-  bannedList: string[],
-): { violated: boolean; details: string[] } {
-  const normBanned = bannedList.map((p) => removeVietnameseDiacritics(p.toLowerCase()));
-  const details: string[] = [];
-
-  for (const s of suggestions) {
-    const title = s.title ?? '';
-    const action = s.action ?? '';
-    const combined = removeVietnameseDiacritics(`${title} ${action}`.toLowerCase());
-
-    for (const b of normBanned) {
-      if (combined.includes(b)) {
-        // Theo BR-08: xem xét nếu action < 40 ký tự hoặc không có số hay tên chỉ số nào
-        const hasNumber = /\d+/.test(action);
-        const hasMetric = /(reach|clicks|cost|orders|ctr|cpc|cpa|cvr|chi phi|luot nhap|don hang|chuyen doi)/i.test(
-          action,
-        );
-        if (action.length < 40 || (!hasNumber && !hasMetric)) {
-          details.push(`Gợi ý "${title}" chứa cụm "${b}" mà không có số liệu/chỉ số cụ thể.`);
-        }
-      }
-    }
-  }
-
-  return { violated: details.length > 0, details };
-}
-
-function calculatePercentile(values: number[], p: number): number {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.ceil((p / 100) * sorted.length) - 1;
-  return sorted[Math.max(0, Math.min(index, sorted.length - 1))] ?? 0;
-}
-
 /**
  * Provider mô phỏng chuẩn mực cho eval khi không có API key trực tiếp.
  * Phản ánh chính xác output chất lượng cao của mô hình theo từng tình huống EV-01..08.
@@ -108,8 +61,15 @@ class EvalMockProvider implements LlmProvider {
     _schema: object,
     _opts: { timeoutMs: number; temperature: number },
   ): Promise<RawInsightOutput> {
-    // Mô phỏng độ trễ thực tế 400 - 900ms
-    const latency = 400 + Math.floor(Math.random() * 450);
+    // Độ trễ cố định theo kịch bản (deterministic, không dùng Math.random - R-03)
+    let latency = 500;
+    if (user.includes('Đúng 3 ngày') || user.includes('c-3days')) latency = 450;
+    else if (user.includes('CPA tăng vọt') || user.includes('c-cpa-spike')) latency = 520;
+    else if (user.includes('creative fatigue') || user.includes('c-ctr-fatigue')) latency = 510;
+    else if (user.includes('Chi phí 0') || user.includes('c-zero-cost')) latency = 470;
+    else if (user.includes('Biến động mạnh') || user.includes('c-volatile')) latency = 620;
+    else if (user.includes('Thời trang 2 năm') || user.includes('2024-11-02')) latency = 750;
+
     await new Promise((r) => setTimeout(r, latency));
 
     if (user.includes('Đúng 3 ngày') || user.includes('c-3days')) {
@@ -603,9 +563,9 @@ async function runEvaluation(): Promise<void> {
       const exactly3Suggestions = finalResponse !== null && finalResponse.suggestions.length === 3;
 
       // Kiểm tra mustMention (BR-06: metricComments phải có ít nhất 1 mục cho từng Metric bắt buộc)
-      const mentionedMetrics = new Set(finalResponse?.metricComments.map((m) => m.metric) ?? []);
-      const missingMetrics = fixture.expect.mustMention.filter((m) => !mentionedMetrics.has(m));
-      const mustMentionPassed = missingMetrics.length === 0;
+      const mentionCheck = checkMustMention(finalResponse?.metricComments ?? [], fixture.expect.mustMention);
+      const mustMentionPassed = mentionCheck.passed;
+      const missingMetrics = mentionCheck.missing;
 
       results.push({
         fixtureName: fixture.name,
@@ -661,10 +621,20 @@ async function runEvaluation(): Promise<void> {
   const timestamp = new Date().toISOString();
   const runId = `eval-${Date.now().toString(36)}`;
 
+  const isMock = providerName === 'eval-mock';
+  const evalStatus = (targetMet: boolean) => (isMock ? 'n/a (mock)' : targetMet ? '✅ ĐẠT' : '❌ CHƯA ĐẠT');
+
+  const warningBanner = isMock
+    ? `> [!WARNING]\n` +
+      `> **CẢNH BÁO — CHẠY OFFLINE VỚI MOCK (CHƯA CÓ AI_API_KEY):**\n` +
+      `> Đợt đánh giá được thực hiện ở chế độ OFFLINE VỚI MOCK nhằm kiểm chứng **tính toàn vẹn của đường ống (pipeline integrity)**, tính hợp lệ của 8 kịch bản và cơ chế kiểm soát đầu ra Guardrails/Fallback.\n` +
+      `> Kết quả dưới đây **KHÔNG** đại diện cho chất lượng mô hình LLM thật. Cột "Đánh giá" ghi nhận \`n/a (mock)\`. Để đánh giá LLM thật, hãy cấu hình \`AI_API_KEY\` và chạy lại \`npm run eval:ai\`.\n\n`
+    : '';
+
   // Tạo báo cáo Markdown docs/ai-eval-report.md
   const reportMarkdown = `# Báo cáo đánh giá mô hình AI (AI Evaluation Report)
 
-- **Mã đợt đánh giá (Run ID):** \`${runId}\`
+${warningBanner}- **Mã đợt đánh giá (Run ID):** \`${runId}\`
 - **Thời gian thực hiện:** \`${timestamp}\`
 - **Git Commit:** \`${gitCommit}\`
 - **Bộ hợp đồng:** \`CONTRACTS v1.0 + CR-004\`
@@ -678,25 +648,25 @@ async function runEvaluation(): Promise<void> {
 
 | Chỉ tiêu đo lường | Định nghĩa | Kết quả đạt được | Mục tiêu chuẩn | Đánh giá |
 |---|---|:---:|:---:|:---:|
-| **Initial Schema Pass** | % phản hồi thô qua schema JSON ngay lần đầu | **${initialSchemaPassRate.toFixed(1)}%** | ≥ 90.0% | ${
-    initialSchemaPassRate >= 90 ? '✅ ĐẠT' : '❌ CHƯA ĐẠT'
-  } |
-| **Raw Overall Accuracy** | % hướng \`overall\` từ LLM khớp kỳ vọng oracle | **${rawOverallAccuracy.toFixed(1)}%** | ≥ 90.0% | ${
-    rawOverallAccuracy >= 90 ? '✅ ĐẠT' : '❌ CHƯA ĐẠT'
-  } |
-| **Raw Banned-Phrase Gate** | % lượt không vi phạm cụm cấm nói chung chung | **${rawBannedPassRate.toFixed(1)}%** | 100.0% | ${
-    rawBannedPassRate >= 100 ? '✅ ĐẠT' : '❌ CHƯA ĐẠT'
-  } |
+| **Initial Schema Pass** | % phản hồi thô qua schema JSON ngay lần đầu | **${initialSchemaPassRate.toFixed(1)}%** | ≥ 90.0% | ${evalStatus(
+    initialSchemaPassRate >= 90,
+  )} |
+| **Raw Overall Accuracy** | % hướng \`overall\` từ LLM khớp kỳ vọng oracle | **${rawOverallAccuracy.toFixed(1)}%** | ≥ 90.0% | ${evalStatus(
+    rawOverallAccuracy >= 90,
+  )} |
+| **Raw Banned-Phrase Gate** | % lượt không vi phạm cụm cấm nói chung chung | **${rawBannedPassRate.toFixed(1)}%** | 100.0% | ${evalStatus(
+    rawBannedPassRate >= 100,
+  )} |
 | **Repair Rate** | % lượt cần gửi prompt sửa lỗi schema (retry) | **${repairRate.toFixed(1)}%** | Thống kê | ℹ️ THÔNG TIN |
 | **Corrected Rate** | % phản hồi được guardrail hiệu chỉnh số/hướng | **${correctedRate.toFixed(1)}%** | Thống kê | ℹ️ THÔNG TIN |
-| **Đúng 3 gợi ý (Final)** | % phản hồi cuối cùng có đúng 3 gợi ý hành động | **${exactly3Rate.toFixed(1)}%** | **100.0%** | ${
-    exactly3Rate === 100 ? '✅ ĐẠT' : '❌ CHƯA ĐẠT'
-  } |
-| **mustMention Coverage** | % phản hồi nhắc đủ các chỉ số nghiệp vụ trọng tâm | **${mustMentionRate.toFixed(1)}%** | 100.0% | ${
-    mustMentionRate >= 100 ? '✅ ĐẠT' : '❌ CHƯA ĐẠT'
-  } |
-| **Độ trễ p50** | Thời gian phản hồi trung vị | **${p50} ms** | ≤ 5.000 ms | ✅ ĐẠT |
-| **Độ trễ p95** | Thời gian phản hồi phân vị 95 | **${p95} ms** | ≤ 15.000 ms | ✅ ĐẠT |
+| **Đúng 3 gợi ý (Final)** | % phản hồi cuối cùng có đúng 3 gợi ý hành động | **${exactly3Rate.toFixed(1)}%** | **100.0%** | ${evalStatus(
+    exactly3Rate === 100,
+  )} |
+| **mustMention Coverage** | % phản hồi nhắc đủ các chỉ số nghiệp vụ trọng tâm | **${mustMentionRate.toFixed(1)}%** | 100.0% | ${evalStatus(
+    mustMentionRate >= 100,
+  )} |
+| **Độ trễ p50** | Thời gian phản hồi trung vị | **${p50} ms** | ≤ 5.000 ms | ${evalStatus(p50 <= 5000)} |
+| **Độ trễ p95** | Thời gian phản hồi phân vị 95 | **${p95} ms** | ≤ 15.000 ms | ${evalStatus(p95 <= 15000)} |
 
 ---
 
@@ -707,8 +677,9 @@ async function runEvaluation(): Promise<void> {
 ${results
   .map((r) => {
     const hash = fixtureHashes[`${r.fixtureName}.json`] ?? '—';
-    const status =
-      r.rawOverallPassed && r.exactly3Suggestions && r.mustMentionPassed && r.rawBannedPassed
+    const status = isMock
+      ? 'ℹ️ MOCK PASS'
+      : r.rawOverallPassed && r.exactly3Suggestions && r.mustMentionPassed && r.rawBannedPassed
         ? '✅ PASS'
         : '⚠️ GUARDED';
     return `| **${r.fixtureName}** | ${r.fixtureName} | \`${hash}\` | \`${r.rawOverall}\` / \`${
@@ -760,7 +731,11 @@ ${JSON.stringify(results.find((r) => r.fixtureName === '07-injection')?.finalRes
 ## 4. Kết luận nghiệm thu task AI-09
 
 - Pipeline đánh giá AI hoạt động tự động hóa hoàn toàn qua câu lệnh \`npm run eval:ai\`.
-- Tất cả 8 kịch bản kiểm thử trong \`src/fixtures/ai-eval/\` đều đạt 100% về chuẩn Zod schema, đảm bảo đúng 3 gợi ý thực thi và duy trì độ trễ ổn định.
+- ${
+    isMock
+      ? 'Đợt chạy mock đã kiểm chứng tính toàn vẹn của đường ống (pipeline integrity): toàn bộ 8 kịch bản trong `src/fixtures/ai-eval/` đều hợp lệ 100% với Zod schema, đảm bảo đúng 3 gợi ý thực thi và cơ chế Guardrails hoạt động chính xác.'
+      : 'Đợt đánh giá trực tiếp với LLM đã xác nhận mô hình đạt đầy đủ các chỉ số yêu cầu theo `docs/05_AI_SPEC.md §8`.'
+  }
 `;
 
   const reportPath = resolve('docs/ai-eval-report.md');
