@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { fallbackInsight } from '@/lib/ai/fallback';
 import { enforceGuardrails } from '@/lib/ai/guardrails';
-import { buildUserPrompt, SYSTEM_PROMPT_VI } from '@/lib/ai/prompts';
+import { buildUserPrompt, FEW_SHOT, PROMPT_VERSION, SYSTEM_PROMPT_VI } from '@/lib/ai/prompts';
 import { getProvider } from '@/lib/ai/provider';
 import { defaultRateLimiter } from '@/lib/ai/rateLimit';
 import { INSIGHT_JSON_SCHEMA, insightRequestSchema } from '@/lib/ai/schemas';
@@ -13,6 +13,18 @@ const CACHE_MAX_ITEMS = 100;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 giờ
 const TOTAL_BUDGET_MS = 20_000; // 20s theo RISK-04
 const INITIAL_TIMEOUT_MS = 15_000; // 15s cho lần gọi đầu
+
+/**
+ * TL-06b: system prompt + few-shot (docs/05 §4). Provider chỉ nhận 1 system + 1 user, nên ví dụ của BA
+ * đặt cuối system prompt, ghi rõ chỉ minh hoạ định dạng — model không được lấy số của ví dụ.
+ */
+const SYSTEM_PROMPT_WITH_EXAMPLES = [
+  SYSTEM_PROMPT_VI,
+  ...FEW_SHOT.map(
+    (ex, i) =>
+      `VÍ DỤ ${i + 1} — chỉ minh hoạ cách trả lời, KHÔNG dùng số liệu của ví dụ cho chiến dịch thật.\nĐầu vào:\n${ex.user}\nĐầu ra:\n${ex.assistant}`,
+  ),
+].join('\n\n');
 
 /* ───────────────────────── Bộ nhớ tạm & Cache LRU ───────────────────────── */
 
@@ -135,13 +147,10 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // 6. Chuẩn bị prompt & gọi Provider với retry
-  let userPrompt = '';
-  try {
-    userPrompt = buildUserPrompt(req);
-  } catch {
-    userPrompt = `Dữ liệu chiến dịch: ${JSON.stringify(req)}`;
-  }
-  const systemPrompt = SYSTEM_PROMPT_VI || 'Bạn là chuyên gia phân tích hiệu quả quảng cáo.';
+  // buildUserPrompt (BA-03) pure, escape dữ liệu người dùng — không còn đường dự phòng gửi JSON thô
+  // (JSON thô không escape "</data>" → mở lại lỗ prompt injection E28)
+  const userPrompt = buildUserPrompt(req);
+  const systemPrompt = SYSTEM_PROMPT_WITH_EXAMPLES;
 
   let provider;
   try {
@@ -201,7 +210,8 @@ export async function POST(request: Request): Promise<Response> {
 
   // 7. Thực thi Guardrails 7 bước
   const guardrailResult = enforceGuardrails(rawLlmOutput, req, {
-    modelName: `${provider.name}@v1.0`,
+    // docs/05 §5: model = `${AI_MODEL}@${PROMPT_VERSION}` — trước viết cứng "@v1.0"
+    modelName: `${process.env.AI_MODEL || provider.name}@${PROMPT_VERSION}`,
   });
 
   if (!guardrailResult.ok) {
