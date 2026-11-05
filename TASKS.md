@@ -45,7 +45,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [~] (Hoàng Anh · sửa R-02..R-04 ở AI-FIX-01) | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
 | [x] | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
 | [ ] | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
-| [ ] | AI-FIX-01 | `useInsights`: không gọi khi chưa đủ dữ liệu (E26), gộp request trùng, khoá effect theo cacheKey (R-02..R-04 `handoffs/REVIEW-FD-FI-2026-11-04.md`) | ai-engineer | Hoàng Anh | P0 | AI-06 |
+| [x] | AI-FIX-01 | `useInsights`: không gọi khi chưa đủ dữ liệu (E26), gộp request trùng, khoá effect theo cacheKey (R-02..R-04 `handoffs/REVIEW-FD-FI-2026-11-04.md`) | ai-engineer | Hoàng Anh | P0 | AI-06 |
 | [x] | FI-01 | EntryForm nhiều dòng + validation inline + dialog trùng ngày | frontend-input | Trường | P0 | DATA-01, DATA-04 |
 | [x] | FI-02 | EntryTable (sửa/xoá/hoàn tác) — bản thường, ảo hoá ở FI-02b | frontend-input | Trường | P0 | DATA-04 |
 | [x] | FI-05 | DataManager: dữ liệu mẫu, backup xuất/nhập, xoá hết | frontend-input | Trường | P0 | DATA-04 |

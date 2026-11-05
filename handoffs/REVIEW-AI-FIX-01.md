@@ -1,4 +1,4 @@
-# REVIEW — AI-FIX-01 · PR #24 — **REQUEST_CHANGES**
+# REVIEW — AI-FIX-01 · PR #24 — **APPROVE** (vòng 2; vòng 1: REQUEST_CHANGES)
 
 ## Vòng 1
 
@@ -34,3 +34,25 @@ Cách sửa: bỏ nhánh `else` (initiator luôn đã đăng ký subscriber tron
 - Giải quyết đúng 3 lỗi R-02..R-04, gỡ `it.fails`/`test.fail` tương ứng, có thêm test mới.
 - Effect khóa theo giá trị nguyên thuỷ, tránh vòng lặp khi snapshot đổi tham chiếu; tuân thủ lint React 19.
 - Handoff rõ ràng, số liệu kiểm thử khớp kết quả chạy thật.
+
+---
+
+## Vòng 2 — **APPROVE**
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ không lỗi chặn; 2 cảnh báo ownership (e2e/integration) như vòng 1 — chấp nhận (chỉ gỡ `test.fail`/`it.fails`) |
+| `npm run check` | ✅ lint + typecheck xanh; Vitest 63 file, 3936 test pass / 0 fail |
+| `npm run build` | ✅ xanh |
+| Hợp đồng `useInsights` (§E) | ✅ chữ ký không đổi |
+| R-05 | ✅ bỏ nhánh `else applyOutcome`; broadcast chỉ tới subscriber còn `active` và `activeKeyRef.current === cacheKey` |
+| Test ca biên R-05 | ✅ 3 test: đổi key (key mới từ cache), đổi key (fetch mới), unmount giữa chừng |
+| Handoff + log AI | ✅ |
+
+### Lưu ý không chặn
+- Khi đổi key và đang tải key mới, `data` của key cũ vẫn hiển thị cùng `status: 'loading'` tới khi có kết quả; cân nhắc `setData(null)` khi đổi key nếu UI cần.
+- Handoff ghi "tiết kiệm 50% quota" chỉ đúng khi 2 nơi cùng cacheKey.
+
+### Điểm tốt
+- Sửa R-05 đúng gốc, không thêm cơ chế phức tạp; test phủ đúng kịch bản race.
+- Số liệu kiểm thử trong handoff khớp kết quả chạy thật.
