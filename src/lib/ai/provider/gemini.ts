@@ -13,7 +13,7 @@ export class GeminiProvider implements LlmProvider {
 
   constructor(opts?: GeminiProviderOptions) {
     this.apiKey = opts?.apiKey ?? process.env.AI_API_KEY ?? '';
-    this.model = opts?.model ?? process.env.AI_MODEL ?? 'gemini-1.5-flash';
+    this.model = opts?.model ?? (process.env.AI_MODEL || 'gemini-flash-latest'); // TL-06b: dòng 1.5 đã bị Google ngừng; khớp .env.example
   }
 
   async generateJson(

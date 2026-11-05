@@ -7,19 +7,14 @@
 import dynamic from 'next/dynamic';
 import { useSyncExternalStore } from 'react';
 
-import { AccountMenu } from '@/components/account/AccountMenu';
 import { AiInsightCard } from '@/components/dashboard/AiInsightCard';
-import { AnomalyFeed } from '@/components/dashboard/AnomalyFeed';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { ExportReportButton } from '@/components/dashboard/ExportReportButton';
-import { ForecastPanel } from '@/components/dashboard/ForecastPanel';
 import { GrainSwitcher } from '@/components/dashboard/GrainSwitcher';
 import { KpiCards } from '@/components/dashboard/KpiCards';
 import { LiveModeToggle } from '@/components/dashboard/LiveModeToggle';
 import { SectionBoundary } from '@/components/dashboard/SectionBoundary';
-import { DataManager } from '@/components/input/DataManager';
 import { EntryForm } from '@/components/input/EntryForm';
-import { EntryTable } from '@/components/input/EntryTable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInsights } from '@/lib/ai/useInsights';
@@ -27,6 +22,30 @@ import { useDataStore } from '@/lib/data/store';
 import { todayVN } from '@/lib/domain/dates';
 import { useAnalytics } from '@/lib/workers/useAnalytics';
 
+// TL-06b: better-auth client + dialog tài khoản (~40 KB gzip) ra khỏi bundle đầu — khách (P0) không cần;
+// menu hiện sau hydrate, giữ chỗ 44 px để không xô layout
+const AccountMenu = dynamic(() => import('@/components/account/AccountMenu').then((m) => m.AccountMenu), {
+  ssr: false,
+  loading: () => <div className="size-11 shrink-0" aria-hidden />,
+});
+// TL-06b: 2 tab không mở mặc định (bảng ảo hoá, quản lý dữ liệu) tải khi người dùng bấm vào tab — bundle đầu < 250 KB
+const EntryTable = dynamic(() => import('@/components/input/EntryTable').then((m) => m.EntryTable), {
+  ssr: false,
+  loading: () => <Skeleton className="h-64 w-full" />,
+});
+const DataManager = dynamic(() => import('@/components/input/DataManager').then((m) => m.DataManager), {
+  ssr: false,
+  loading: () => <Skeleton className="h-40 w-full" />,
+});
+// TL-06b: khu dự báo + cảnh báo (P1/P2) nằm dưới màn hình đầu → tách chunk
+const ForecastPanel = dynamic(() => import('@/components/dashboard/ForecastPanel').then((m) => m.ForecastPanel), {
+  ssr: false,
+  loading: () => <Skeleton className="h-48 w-full" />,
+});
+const AnomalyFeed = dynamic(() => import('@/components/dashboard/AnomalyFeed').then((m) => m.AnomalyFeed), {
+  ssr: false,
+  loading: () => <Skeleton className="h-32 w-full" />,
+});
 // ECharts nặng → tách chunk, chỉ tải ở client
 const TrendChart = dynamic(() => import('@/components/dashboard/TrendChart').then((m) => m.TrendChart), {
   ssr: false,
