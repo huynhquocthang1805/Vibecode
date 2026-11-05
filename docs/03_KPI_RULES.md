@@ -167,6 +167,29 @@ Giữ ý nghĩa E01–E30 để các task đang tham chiếu không bị đổi 
 | BA01-D01–D04 | Ranh giới UTC/VN, cuối tuần ISO, hai phía ranh giới quý | đúng ngày VN, tuần và quý |
 | BA01-P01–P05 | Null, cả hai 0, tăng 25%, giảm 100% | delta null hoặc đúng đơn vị phần trăm |
 
+### 5.2. BA-08 — E31–E50 và dữ liệu lớn
+
+E31–E50 trong `src/fixtures/edge-cases.json` giữ nguyên ý nghĩa docs/13 §10. E31–E33 gọi validation thật; các ca còn lại là `scenario` có `targetTask`, input/expect máy đọc được. Fixture mô tả kỳ vọng, không phải bằng chứng chức năng đã đạt. E40/E42/E44/E48–E50 cần QA-08/FC-10; không tự đánh pass khi mới kiểm JSON.
+
+| Ca | Hành vi | Nơi nghiệm thu |
+|---|---|---|
+| E31–E33 | MIN_DATE, MAX_VALUE, số khoa học | QA-01 / DATA-01 |
+| E34–E39 | BOM/CP1258, `;`, header dòng 4, hàng tổng, gộp trùng | QA-02 / DATA-07 |
+| E40–E41 | Trần 200k dòng và 100 dòng form | QA-08 / QA-04 |
+| E42–E44 | Dữ liệu thưa/cũ, outlier chi phí ×100 | FC-10 / QA-08; E43 QA-01 |
+| E45–E47 | Tên 80 ký tự, trần 100 chiến dịch, đổi khóa trùng | QA-04 / QA-02 |
+| E48–E50 | Nhịp persist, mất partition, checksum chuỗi thao tác | QA-08 |
+
+Generator dùng seed và today cố định để tái lập. `stress-200k` = 200.000 dòng, 100 chiến dịch × 2.000 ngày (~5,5 năm); không mô phỏng Tết. `sparse` chỉ có 62 dòng (tháng 1/2015 và tháng 10/2026), không thêm ngày giả vào khoảng trống. `ads-csv` có ba dòng chú thích, sáu dòng theo nhóm quảng cáo và một hàng tổng: tổng đúng 600.000 ₫/6 đơn; mỗi ngày gộp ba dòng, không cộng thêm hàng tổng.
+
+```bash
+npm run gen:mock -- --dataset stress-200k --today 2026-11-06 --seed 20261106
+npm run gen:mock -- --dataset sparse --today 2026-11-06 --seed 20261106
+npm run gen:mock -- --dataset ads-csv --out test-results/ba08
+```
+
+JSON stress được gitignore; CSV mặc định vào `test-results/ba08` cũng được bỏ qua. Không commit file lớn. CSV ba mã hóa UTF-8 BOM, UTF-16LE BOM và windows-1258 đều dùng `;`; nội dung giải mã so sau chuẩn hóa NFC. Bảng byte CP1258 theo [WHATWG Encoding](https://encoding.spec.whatwg.org/#legacy-single-byte-encodings), ký tự không biểu diễn được phải báo lỗi, không thay bằng dấu hỏi.
+
 ## 6. Định dạng số (vi-VN)
 
 - Số nguyên: `125.400` · Tiền: `18.500.000 ₫` · Rút gọn (báo cáo chat): `18,5tr`, `1,2 tỷ` · %: `2,56%` · Delta: `▲ 12,3%` / `▼ 3,0%` / `— 0,0%`.

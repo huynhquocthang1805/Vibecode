@@ -16,7 +16,7 @@
  * npm.cmd run check
  * Tái lập cần CÙNG seed, today, khoảng ngày, cấu hình và phiên bản script.
  * Mặc định kết thúc hôm qua giờ VN. Metadata = 0 cố định như adapter BA-01.
- * Stress không mô phỏng Tết, không thuộc BA-08; không commit stress-*.json.
+ * Stress không mô phỏng Tết; BA-08 thêm stress-200k, sparse và ads-csv. Không commit dữ liệu stress lớn.
  * Chỉ ghi sau kiểm tra bằng helper thật DATA-01/02; không bỏ qua stub.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -240,6 +240,68 @@ export function demoEvidence(entries: DailyEntry[]) {
   return { early, fatigue, late };
 }
 
+/** BA-08: hai đoạn tách biệt; không gap-fill gần 12 năm thành bản ghi giả. */
+export function generateSparse(options: Pick<GenerateOptions, 'seed' | 'today'> = {}): DailyEntry[] {
+  return ['2015-01-31', '2026-10-31'].flatMap((endDate) =>
+    generate(31, { ...options, endDate, days: 31, campaignCount: 1, profile: 'stress' }),
+  );
+}
+
+export type AdsEncoding = 'utf-8-bom' | 'utf-16le' | 'windows-1258';
+
+/** Fixture Ads Manager: ba dòng chú thích, ba nhóm quảng cáo/ngày, hàng tổng. */
+export function generateAdsCsv(): string {
+  return [
+    'Báo cáo quảng cáo',
+    'Khoảng thời gian: 20/10/2026 - 21/10/2026',
+    'Đơn vị tiền tệ: VND',
+    'Ngày;Tên chiến dịch;Lượt tiếp cận;Lượt click;Chi phí;Đơn hàng',
+    ...['20/10/2026', '21/10/2026'].flatMap((date) =>
+      Array.from({ length: 3 }, () => `${date};Thời trang;1.000;20;100.000;1`),
+    ),
+    'Tổng cộng;;6.000;120;600.000;6',
+    '',
+  ].join('\r\n');
+}
+
+/** Bảng byte dùng TextDecoder theo WHATWG: https://encoding.spec.whatwg.org/#legacy-single-byte-encodings */
+export function encodeAdsCsv(text: string, encoding: AdsEncoding): Uint8Array {
+  if (encoding === 'utf-8-bom') return Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(text, 'utf8')]);
+  if (encoding === 'utf-16le') return Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(text, 'utf16le')]);
+  const decoder = new TextDecoder('windows-1258');
+  const bytes = new Map<string, number>();
+  for (let byte = 0; byte < 256; byte++) {
+    const char = decoder.decode(Uint8Array.of(byte));
+    if (char !== '\ufffd') bytes.set(char, byte);
+  }
+  // CP1258 lưu một số dấu thanh riêng; ghép lại các dấu cấu trúc (ê, ơ, ă) trước.
+  const tones = new Set(['\u0300', '\u0301', '\u0303', '\u0309', '\u0323']);
+  const chars = [...new Intl.Segmenter('vi', { granularity: 'grapheme' }).segment(text)].flatMap(({ segment }) => {
+    const decomposed = Array.from(segment.normalize('NFD'));
+    return [...decomposed.filter((char) => !tones.has(char)), ...decomposed.filter((char) => tones.has(char))];
+  });
+  const out: number[] = [];
+  for (let index = 0; index < chars.length;) {
+    let consumed = 0;
+    for (let width = Math.min(3, chars.length - index); width > 0; width--) {
+      const byte = bytes.get(
+        chars
+          .slice(index, index + width)
+          .join('')
+          .normalize('NFC'),
+      );
+      if (byte !== undefined) {
+        out.push(byte);
+        consumed = width;
+        break;
+      }
+    }
+    if (!consumed) throw new Error(`UNENCODABLE_WINDOWS_1258: ${chars[index]}`);
+    index += consumed;
+  }
+  return Uint8Array.from(out);
+}
+
 export async function main(args: string[]): Promise<void> {
   const { values } = parseArgs({
     args,
@@ -252,17 +314,20 @@ export async function main(args: string[]): Promise<void> {
       rows: { type: 'string' },
       days: { type: 'string' },
       campaigns: { type: 'string' },
+      out: { type: 'string' },
     },
     allowPositionals: false,
     strict: true,
   });
   if (values.help) {
     process.stdout.write(
-      'BA-05: --dataset all|demo-30d|campaign-2y|stress --seed UINT32 --today YYYY-MM-DD --end-date YYYY-MM-DD\nStress only: --rows N --days N --campaigns N. Chạy tại root repo; cần DATA-01/02.\n',
+      'BA-05/08: --dataset all|demo-30d|campaign-2y|stress|stress-200k|sparse|ads-csv --seed UINT32 --today YYYY-MM-DD --end-date YYYY-MM-DD\nStress only: --rows N --days N --campaigns N. --out DIR (CSV mặc định test-results/ba08).\n',
     );
     return;
   }
-  const dataset = z.enum(['all', 'demo-30d', 'campaign-2y', 'stress']).parse(values.dataset);
+  const dataset = z
+    .enum(['all', 'demo-30d', 'campaign-2y', 'stress', 'stress-200k', 'sparse', 'ads-csv'])
+    .parse(values.dataset);
   if (
     dataset !== 'stress' &&
     (values.rows !== undefined || values.days !== undefined || values.campaigns !== undefined)
@@ -275,7 +340,25 @@ export async function main(args: string[]): Promise<void> {
   };
   optionsSchema.parse(options);
   options.today = options.today ?? todayVN();
+  if (dataset === 'ads-csv') {
+    const text = generateAdsCsv();
+    const directory = resolve(values.out ?? 'test-results/ba08');
+    const encodings: AdsEncoding[] = ['utf-8-bom', 'utf-16le', 'windows-1258'];
+    const outputs = encodings.map((encoding) => ({ encoding, bytes: encodeAdsCsv(text, encoding) }));
+    await mkdir(directory, { recursive: true });
+    for (const output of outputs) await writeFile(resolve(directory, `ads-${output.encoding}.csv`), output.bytes);
+    process.stdout.write(
+      `${JSON.stringify(outputs.map(({ encoding, bytes }) => ({ encoding, bytes: bytes.length })))}\n`,
+    );
+    return;
+  }
   const outputs: Array<{ name: string; entries: DailyEntry[] }> = [];
+  if (dataset === 'sparse') outputs.push({ name: 'stress-sparse.json', entries: generateSparse(options) });
+  if (dataset === 'stress-200k')
+    outputs.push({
+      name: 'stress-200000.json',
+      entries: generate(LIMITS.MAX_ROWS_TOTAL, { ...options, profile: 'stress', campaignCount: LIMITS.MAX_CAMPAIGNS }),
+    });
   if (dataset === 'all' || dataset === 'demo-30d') {
     const entries = generate(30, { ...options, profile: 'demo' });
     demoEvidence(entries);
@@ -305,7 +388,7 @@ export async function main(args: string[]): Promise<void> {
     ...(name === 'demo-30d.json' ? { evidence: demoEvidence(entries) } : {}),
   }));
   // Hoàn thành TẤT CẢ kiểm tra trước khi ghi. Lỗi I/O vẫn báo lên caller.
-  const directory = resolve('src/fixtures');
+  const directory = resolve(values.out ?? 'src/fixtures');
   await mkdir(directory, { recursive: true });
   for (const output of outputs)
     await writeFile(resolve(directory, output.name), `${JSON.stringify(output.entries, null, 2)}\n`, 'utf8');

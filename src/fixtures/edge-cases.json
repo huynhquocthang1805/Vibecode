@@ -1,5 +1,510 @@
 [
   {
+    "id": "E31",
+    "description": "Ngày trước MIN_DATE bị chặn",
+    "kind": "validate",
+    "context": {
+      "today": "2026-11-06"
+    },
+    "input": {
+      "date": "2014-12-31",
+      "campaignId": "default",
+      "reach": 1000,
+      "clicks": 20,
+      "cost": 100000,
+      "orders": 1
+    },
+    "expect": {
+      "ok": false,
+      "codes": [
+        "DATE_TOO_OLD"
+      ],
+      "issues": [
+        {
+          "field": "date",
+          "code": "DATE_TOO_OLD",
+          "level": "error"
+        }
+      ]
+    }
+  },
+  {
+    "id": "E32",
+    "description": "Chi phí vượt giới hạn bị chặn",
+    "kind": "validate",
+    "context": {
+      "today": "2026-11-06"
+    },
+    "input": {
+      "date": "2026-10-20",
+      "campaignId": "default",
+      "reach": 1000,
+      "clicks": 20,
+      "cost": 40000000001,
+      "orders": 1
+    },
+    "expect": {
+      "ok": false,
+      "codes": [
+        "TOO_LARGE"
+      ],
+      "issues": [
+        {
+          "field": "cost",
+          "code": "TOO_LARGE",
+          "level": "error"
+        }
+      ]
+    }
+  },
+  {
+    "id": "E33",
+    "description": "Số khoa học nguyên được chuẩn hóa",
+    "kind": "validate",
+    "context": {
+      "today": "2026-11-06"
+    },
+    "input": {
+      "date": "2026-10-20",
+      "campaignId": "default",
+      "reach": "1.2E+06",
+      "clicks": 20,
+      "cost": 100000,
+      "orders": 1
+    },
+    "expect": {
+      "ok": true,
+      "codes": [],
+      "issues": [],
+      "value": {
+        "date": "2026-10-20",
+        "campaignId": "default",
+        "reach": 1200000,
+        "clicks": 20,
+        "cost": 100000,
+        "orders": 1
+      }
+    }
+  },
+  {
+    "id": "E34",
+    "description": "CSV UTF-8 BOM nhận header Ngày",
+    "kind": "scenario",
+    "scenario": "csv-encoding",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "generator": "generateAdsCsv",
+      "encoding": "utf-8-bom"
+    },
+    "expect": {
+      "dateHeader": "Ngày",
+      "encoding": "utf-8",
+      "delimiter": ";"
+    }
+  },
+  {
+    "id": "E35",
+    "description": "CSV windows-1258 giữ đúng header tiếng Việt",
+    "kind": "scenario",
+    "scenario": "csv-encoding",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "generator": "generateAdsCsv",
+      "encoding": "windows-1258"
+    },
+    "expect": {
+      "dateHeader": "Ngày",
+      "encoding": "windows-1258",
+      "delimiter": ";"
+    }
+  },
+  {
+    "id": "E36",
+    "description": "Dấu chấm hàng nghìn và phân cách chấm phẩy",
+    "kind": "scenario",
+    "scenario": "csv-number",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "delimiter": ";",
+      "headers": [
+        "Ngày",
+        "Reach",
+        "Click",
+        "Chi phí",
+        "Đơn hàng"
+      ],
+      "row": [
+        "20/10/2026",
+        "1.000",
+        "20",
+        "1.234.567",
+        "1"
+      ]
+    },
+    "expect": {
+      "cost": 1234567
+    }
+  },
+  {
+    "id": "E37",
+    "description": "Nhận header sau ba dòng chú thích",
+    "kind": "scenario",
+    "scenario": "csv-preamble",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "generator": "generateAdsCsv",
+      "preambleLines": 3
+    },
+    "expect": {
+      "headerLine": 4,
+      "dataRows": 6
+    }
+  },
+  {
+    "id": "E38",
+    "description": "Bỏ hàng tổng để tránh cộng hai lần",
+    "kind": "scenario",
+    "scenario": "csv-summary",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "generator": "generateAdsCsv"
+    },
+    "expect": {
+      "warningCodes": [
+        "SUMMARY_ROW"
+      ],
+      "cost": 600000,
+      "orders": 6
+    }
+  },
+  {
+    "id": "E39",
+    "description": "Ba nhóm quảng cáo cùng ngày gộp thành một",
+    "kind": "scenario",
+    "scenario": "csv-duplicates",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "entries": [
+        {
+          "date": "2026-10-20",
+          "campaignId": "default",
+          "reach": 1000,
+          "clicks": 20,
+          "cost": 100000,
+          "orders": 1
+        },
+        {
+          "date": "2026-10-20",
+          "campaignId": "default",
+          "reach": 1000,
+          "clicks": 20,
+          "cost": 100000,
+          "orders": 1
+        },
+        {
+          "date": "2026-10-20",
+          "campaignId": "default",
+          "reach": 1000,
+          "clicks": 20,
+          "cost": 100000,
+          "orders": 1
+        }
+      ],
+      "policy": "sum"
+    },
+    "expect": {
+      "entryCount": 1,
+      "mergedInFile": 2,
+      "totals": {
+        "reach": 3000,
+        "clicks": 60,
+        "cost": 300000,
+        "orders": 3
+      }
+    }
+  },
+  {
+    "id": "E40",
+    "description": "Vượt sức chứa từ chối nguyên tử",
+    "kind": "scenario",
+    "scenario": "import-capacity",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-08",
+    "input": {
+      "existingRows": 199999,
+      "newUniqueRows": 2
+    },
+    "expect": {
+      "aborted": true,
+      "code": "LIMIT_EXCEEDED",
+      "stateUnchanged": true
+    }
+  },
+  {
+    "id": "E41",
+    "description": "Dán 5000 dòng mở dialog, không phình form",
+    "kind": "scenario",
+    "scenario": "paste-form-limit",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-04",
+    "input": {
+      "rowCount": 5000,
+      "entry": {
+        "date": "2026-10-20",
+        "campaignId": "default",
+        "reach": 1000,
+        "clicks": 20,
+        "cost": 100000,
+        "orders": 1
+      }
+    },
+    "expect": {
+      "pasteDialogOpen": true,
+      "maxDraftRows": 100
+    }
+  },
+  {
+    "id": "E42",
+    "description": "Hai đoạn 2015 và 2026 không dự báo xuyên khoảng trống",
+    "kind": "scenario",
+    "scenario": "sparse-data",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "FC-10/QA-08",
+    "input": {
+      "generator": "generateSparse"
+    },
+    "expect": {
+      "defaultRangeDays": 90,
+      "fitSegmentYear": 2026
+    }
+  },
+  {
+    "id": "E43",
+    "description": "Dữ liệu cũ hơn 30 ngày không có nowcast",
+    "kind": "scenario",
+    "scenario": "stale-forecast",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-01",
+    "input": {
+      "days": 30,
+      "endDate": "2026-10-07"
+    },
+    "expect": {
+      "forecastStatus": "stale",
+      "nowcasts": []
+    }
+  },
+  {
+    "id": "E44",
+    "description": "Ngoại lệ chi phí không kéo lệch dự báo",
+    "kind": "scenario",
+    "scenario": "forecast-outlier",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "FC-10/QA-08",
+    "input": {
+      "days": 90,
+      "metric": "cost",
+      "outlierIndex": 60,
+      "multiplier": 100
+    },
+    "expect": {
+      "maxRelativeForecastChange": 0.2,
+      "anomalyAtOutlier": true
+    }
+  },
+  {
+    "id": "E45",
+    "description": "Tên chiến dịch dài được cắt và cảnh báo",
+    "kind": "scenario",
+    "scenario": "campaign-name-limit",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-04",
+    "input": {
+      "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "expect": {
+      "nameLength": 80,
+      "warningVisible": true
+    }
+  },
+  {
+    "id": "E46",
+    "description": "Chiến dịch thứ 101 bị chặn",
+    "kind": "scenario",
+    "scenario": "campaign-capacity",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "existingCampaigns": 100,
+      "newCampaignName": "Chiến dịch 101"
+    },
+    "expect": {
+      "code": "LIMIT_EXCEEDED",
+      "stateUnchanged": true
+    }
+  },
+  {
+    "id": "E47",
+    "description": "Đổi ngày sang khóa đã có theo duplicate policy",
+    "kind": "scenario",
+    "scenario": "entry-key-conflict",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-02",
+    "input": {
+      "existing": [
+        {
+          "date": "2026-10-20",
+          "campaignId": "default",
+          "reach": 1000,
+          "clicks": 20,
+          "cost": 100000,
+          "orders": 1
+        },
+        {
+          "date": "2026-10-21",
+          "campaignId": "default",
+          "reach": 1000,
+          "clicks": 20,
+          "cost": 100000,
+          "orders": 2
+        }
+      ],
+      "patch": {
+        "date": "2026-10-20"
+      },
+      "policies": [
+        "ask",
+        "skip",
+        "sum",
+        "overwrite"
+      ]
+    },
+    "expect": {
+      "uniqueKeys": true,
+      "askAndSkipUnchanged": true,
+      "sumOrders": 3,
+      "overwriteOrders": 2
+    }
+  },
+  {
+    "id": "E48",
+    "description": "Live x60 không làm đói ghi storage",
+    "kind": "scenario",
+    "scenario": "persist-max-wait",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-08",
+    "input": {
+      "speed": 60,
+      "durationMs": 600000
+    },
+    "expect": {
+      "maxPersistGapMs": 2000
+    }
+  },
+  {
+    "id": "E49",
+    "description": "Mất một partition vẫn nạp các năm còn lại",
+    "kind": "scenario",
+    "scenario": "missing-partition",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-08",
+    "input": {
+      "years": [
+        2024,
+        2025,
+        2026
+      ],
+      "removeYear": 2025
+    },
+    "expect": {
+      "loadedYears": [
+        2024,
+        2026
+      ],
+      "warningYear": 2025
+    }
+  },
+  {
+    "id": "E50",
+    "description": "Chuỗi thao tác ngẫu nhiên giữ checksum nhất quán",
+    "kind": "scenario",
+    "scenario": "rollup-checksum",
+    "context": {
+      "today": "2026-11-06",
+      "seed": 20261106
+    },
+    "targetTask": "QA-08",
+    "input": {
+      "seed": 20261106,
+      "steps": 200,
+      "operations": [
+        "add",
+        "update",
+        "remove",
+        "import",
+        "undo"
+      ]
+    },
+    "expect": {
+      "storeEqualsWorker": true,
+      "workerEqualsRebuild": true
+    }
+  },
+  {
     "id": "E01",
     "description": "Toàn bộ chỉ số bằng 0: lưu được, các KPI không xác định",
     "kind": "validate",
