@@ -6,14 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const calls: Array<{ system: string; user: string }> = [];
+const calls: Array<{ system: string; user: string; opts?: { timeoutMs: number; temperature: number } }> = [];
 let output: unknown = null;
 
 vi.mock('@/lib/ai/provider', () => ({
   getProvider: () => ({
     name: 'gemini',
-    generateJson: async (system: string, user: string) => {
-      calls.push({ system, user });
+    generateJson: async (system: string, user: string, _schema: object, opts: { timeoutMs: number; temperature: number }) => {
+      calls.push({ system, user, opts });
       return output;
     },
   }),
@@ -85,6 +85,29 @@ describe('TL-06b · /api/insights gửi prompt BA-03 cho provider', () => {
     const data = (await res.json()) as { model: string; suggestions: unknown[] };
     expect(data.model).toBe(`gemini-flash-latest@${PROMPT_VERSION}`);
     expect(data.suggestions).toHaveLength(3);
+  });
+});
+
+describe('AI-TIMEOUT-01 · route truyền AI_TIMEOUT_MS / AI_TEMPERATURE cho provider', () => {
+  beforeEach(() => {
+    calls.length = 0;
+    output = JSON.parse(FEW_SHOT[0]!.assistant);
+  });
+  afterEach(() => {
+    delete process.env.AI_TIMEOUT_MS;
+    delete process.env.AI_TEMPERATURE;
+  });
+
+  it('không đặt → 15000 ms, 0.3 (như cũ)', async () => {
+    await post(makeRequest('Chiến dịch D'), '10.0.0.4');
+    expect(calls[0]!.opts).toEqual({ timeoutMs: 15_000, temperature: 0.3 });
+  });
+
+  it('AI_TIMEOUT_MS=30000, AI_TEMPERATURE=0.5 → provider nhận đúng (model Pro chậm)', async () => {
+    process.env.AI_TIMEOUT_MS = '30000';
+    process.env.AI_TEMPERATURE = '0.5';
+    await post(makeRequest('Chiến dịch E'), '10.0.0.5');
+    expect(calls[0]!.opts).toEqual({ timeoutMs: 30_000, temperature: 0.5 });
   });
 });
 

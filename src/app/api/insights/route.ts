@@ -5,14 +5,16 @@ import { enforceGuardrails } from '@/lib/ai/guardrails';
 import { buildUserPrompt, FEW_SHOT, PROMPT_VERSION, SYSTEM_PROMPT_VI } from '@/lib/ai/prompts';
 import { getProvider } from '@/lib/ai/provider';
 import { defaultRateLimiter } from '@/lib/ai/rateLimit';
+import { AI_RETRY_RESERVE_MS, readAiRuntimeConfig } from '@/lib/ai/runtimeConfig';
 import { INSIGHT_JSON_SCHEMA, insightRequestSchema } from '@/lib/ai/schemas';
 import type { InsightError, InsightRequest, InsightResponse } from '@/types/domain';
 
 const MAX_BODY_BYTES = 32 * 1024; // 32KB
 const CACHE_MAX_ITEMS = 100;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 giờ
-const TOTAL_BUDGET_MS = 20_000; // 20s theo RISK-04
-const INITIAL_TIMEOUT_MS = 15_000; // 15s cho lần gọi đầu
+// AI-TIMEOUT-01: thời gian chờ + temperature đọc từ AI_TIMEOUT_MS / AI_TEMPERATURE (mặc định 15 s · tổng 20 s · 0.3)
+// Vercel: cho phép hàm chạy tới 60 s (timeout tối đa 50 s + 5 s thử lại < 60 s)
+export const maxDuration = 60;
 
 /**
  * TL-06b: system prompt + few-shot (docs/05 §4). Provider chỉ nhận 1 system + 1 user, nên ví dụ của BA
@@ -167,19 +169,21 @@ export async function POST(request: Request): Promise<Response> {
   let rawLlmOutput: unknown;
   let callError: unknown;
 
+  const aiConfig = readAiRuntimeConfig();
+
   // Lần gọi 1
   try {
     rawLlmOutput = await provider.generateJson(systemPrompt, userPrompt, INSIGHT_JSON_SCHEMA, {
-      timeoutMs: INITIAL_TIMEOUT_MS,
-      temperature: 0.3,
+      timeoutMs: aiConfig.timeoutMs,
+      temperature: aiConfig.temperature,
     });
   } catch (err) {
     callError = err;
     const elapsed = Date.now() - startTime;
-    const remainingBudget = TOTAL_BUDGET_MS - elapsed;
+    const remainingBudget = aiConfig.totalBudgetMs - elapsed;
 
     // Retry 1 lần nếu còn >= 5s
-    if (remainingBudget >= 5_000) {
+    if (remainingBudget >= AI_RETRY_RESERVE_MS) {
       await new Promise((r) => setTimeout(r, 500));
       try {
         rawLlmOutput = await provider.generateJson(systemPrompt, userPrompt, INSIGHT_JSON_SCHEMA, {
