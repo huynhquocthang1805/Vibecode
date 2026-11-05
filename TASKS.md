@@ -56,7 +56,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] (chạy thật với AI-08 — E2E F5 xanh) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
 | [ ] | QA-01 | Test ca biên + property-based từ contracts | qa-engineer | Nhân | P0 | BA-01, TL-02 |
 | [~] (Thắng+Claude · bot review + review tích hợp) | TL-05 | Review PR liên tục (`/review`) | techlead | Thắng+Claude | P0 | — |
-| [~] (Thắng+Claude · PR mở) | TL-06c | Sau AI-08: gỡ `test.fail` F5 (E2E main đang đỏ); route + eval-ai dùng chung `buildSystemPrompt()`/`modelLabel()` (eval trước thiếu few-shot, temperature 0.2 ≠ 0.3); nhãn model = model thật kể cả mặc định | techlead (làm phần ai-engineer) | Thắng+Claude | P0 | AI-08 |
+| [x] | TL-06c | Sau AI-08: gỡ `test.fail` F5 (E2E main đang đỏ); route + eval-ai dùng chung `buildSystemPrompt()`/`modelLabel()` (eval trước thiếu few-shot, temperature 0.2 ≠ 0.3); nhãn model = model thật kể cả mặc định | techlead (làm phần ai-engineer) | Thắng+Claude | P0 | AI-08 |
 | [x] | TL-06b | Rà soát sau BA-03: AI thật nhận few-shot + nhãn `AI_MODEL@PROMPT_VERSION` + Gemini mặc định `gemini-flash-latest`; lazy AccountMenu/tab phụ/dự báo → bundle 277 → 256 KB | techlead | Thắng+Claude | P0 | BA-03 |
 | [x] | TL-06a | Ghép trang (today thật) + E2E smoke G1 desktop/iPhone + chấm G1 lần 1 | techlead | Thắng+Claude | P0 | TL-03 |
 | [~] (G1 lần 3 · 2026-11-05: 7/7 tự động — chờ Thắng thử Gemini thật trên điện thoại; handoffs/GATE-G1.md) | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
