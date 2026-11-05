@@ -77,7 +77,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FI-04 | Quản lý chiến dịch + bộ chọn chiến dịch | frontend-input | Trường | P1 | DATA-04 |
 | [x] | FI-06 | Form mobile (thẻ dọc, inputMode, format khi gõ) | frontend-input | Trường | P1 | FI-01 |
 | [x] | FD-04 | GrainSwitcher + ForecastPanel + vùng dự báo trên biểu đồ | frontend-dashboard | Trường | P1 | FC-06, DATA-06 |
-| [ ] | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
+| [x] | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
 | [~] (Nhân · đặc tả đã merge, chưa có 8 fixture) | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
 | [ ] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
 | [ ] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |

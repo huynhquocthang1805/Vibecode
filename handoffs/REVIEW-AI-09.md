@@ -1,6 +1,27 @@
 # Review AI-09 — `scripts/eval-ai.ts` + fixtures ai-eval + `docs/ai-eval-report.md`
 
-**Verdict: REQUEST_CHANGES**
+**Verdict (vòng 2, mới nhất): APPROVE** · Vòng 1: REQUEST_CHANGES
+
+## Vòng 2
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ Không lỗi chặn; ⚠️ 8 fixture thuộc ba-analyst (đã chấp nhận ở vòng 1) |
+| `npm run check` | ✅ lint + typecheck xanh; Vitest 64 file, 3987 pass / 0 fail |
+| `npm run build` | ✅ thành công |
+| R-01 báo cáo mock trung thực | ✅ `docs/ai-eval-report.md` có cảnh báo đầu trang; cột Đánh giá ghi `n/a (mock)` (`scripts/eval-ai.ts:625`); handoff ghi rõ chưa có kết quả LLM thật |
+| R-02 test runner | ✅ `evalMetrics.ts` tách thuần; `eval.test.ts` 23 khối `it` (nhiều ca sinh thêm theo fixture), tổng 3987 test pass |
+| R-03 `Math.random` | ✅ đã bỏ, độ trễ cố định (`scripts/eval-ai.ts:64`) |
+| Hợp đồng / any / secret | ✅ không đổi |
+
+### Lưu ý không chặn
+- Báo cáo ghi Git Commit `4b0545e`, chưa khớp commit sửa; chạy lại khi có `AI_API_KEY`.
+- Trước nghiệm thu cuối cần chạy `AI_API_KEY=… npm run eval:ai` một lần để có số liệu Gemini/OpenAI thật.
+- `AiEvalFixture` vẫn khai báo ở `scripts/`; nên chuyển vào `src/lib/ai` sau.
+
+---
+
+## Vòng 1 — REQUEST_CHANGES
 
 ## Vòng 1
 
