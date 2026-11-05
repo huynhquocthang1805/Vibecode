@@ -56,7 +56,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [~] (Trường · UI xong; chờ AI-08 của Thắng 2) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
 | [ ] | QA-01 | Test ca biên + property-based từ contracts | qa-engineer | Nhân | P0 | BA-01, TL-02 |
 | [~] (Thắng+Claude · bot review + review tích hợp) | TL-05 | Review PR liên tục (`/review`) | techlead | Thắng+Claude | P0 | — |
-| [~] (Thắng+Claude · PR mở) | TL-06b | Rà soát sau BA-03: AI thật nhận few-shot + nhãn `AI_MODEL@PROMPT_VERSION` + Gemini mặc định `gemini-flash-latest`; lazy AccountMenu/tab phụ/dự báo → bundle 277 → 256 KB | techlead | Thắng+Claude | P0 | BA-03 |
+| [x] | TL-06b | Rà soát sau BA-03: AI thật nhận few-shot + nhãn `AI_MODEL@PROMPT_VERSION` + Gemini mặc định `gemini-flash-latest`; lazy AccountMenu/tab phụ/dự báo → bundle 277 → 256 KB | techlead | Thắng+Claude | P0 | BA-03 |
 | [x] | TL-06a | Ghép trang (today thật) + E2E smoke G1 desktop/iPhone + chấm G1 lần 1 | techlead | Thắng+Claude | P0 | TL-03 |
 | [~] (G1 lần 2 · 2026-11-05: 6/7 — chỉ còn AI-08; handoffs/GATE-G1.md) | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
 
