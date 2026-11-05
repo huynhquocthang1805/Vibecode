@@ -9,7 +9,8 @@ export interface GeminiProviderOptions {
 export class GeminiProvider implements LlmProvider {
   readonly name = 'gemini';
   private readonly apiKey: string;
-  private readonly model: string;
+  /** Tên model thật đang gọi — route/eval đọc để gắn nhãn InsightResponse.model */
+  readonly model: string;
 
   constructor(opts?: GeminiProviderOptions) {
     this.apiKey = opts?.apiKey ?? process.env.AI_API_KEY ?? '';

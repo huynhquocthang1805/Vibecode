@@ -8,7 +8,8 @@ export interface OpenAiProviderOptions {
 export class OpenAiProvider implements LlmProvider {
   readonly name = 'openai';
   private readonly apiKey: string;
-  private readonly model: string;
+  /** Tên model thật đang gọi — route/eval đọc để gắn nhãn InsightResponse.model */
+  readonly model: string;
 
   constructor(opts?: OpenAiProviderOptions) {
     this.apiKey = opts?.apiKey ?? process.env.AI_API_KEY ?? '';

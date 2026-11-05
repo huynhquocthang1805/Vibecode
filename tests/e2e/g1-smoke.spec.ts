@@ -85,7 +85,6 @@ test('F4 · E26: trang chưa có dữ liệu không được gọi /api/insights
 });
 
 test('F5: xuất báo cáo text → sao chép được', async ({ page, context, browserName }) => {
-  test.fail(true, 'AI-08 (Thắng 2): buildReport chưa có → dialog báo "chưa sẵn sàng"');
   if (browserName === 'chromium') await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await enterThreeDays(page);
   await page.locator('#bao-cao').getByRole('button').first().click();

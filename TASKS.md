@@ -44,7 +44,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | AI-05 | fallbackInsight rule-based | ai-engineer | Hoàng Anh | P0 | BA-02, FC-01 |
 | [x] (R-02..R-04 sửa ở AI-FIX-01, PR #24) | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
 | [x] | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
-| [x] **← chặn Gate G1 duy nhất** (mẫu BA-04 + `fillTemplate` đã có, xem handoffs/BA-04.md) | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
+| [x] (PR #28; E2E F5 xanh desktop + iPhone) | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
 | [x] | AI-FIX-01 | `useInsights`: không gọi khi chưa đủ dữ liệu (E26), gộp request trùng, khoá effect theo cacheKey (R-02..R-04 `handoffs/REVIEW-FD-FI-2026-11-04.md`) | ai-engineer | Hoàng Anh | P0 | AI-06 |
 | [x] | FI-01 | EntryForm nhiều dòng + validation inline + dialog trùng ngày | frontend-input | Trường | P0 | DATA-01, DATA-04 |
 | [x] | FI-02 | EntryTable (sửa/xoá/hoàn tác) — bản thường, ảo hoá ở FI-02b | frontend-input | Trường | P0 | DATA-04 |
@@ -53,12 +53,13 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] (R-01 sửa ở PR #12) | FD-02 | KpiCards (delta, màu ngữ nghĩa, tooltip, "—") | frontend-dashboard | Trường | P0 | DATA-02 |
 | [x] | FD-03 | TrendChart + KpiRatioChart (ECharts, lazy) | frontend-dashboard | Trường | P0 | BA-05 |
 | [x] (R-02 sửa cùng AI-FIX-01) | FD-05 | AiInsightCard (5 trạng thái) | frontend-dashboard | Trường | P0 | AI-06 |
-| [~] (Trường · UI xong; chờ AI-08 của Thắng 2) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
+| [x] (chạy thật với AI-08 — E2E F5 xanh) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
 | [ ] | QA-01 | Test ca biên + property-based từ contracts | qa-engineer | Nhân | P0 | BA-01, TL-02 |
 | [~] (Thắng+Claude · bot review + review tích hợp) | TL-05 | Review PR liên tục (`/review`) | techlead | Thắng+Claude | P0 | — |
+| [~] (Thắng+Claude · PR mở) | TL-06c | Sau AI-08: gỡ `test.fail` F5 (E2E main đang đỏ); route + eval-ai dùng chung `buildSystemPrompt()`/`modelLabel()` (eval trước thiếu few-shot, temperature 0.2 ≠ 0.3); nhãn model = model thật kể cả mặc định | techlead (làm phần ai-engineer) | Thắng+Claude | P0 | AI-08 |
 | [x] | TL-06b | Rà soát sau BA-03: AI thật nhận few-shot + nhãn `AI_MODEL@PROMPT_VERSION` + Gemini mặc định `gemini-flash-latest`; lazy AccountMenu/tab phụ/dự báo → bundle 277 → 256 KB | techlead | Thắng+Claude | P0 | BA-03 |
 | [x] | TL-06a | Ghép trang (today thật) + E2E smoke G1 desktop/iPhone + chấm G1 lần 1 | techlead | Thắng+Claude | P0 | TL-03 |
-| [~] (G1 lần 2 · 2026-11-05: 6/7 — chỉ còn AI-08; handoffs/GATE-G1.md) | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
+| [~] (G1 lần 3 · 2026-11-05: 7/7 tự động — chờ Thắng thử Gemini thật trên điện thoại; handoffs/GATE-G1.md) | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
 
 ## Wave 4 — P1 (Dữ liệu lớn · Tháng/Quý · Dự báo)
 | | ID | Task | Owner | Người | P | Phụ thuộc |
@@ -80,7 +81,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FD-04 | GrainSwitcher + ForecastPanel + vùng dự báo trên biểu đồ | frontend-dashboard | Trường | P1 | FC-06, DATA-06 |
 | [x] (runner + báo cáo **mock** — chưa chạy Gemini thật, xem AI-10) | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
 | [x] (8 fixture do Hoàng Anh làm trong AI-09 PR #25 theo đặc tả của Nhân; Nhân rà nội dung) | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
-| [ ] | AI-10 | Chạy `npm run eval:ai` với **Gemini thật** (Thắng cấp `AI_API_KEY`, `AI_MODEL=gemini-flash-latest`) sau TL-06b; commit `docs/ai-eval-report.md` thật; kiểm tra 8 kịch bản qua guardrail | ai-engineer | Hoàng Anh | P0 | TL-06b |
+| [ ] (runner đã sẵn sàng sau TL-06c — chỉ còn thiếu key; ai có key chạy 1 lệnh) | AI-10 | Chạy `npm run eval:ai` với **Gemini thật** (Thắng cấp `AI_API_KEY`, `AI_MODEL=gemini-flash-latest`) sau TL-06c; commit `docs/ai-eval-report.md` thật; kiểm tra 8 kịch bản qua guardrail | ai-engineer | Hoàng Anh | P0 | TL-06b |
 | [ ] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
 | [ ] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |
 | [ ] | QA-03 | Test API + guardrails với provider giả (8 lỗi) | qa-engineer | Nhân | P1 | AI-04 |
