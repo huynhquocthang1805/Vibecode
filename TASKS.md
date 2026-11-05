@@ -109,8 +109,8 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 |---|---|---|---|---|---|---|
 | [x] | DATA-08 | Event bus + BroadcastChannel + Live simulator | data-engineer | Huy | P2 | DATA-06 |
 | [x] | DATA-09 | IndexedDB adapter + tự chuyển khi vượt ngưỡng | data-engineer | Huy | P2 | DATA-03 |
-| [ ] | FC-07 | detectAnomalies + detectLiveAnomaly (`anomaly.ts`) | ai-engineer | Hoàng Anh | P2 | FC-05 |
-| [ ] | FC-08 | Target pacing (`pacing.ts`) | ai-engineer | Hoàng Anh | P2 | FC-06 |
+| [x] | FC-07 | detectAnomalies + detectLiveAnomaly (`anomaly.ts`) | ai-engineer | Hoàng Anh | P2 | FC-05 |
+| [x] | FC-08 | Target pacing (`pacing.ts`) | ai-engineer | Hoàng Anh | P2 | FC-06 |
 | [x] | FD-07 | LiveModeToggle + AnomalyFeed + animation thẻ | frontend-dashboard | Trường | P2 | DATA-08, FC-07 |
 | [x] | FD-08 | Rà soát trạng thái rỗng/lỗi, a11y, dark mode | frontend-dashboard | Trường | P2 | — |
 | [ ] | FD-10 | Bundle đầu < 250 KB (lazy `reviewFixture`), renderer canvas khi nhiều điểm, bỏ tên hard-code (R-05, R-06) | frontend-dashboard | Trường | P1 | FD-01 |
