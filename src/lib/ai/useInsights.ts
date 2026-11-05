@@ -97,6 +97,7 @@ async function executeApiRequest(
   payload: InsightRequest,
   totals: Totals,
 ): Promise<FetchOutcome> {
+  let outcome: FetchOutcome;
   try {
     const response = await fetch('/api/insights', {
       method: 'POST',
@@ -120,24 +121,24 @@ async function executeApiRequest(
         totals,
       };
       saveClientCache(cache);
-      return { ok: true, data: resData };
+      outcome = { ok: true, data: resData };
+    } else {
+      const errData = (await response.json().catch(() => ({}))) as InsightError;
+      const insightErr: InsightError = {
+        code: errData.code || 'PROVIDER_ERROR',
+        message: errData.message || `Lỗi yêu cầu (HTTP ${response.status})`,
+        fallback: errData.fallback,
+      };
+
+      outcome = {
+        ok: false,
+        status: response.status,
+        error: insightErr,
+        fallback: errData.fallback,
+      };
     }
-
-    const errData = (await response.json().catch(() => ({}))) as InsightError;
-    const insightErr: InsightError = {
-      code: errData.code || 'PROVIDER_ERROR',
-      message: errData.message || `Lỗi yêu cầu (HTTP ${response.status})`,
-      fallback: errData.fallback,
-    };
-
-    return {
-      ok: false,
-      status: response.status,
-      error: insightErr,
-      fallback: errData.fallback,
-    };
   } catch (err: unknown) {
-    return {
+    outcome = {
       ok: false,
       status: 0,
       error: {
@@ -148,6 +149,17 @@ async function executeApiRequest(
   } finally {
     inflightRequests.delete(cacheKey);
   }
+
+  // R-05: Broadcast kết quả duy nhất một lần tới các subscriber đang active của cacheKey này.
+  // Không bao giờ gọi fallback hay applyOutcome lên các component đã unmount hoặc chuyển sang key khác.
+  const subs = subscribers.get(cacheKey);
+  if (subs) {
+    for (const sub of subs) {
+      sub(outcome);
+    }
+  }
+
+  return outcome;
 }
 
 /**
@@ -155,32 +167,38 @@ async function executeApiRequest(
  * - Bỏ qua khi chưa đủ dữ liệu (sufficient=false) — R-02 (E26).
  * - Gộp request đang bay theo cacheKey ở module-level — R-03.
  * - Khoá effect theo [isSufficient, cacheKey, revision] thay vì object snapshot — R-04.
+ * - Chống race condition ghi đè kết quả khi đổi cacheKey hoặc unmount giữa chừng — R-05.
  * - Cache client localStorage TTL 24h, tối đa 20 mục.
  * - Tự động refresh khi dữ liệu đổi > 5% và sau ít nhất 60s debounce.
  * - refresh() bỏ qua cache client để gọi mới.
  * - Tuyệt đối không bao giờ throw trong render tree.
  */
 export function useInsights(snap: AnalyticsSnapshot | null): UseInsightsResult {
-  const [data, setData] = useState<InsightResponse | null>(null);
-  const [status, setStatus] = useState<InsightStatus>('idle');
-  const [error, setError] = useState<InsightError | undefined>(undefined);
-
-  const snapRef = useRef<AnalyticsSnapshot | null>(snap);
-
-  useEffect(() => {
-    snapRef.current = snap;
-  }, [snap]);
-
-  const lastFetchedTimeRef = useRef<number>(0);
-  const lastFetchedTotalsRef = useRef<Totals | null>(null);
-  const lastFetchedKeyRef = useRef<string>('');
-
   const isSufficient = Boolean(snap?.trend?.dataQuality?.sufficient);
   const campaignId = snap?.query.campaignId ?? '';
   const grain = snap?.query.grain ?? '';
   const rangeKey = snap ? `${snap.dataSpan.first ?? ''}_${snap.dataSpan.last ?? ''}` : '';
   const cacheKey = snap ? makeCacheKey(campaignId, grain, rangeKey) : '';
   const revision = snap?.revision ?? 0;
+
+  // Hiển thị trạng thái loading ngay nếu request cho cacheKey này đã đang bay từ instance khác
+  const [data, setData] = useState<InsightResponse | null>(null);
+  const [status, setStatus] = useState<InsightStatus>(() =>
+    cacheKey && inflightRequests.has(cacheKey) ? 'loading' : 'idle',
+  );
+  const [error, setError] = useState<InsightError | undefined>(undefined);
+
+  const snapRef = useRef<AnalyticsSnapshot | null>(snap);
+  const activeKeyRef = useRef<string>(cacheKey);
+
+  useEffect(() => {
+    snapRef.current = snap;
+    activeKeyRef.current = cacheKey;
+  }, [snap, cacheKey]);
+
+  const lastFetchedTimeRef = useRef<number>(0);
+  const lastFetchedTotalsRef = useRef<Totals | null>(null);
+  const lastFetchedKeyRef = useRef<string>('');
 
   const applyOutcome = useCallback((outcome: FetchOutcome) => {
     if (outcome.ok) {
@@ -215,18 +233,24 @@ export function useInsights(snap: AnalyticsSnapshot | null): UseInsightsResult {
         const cache = getClientCache();
         const entry = cache[cKey];
         if (entry && Date.now() < entry.expiresAt) {
-          setData(entry.value);
-          setStatus(entry.value.source === 'fallback' ? 'fallback' : 'success');
-          setError(undefined);
-          lastFetchedTimeRef.current = Date.now();
-          lastFetchedTotalsRef.current = snapshot.totals;
-          lastFetchedKeyRef.current = cKey;
+          // R-05: Chỉ cập nhật nếu hook vẫn đang xem cKey
+          if (activeKeyRef.current === cKey) {
+            setData(entry.value);
+            setStatus(entry.value.source === 'fallback' ? 'fallback' : 'success');
+            setError(undefined);
+            lastFetchedTimeRef.current = Date.now();
+            lastFetchedTotalsRef.current = snapshot.totals;
+            lastFetchedKeyRef.current = cKey;
+          }
           return;
         }
       }
 
-      setStatus('loading');
-      setError(undefined);
+      // R-05: Chỉ cập nhật trạng thái loading nếu hook vẫn đang xem cKey
+      if (activeKeyRef.current === cKey) {
+        setStatus('loading');
+        setError(undefined);
+      }
 
       // R-03: Gộp request đang bay theo cacheKey
       let promise = inflightRequests.get(cKey);
@@ -236,25 +260,11 @@ export function useInsights(snap: AnalyticsSnapshot | null): UseInsightsResult {
         inflightRequests.set(cKey, promise);
       }
 
-      const outcome = await promise;
-
-      // Broadcast kết quả cho tất cả subscriber của cKey
-      const subs = subscribers.get(cKey);
-      if (subs && subs.size > 0) {
-        for (const sub of subs) {
-          sub(outcome);
-        }
-      } else {
-        applyOutcome(outcome);
-      }
-
-      if (outcome.ok) {
-        lastFetchedTimeRef.current = Date.now();
-        lastFetchedTotalsRef.current = snapshot.totals;
-        lastFetchedKeyRef.current = cKey;
-      }
+      await promise;
+      // R-05: Không cập nhật state hay refs ở đây; executeApiRequest đã tự động
+      // phát tới handleOutcome của các subscribers đang active của cKey.
     },
-    [applyOutcome],
+    [],
   );
 
   const refresh = useCallback(() => {
@@ -277,10 +287,17 @@ export function useInsights(snap: AnalyticsSnapshot | null): UseInsightsResult {
 
     let active = true;
 
-    // Đăng ký subscriber để nhận broadcast cập nhật từ instance khác
+    // R-05: Đăng ký subscriber chỉ nhận kết quả khi hook còn active và vẫn đang xem cacheKey này
     const handleOutcome: OutcomeSubscriber = (outcome) => {
       if (!active) return;
+      if (activeKeyRef.current !== cacheKey) return;
+
       applyOutcome(outcome);
+      if (outcome.ok) {
+        lastFetchedTimeRef.current = Date.now();
+        lastFetchedTotalsRef.current = currentSnap.totals;
+        lastFetchedKeyRef.current = cacheKey;
+      }
     };
 
     let subs = subscribers.get(cacheKey);
