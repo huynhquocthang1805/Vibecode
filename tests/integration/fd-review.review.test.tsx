@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KpiCards } from '@/components/dashboard/KpiCards';
 import fixture from '@/components/dashboard/reviewFixture.json';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useInsights } from '@/lib/ai/useInsights';
+import { _resetInflightState, useInsights } from '@/lib/ai/useInsights';
 import { fmtInt } from '@/lib/domain/format';
 import type { AnalyticsSnapshot } from '@/types/domain';
 
@@ -51,15 +51,19 @@ describe('FD-05 + AI-06 · useInsights không gọi AI khi chưa đủ dữ li�
   const fetchMock = vi.fn();
   beforeEach(() => {
     localStorage.clear();
+    _resetInflightState();
     fetchMock.mockReset();
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ code: 'BAD_REQUEST', message: 'x' }), { status: 400 }));
     vi.stubGlobal('fetch', fetchMock);
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    _resetInflightState();
+    vi.unstubAllGlobals();
+  });
 
   // R-02: mở trang trống → useInsights tự POST /api/insights với range {from:"",to:""} → 400 BAD_REQUEST
   // (thấy thật trên trình duyệt). E26: < 3 ngày client không được gọi.
-  it.fails('R-02 snapshot chưa đủ dữ liệu (sufficient=false) → không gọi fetch', async () => {
+  it('R-02 snapshot chưa đủ dữ liệu (sufficient=false) → không gọi fetch', async () => {
     const empty = emptySnapshot(); // cố định object như snapshot thật từ useAnalytics
     renderHook(() => useInsights(empty));
     await new Promise((r) => setTimeout(r, 50));
@@ -68,7 +72,7 @@ describe('FD-05 + AI-06 · useInsights không gọi AI khi chưa đủ dữ li�
 
   // R-03: DashboardPage và AiInsightCard đều gọi useInsights cùng snapshot → mỗi lần phân tích gửi 2 request
   // giống hệt (thấy thật: 2 request cách nhau 2ms) → tốn gấp đôi hạn mức 10 request/phút.
-  it.fails('R-03 hai nơi dùng useInsights cùng snapshot → chỉ 1 request', async () => {
+  it('R-03 hai nơi dùng useInsights cùng snapshot → chỉ 1 request', async () => {
     const s = structuredClone(base);
     renderHook(() => {
       useInsights(s);
