@@ -1,0 +1,333 @@
+{
+  "name": "03-ctr-fatigue",
+  "request": {
+    "locale": "vi",
+    "campaignName": "CTR giảm dần (creative fatigue)",
+    "grain": "day",
+    "range": {
+      "from": "2026-10-19",
+      "to": "2026-11-01"
+    },
+    "totals": {
+      "reach": 210000,
+      "clicks": 3290,
+      "cost": 8400000,
+      "orders": 140,
+      "kpis": {
+        "ctr": 0.015666666666666666,
+        "cpc": 2553.191489361702,
+        "cpa": 60000,
+        "cvr": 0.0425531914893617
+      }
+    },
+    "trend": {
+      "grain": "day",
+      "periods": 14,
+      "overall": "flat",
+      "metrics": [
+        {
+          "metric": "reach",
+          "direction": "flat",
+          "changePct": 0,
+          "slopePerPeriod": 0,
+          "r2": 0,
+          "cv": 0,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "clicks",
+          "direction": "down",
+          "changePct": -5.555555555555555,
+          "slopePerPeriod": -10,
+          "r2": 1,
+          "cv": 0.1780127716029948,
+          "assessment": "bad"
+        },
+        {
+          "metric": "cost",
+          "direction": "flat",
+          "changePct": 0,
+          "slopePerPeriod": 0,
+          "r2": 0,
+          "cv": 0,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "orders",
+          "direction": "flat",
+          "changePct": 0,
+          "slopePerPeriod": 0,
+          "r2": 0,
+          "cv": 0,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "ctr",
+          "direction": "down",
+          "changePct": -5.555555555555551,
+          "slopePerPeriod": -0.0006666666666666666,
+          "r2": 1,
+          "cv": 0.17801277160299475,
+          "assessment": "bad"
+        },
+        {
+          "metric": "cpc",
+          "direction": "up",
+          "changePct": 5.882352941176468,
+          "slopePerPeriod": 114.74274349393829,
+          "r2": 0.9757934330235434,
+          "cv": 0.18458277677974252,
+          "assessment": "bad"
+        },
+        {
+          "metric": "cpa",
+          "direction": "flat",
+          "changePct": 0,
+          "slopePerPeriod": 0,
+          "r2": 0,
+          "cv": 0,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "cvr",
+          "direction": "up",
+          "changePct": 5.882352941176475,
+          "slopePerPeriod": 0.0019123790582323045,
+          "r2": 0.9757934330235434,
+          "cv": 0.18458277677974247,
+          "assessment": "good"
+        }
+      ],
+      "comparison": null,
+      "dataQuality": {
+        "days": 14,
+        "missingDays": 0,
+        "sufficient": true
+      }
+    },
+    "recent": [
+      {
+        "key": "2026-10-19",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 300,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.02,
+          "cpc": 2000,
+          "cpa": 60000,
+          "cvr": 0.0333
+        }
+      },
+      {
+        "key": "2026-10-20",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 290,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0193,
+          "cpc": 2069,
+          "cpa": 60000,
+          "cvr": 0.0345
+        }
+      },
+      {
+        "key": "2026-10-21",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 280,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0187,
+          "cpc": 2143,
+          "cpa": 60000,
+          "cvr": 0.0357
+        }
+      },
+      {
+        "key": "2026-10-22",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 270,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.018,
+          "cpc": 2222,
+          "cpa": 60000,
+          "cvr": 0.037
+        }
+      },
+      {
+        "key": "2026-10-23",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 260,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0173,
+          "cpc": 2308,
+          "cpa": 60000,
+          "cvr": 0.0385
+        }
+      },
+      {
+        "key": "2026-10-24",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 250,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0167,
+          "cpc": 2400,
+          "cpa": 60000,
+          "cvr": 0.04
+        }
+      },
+      {
+        "key": "2026-10-25",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 240,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.016,
+          "cpc": 2500,
+          "cpa": 60000,
+          "cvr": 0.0417
+        }
+      },
+      {
+        "key": "2026-10-26",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 230,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0153,
+          "cpc": 2609,
+          "cpa": 60000,
+          "cvr": 0.0435
+        }
+      },
+      {
+        "key": "2026-10-27",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 220,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0147,
+          "cpc": 2727,
+          "cpa": 60000,
+          "cvr": 0.0455
+        }
+      },
+      {
+        "key": "2026-10-28",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 210,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.014,
+          "cpc": 2857,
+          "cpa": 60000,
+          "cvr": 0.0476
+        }
+      },
+      {
+        "key": "2026-10-29",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 200,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0133,
+          "cpc": 3000,
+          "cpa": 60000,
+          "cvr": 0.05
+        }
+      },
+      {
+        "key": "2026-10-30",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 190,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0127,
+          "cpc": 3158,
+          "cpa": 60000,
+          "cvr": 0.0526
+        }
+      },
+      {
+        "key": "2026-10-31",
+        "isPartial": false,
+        "reach": 15000,
+        "clicks": 180,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.012,
+          "cpc": 3333,
+          "cpa": 60000,
+          "cvr": 0.0556
+        }
+      },
+      {
+        "key": "2026-11-01",
+        "isPartial": true,
+        "reach": 15000,
+        "clicks": 170,
+        "cost": 600000,
+        "orders": 10,
+        "kpis": {
+          "ctr": 0.0113,
+          "cpc": 3529,
+          "cpa": 60000,
+          "cvr": 0.0588
+        }
+      }
+    ],
+    "nowcasts": [],
+    "anomalies": [],
+    "context": {
+      "goal": "sales"
+    }
+  },
+  "expect": {
+    "overall": "flat",
+    "mustMention": [
+      "ctr",
+      "cpc"
+    ],
+    "forbidden": [
+      "tối ưu chiến dịch",
+      "cải thiện nội dung",
+      "tối ưu hoá",
+      "cải thiện hiệu quả",
+      "nâng cao hiệu quả",
+      "tăng cường quảng cáo",
+      "đẩy mạnh quảng cáo",
+      "tăng tương tác",
+      "cải thiện chiến dịch",
+      "tối ưu ngân sách",
+      "tiếp tục theo dõi",
+      "theo dõi thêm"
+    ]
+  }
+}

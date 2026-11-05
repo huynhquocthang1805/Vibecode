@@ -1,0 +1,356 @@
+{
+  "name": "08-two-years",
+  "request": {
+    "locale": "vi",
+    "campaignName": "Thời trang 2 năm",
+    "grain": "quarter",
+    "range": {
+      "from": "2024-11-02",
+      "to": "2026-11-01"
+    },
+    "totals": {
+      "reach": 20246018,
+      "clicks": 445246,
+      "cost": 1603062279,
+      "orders": 10297,
+      "kpis": {
+        "ctr": 0.02199178129743834,
+        "cpc": 3600.3968120993786,
+        "cpa": 155682.45887151596,
+        "cvr": 0.023126541282796478
+      }
+    },
+    "trend": {
+      "grain": "quarter",
+      "periods": 4,
+      "overall": "down",
+      "metrics": [
+        {
+          "metric": "reach",
+          "direction": "up",
+          "changePct": 6.329418211783257,
+          "slopePerPeriod": -454894.3,
+          "r2": 0.49226107993957297,
+          "cv": 0.3651989874368903,
+          "assessment": "good"
+        },
+        {
+          "metric": "clicks",
+          "direction": "flat",
+          "changePct": 3.263445761166819,
+          "slopePerPeriod": -9944.7,
+          "r2": 0.4914134498639369,
+          "cv": 0.36822288177728596,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "cost",
+          "direction": "flat",
+          "changePct": 2.1254416843015527,
+          "slopePerPeriod": -35439428.3,
+          "r2": 0.48082269021059765,
+          "cv": 0.3688140239110463,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "orders",
+          "direction": "down",
+          "changePct": 3.171247357293869,
+          "slopePerPeriod": -275.5,
+          "r2": 0.6506389141652369,
+          "cv": 0.38417461021078386,
+          "assessment": "bad"
+        },
+        {
+          "metric": "ctr",
+          "direction": "flat",
+          "changePct": -2.8834658386917273,
+          "slopePerPeriod": -0.000016301428156223138,
+          "r2": 0.0006400813792665551,
+          "cv": 0.03833360769468182,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "cpc",
+          "direction": "flat",
+          "changePct": -1.102039611865463,
+          "slopePerPeriod": 5.321102210994513,
+          "r2": 0.2781188958354011,
+          "cv": 0.003622159902659536,
+          "assessment": "neutral"
+        },
+        {
+          "metric": "cpa",
+          "direction": "up",
+          "changePct": -1.0136600068142685,
+          "slopePerPeriod": 7423.365899059645,
+          "r2": 0.53029309107736,
+          "cv": 0.08338100804297789,
+          "assessment": "bad"
+        },
+        {
+          "metric": "cvr",
+          "direction": "down",
+          "changePct": -0.08928464781835145,
+          "slopePerPeriod": -0.0011299192542621936,
+          "r2": 0.5336839212102978,
+          "cv": 0.08715917824615228,
+          "assessment": "bad"
+        }
+      ],
+      "comparison": {
+        "current": {
+          "key": "2026-Q4",
+          "grain": "quarter",
+          "start": "2026-10-01",
+          "end": "2026-12-31",
+          "daysWithData": 32,
+          "daysInPeriod": 92,
+          "isPartial": true,
+          "reach": 1043888,
+          "clicks": 22656,
+          "cost": 81421460,
+          "orders": 488,
+          "kpis": {
+            "ctr": 0.02170347776772987,
+            "cpc": 3593.8144420903955,
+            "cpa": 166847.25409836066,
+            "cvr": 0.02153954802259887
+          }
+        },
+        "previous": {
+          "key": "2026-Q3",
+          "grain": "quarter",
+          "start": "2026-07-01",
+          "end": "2026-09-30",
+          "daysWithData": 92,
+          "daysInPeriod": 92,
+          "isPartial": false,
+          "reach": 2811427,
+          "clicks": 59226,
+          "cost": 214038920,
+          "orders": 1353,
+          "kpis": {
+            "ctr": 0.02106617031137568,
+            "cpc": 3613.9350960726706,
+            "cpa": 158195.80192165557,
+            "cvr": 0.02284469658595887
+          }
+        },
+        "likeForLike": true,
+        "deltaPct": {
+          "reach": 6.329418211783257,
+          "clicks": 3.263445761166819,
+          "cost": 2.1254416843015527,
+          "orders": 3.171247357293869,
+          "ctr": -2.8834658386917273,
+          "cpc": -1.102039611865463,
+          "cpa": -1.0136600068142685,
+          "cvr": -0.08928464781835145
+        }
+      },
+      "dataQuality": {
+        "days": 305,
+        "missingDays": 60,
+        "sufficient": true
+      }
+    },
+    "recent": [
+      {
+        "key": "2024-Q4",
+        "isPartial": true,
+        "reach": 1474627,
+        "clicks": 34484,
+        "cost": 124252000,
+        "orders": 834,
+        "kpis": {
+          "ctr": 0.0234,
+          "cpc": 3603,
+          "cpa": 148983,
+          "cvr": 0.0242
+        }
+      },
+      {
+        "key": "2025-Q1",
+        "isPartial": false,
+        "reach": 2204689,
+        "clicks": 47284,
+        "cost": 170401000,
+        "orders": 1194,
+        "kpis": {
+          "ctr": 0.0214,
+          "cpc": 3604,
+          "cpa": 142714,
+          "cvr": 0.0253
+        }
+      },
+      {
+        "key": "2025-Q2",
+        "isPartial": false,
+        "reach": 2319665,
+        "clicks": 52509,
+        "cost": 189257000,
+        "orders": 1209,
+        "kpis": {
+          "ctr": 0.0226,
+          "cpc": 3604,
+          "cpa": 156540,
+          "cvr": 0.023
+        }
+      },
+      {
+        "key": "2025-Q3",
+        "isPartial": false,
+        "reach": 2514960,
+        "clicks": 53550,
+        "cost": 193498000,
+        "orders": 1126,
+        "kpis": {
+          "ctr": 0.0213,
+          "cpc": 3613,
+          "cpa": 171846,
+          "cvr": 0.021
+        }
+      },
+      {
+        "key": "2025-Q4",
+        "isPartial": false,
+        "reach": 2564226,
+        "clicks": 58470,
+        "cost": 210053000,
+        "orders": 1343,
+        "kpis": {
+          "ctr": 0.0228,
+          "cpc": 3592,
+          "cpa": 156405,
+          "cvr": 0.023
+        }
+      },
+      {
+        "key": "2026-Q1",
+        "isPartial": false,
+        "reach": 2589749,
+        "clicks": 54787,
+        "cost": 196278000,
+        "orders": 1411,
+        "kpis": {
+          "ctr": 0.0212,
+          "cpc": 3583,
+          "cpa": 139106,
+          "cvr": 0.0258
+        }
+      },
+      {
+        "key": "2026-Q2",
+        "isPartial": false,
+        "reach": 2722787,
+        "clicks": 62280,
+        "cost": 223863000,
+        "orders": 1339,
+        "kpis": {
+          "ctr": 0.0229,
+          "cpc": 3594,
+          "cpa": 167186,
+          "cvr": 0.0215
+        }
+      },
+      {
+        "key": "2026-Q3",
+        "isPartial": false,
+        "reach": 2811427,
+        "clicks": 59226,
+        "cost": 214039000,
+        "orders": 1353,
+        "kpis": {
+          "ctr": 0.0211,
+          "cpc": 3614,
+          "cpa": 158196,
+          "cvr": 0.0228
+        }
+      },
+      {
+        "key": "2026-Q4",
+        "isPartial": true,
+        "reach": 1043888,
+        "clicks": 22656,
+        "cost": 81421000,
+        "orders": 488,
+        "kpis": {
+          "ctr": 0.0217,
+          "cpc": 3594,
+          "cpa": 166847,
+          "cvr": 0.0215
+        }
+      }
+    ],
+    "nowcasts": [
+      {
+        "periodKey": "2026-Q4",
+        "grain": "quarter",
+        "daysElapsed": 32,
+        "daysTotal": 92,
+        "actualToDate": {
+          "reach": 1043888,
+          "clicks": 22656,
+          "cost": 81421460,
+          "orders": 488
+        },
+        "projected": {
+          "reach": {
+            "mean": 2087776,
+            "lo80": 1565832,
+            "hi80": 2609720
+          },
+          "clicks": {
+            "mean": 45312,
+            "lo80": 33984,
+            "hi80": 56640
+          },
+          "cost": {
+            "mean": 162842920,
+            "lo80": 122132190,
+            "hi80": 203553650
+          },
+          "orders": {
+            "mean": 976,
+            "lo80": 732,
+            "hi80": 1220
+          }
+        },
+        "projectedKpis": {
+          "ctr": 0.021703,
+          "cpc": 3593.81,
+          "cpa": 166847.25,
+          "cvr": 0.021539
+        }
+      }
+    ],
+    "forecastConfidence": "low",
+    "anomalies": [],
+    "context": {
+      "goal": "sales"
+    }
+  },
+  "expect": {
+    "overall": "down",
+    "mustMention": [
+      "orders",
+      "cost",
+      "cpa"
+    ],
+    "forbidden": [
+      "tối ưu chiến dịch",
+      "cải thiện nội dung",
+      "tối ưu hoá",
+      "cải thiện hiệu quả",
+      "nâng cao hiệu quả",
+      "tăng cường quảng cáo",
+      "đẩy mạnh quảng cáo",
+      "tăng tương tác",
+      "cải thiện chiến dịch",
+      "tối ưu ngân sách",
+      "tiếp tục theo dõi",
+      "theo dõi thêm"
+    ]
+  }
+}
