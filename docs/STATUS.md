@@ -1,36 +1,46 @@
-# STATUS — 2026-11-04
+# STATUS — 2026-11-05
 
-Owner: pm-release (Thắng + Claude). Mục tiêu: **Gate G1 — 5 tính năng P0 chạy xuyên suốt**.
+Owner: pm-release (Thắng + Claude). Mục tiêu: **Gate G1 — 5 tính năng P0 chạy xuyên suốt** → còn đúng **1 việc: AI-08**.
+
+## Sức khoẻ `main` (8845ec2 + TL-06b)
+| Kiểm tra | Kết quả |
+|---|---|
+| lint · typecheck | ✅ |
+| Vitest | ✅ 67 file · 4.012 test · **0 lỗi đã biết** (`it.fails` R-01..R-07, BA-03 đều đã sửa) |
+| Build | ✅ (log `BetterAuthError` khi thiếu secret — vô hại, ACC-FIX-01) |
+| E2E desktop + iPhone 12 | ✅ 20/20 · còn 1 `test.fail`: **F5 xuất báo cáo (AI-08)** |
+| Bundle đầu (script modern, gzip-9) | 256.139 B (trước TL-06b 276.754 B) · brotli Vercel 217 KiB · ngân sách 250.000 B |
+| Stub còn lại | `buildReport`, `copyText` (AI-08) |
+| AI thật | prompt BA-03 v1.2 + few-shot đã vào route (TL-06b) · **chưa chạy eval với Gemini thật** (AI-10) |
 
 ## Tiến độ
-| | Tổng | Xong `[x]` | Đang làm / có code `[~]` | Chưa bắt đầu |
+| | Tổng | Xong `[x]` | Đang làm `[~]` | Chưa bắt đầu |
 |---|---|---|---|---|
-| **P0** | 43 | **13** | **18** (code đã có ở nhánh/máy — chỉ cần sửa + merge) | 12 |
-| P1 | 29 | 9 | 1 | 19 |
+| **P0** (gồm P0*) | 51 | **33 (65%)** | 5 | 13 |
+| P1 | 39 | 28 | 1 | 10 |
+| P2 | 6 | 6 | — | — |
 
-→ Nếu 18 task `[~]` được merge, P0 lên **31/43 (72%)**. Phần còn lại chủ yếu là P0* cuối (QA-04/06/07, PM-02..07) + BA-02, BA-04, AI-08, DATA-04b, QA-01, TL-06.
+P0 chưa xong chủ yếu là việc cuối kỳ: QA-01/04/06/07 (Nhân), PM-02..07 + TL-08 (Thắng), AI-08 (Thắng 2), AI-10 (Hoàng Anh).
 
 ## Theo người
-| Người | Đã merge | Đang chờ | Việc tiếp theo |
-|---|---|---|---|
-| Huy · Gemini | DATA-01..07, DATA-FIX-01, FC-01 | — | **DATA-FIX-02** (nowcast rỗng, R-07) → DATA-04b → DATA-08..11 |
-| Hoàng Anh · Gemini | — | **PR #3 AI-01..07** — bot REQUEST_CHANGES: build đỏ (R-01 `runtime`), R-02, R-03 | Sửa 3 lỗi + rebase main → merge sau BA-03-code |
-| Trường · ChatGPT | — | UI FD-01/02/03/05/06 + FI-01/02/05 **chỉ ở máy** | **Push + mở PR ngay** (8 task P0) |
-| Nhân · ChatGPT | BA-01, BA-05, BA-03 *đặc tả*, BA-06 *đặc tả* | nhánh **BA-03-code** — 9/9 test xanh, chưa mở PR | **Mở PR BA-03-code** → **BA-02, BA-04 (P0)** — ngừng viết thêm đặc tả P1 |
-| Thắng 2 · Claude tk 2 | FC-02..06, FC-09 (bot APPROVE) | — | **AI-08** (P0) → FC-10 |
-| Thắng + Claude | TL-01..04, bot review + PR guard | — | Review/merge liên tục, TL-06 ghép trang khi UI + AI vào |
+| Người | Đã merge (mới từ 04/11) | Việc tiếp theo (ưu tiên) |
+|---|---|---|
+| Thắng 2 · Claude tk 2 | — | 🔴 **AI-08 `buildReport` + `copyText`** — chặn G1; mẫu + `fillTemplate` đã sẵn (`handoffs/BA-04.md`) → FC-10 |
+| Hoàng Anh · Gemini | AI-FIX-01, AI-09, FC-07, FC-08 | **AI-10** eval Gemini thật (cần key từ Thắng) |
+| Trường · ChatGPT | FD-02/05 (R-01), FD-04/07/08/09, FI-02b/03/04/06/07 | FD-06 nối AI-08 khi có · FD-10 còn ~6 KB |
+| Huy · Gemini | DATA-08..11, ACC-01..06, DATA-HOTFIX-01 (techlead) | **ACC-FIX-01** (auth khởi tạo lười) |
+| Nhân · ChatGPT | BA-03 (code), BA-06 (đặc tả); BA-02/04 do techlead điền thay | **QA-01 (P0)** → QA-03 → QA-04/06/07 sau G1 · rà câu chữ BA-02/04 |
+| Thắng + Claude | DATA-HOTFIX-01/02, BA-02/03/04, TL-06b | Đặt `AI_API_KEY`, `AI_MODEL` trên Vercel · **chấm G1 lần 3** khi AI-08 merge · ACC-07 · PM-02 README |
 
-## Thứ tự merge đề xuất tới G1
-1. **BA-03-code** (Nhân) — prompt thật; AI route phụ thuộc.
-2. **PR #3 AI-01..07** (Hoàng Anh) — sau khi sửa R-01..R-03 + rebase.
-3. **UI của Trường** (FD + FI) — nối với store/useAnalytics thật.
-4. **BA-04 → AI-08** (mẫu báo cáo → buildReport) → FD-06 dùng được.
-5. **TL-06** ghép + Gate G1 trên https://vibecode-three-xi.vercel.app/ (desktop + điện thoại).
+## Thứ tự tới G1
+1. **TL-06b** (PR mở) — AI thật nhận đủ prompt.
+2. **AI-08** (Thắng 2) → bỏ `test.fail` ở E2E F5 → FD-06 hết `[~]`.
+3. Thắng mở https://vibecode-three-xi.vercel.app/ trên điện thoại: nhập 3 ngày → Phân tích (Gemini thật) → Xuất báo cáo → Sao chép → dán Zalo → techlead ký G1.
 
 ## Rủi ro
-1. 🔴 UI P0 (8 task) chỉ nằm trên máy Trường — mất máy/quên push là mất.
-2. 🟡 Nhân dành nhiều thời gian viết đặc tả (BA-03, BA-06 > 600 dòng) trong khi BA-02/BA-04 (P0, AI cần) chưa bắt đầu.
-3. 🟡 Nowcast rỗng (R-07) — không chặn G1 nhưng chặn FD-04 (P1).
-4. ✅ Link online: https://vibecode-three-xi.vercel.app/ — production deploy `main` thành công (Vercel). Preview PR #3 build đỏ đúng lỗi R-01 bot đã chỉ.
+1. 🔴 AI-08 chưa có nhánh/PR nào — là việc chặn G1 duy nhất. Nếu tới hết 05/11 chưa có: techlead làm thay (như BA-02/04).
+2. 🟡 Nhân giữ 9 task chưa bắt đầu (QA-01..08, BA-07/08) — quá tải; đề xuất chuyển QA-03 (test API/guardrails) cho Hoàng Anh, QA-02 cho Huy.
+3. 🟡 Chưa có bằng chứng AI **thật** (eval mock 100% không chứng minh được Gemini) — rubric chấm AI thật (docs/05).
+4. 🟢 Bundle gần đạt: còn ~6 KB gzip; người dùng thật nhận brotli 217 KiB.
 
-Chi tiết review: `handoffs/REVIEW-INTEGRATION-2026-11-04.md`.
+Chi tiết: `handoffs/GATE-G1.md` (lần 2), `handoffs/TL-06b.md`.

@@ -23,3 +23,21 @@ Sau đó: Thắng mở link Vercel trên điện thoại, nhập 3 ngày, bấm 
 
 ## Không chặn G1 (làm song song)
 FD-02 R-01 (giá trị ↔ delta) · FD-10 bundle 297 KB > 250 KB · BA-02 (bannedPhrases/ruleSuggestions) · DATA-04b.
+
+---
+
+# Gate G1 — lần chấm 2 · techlead · 2026-11-05
+
+**Kết luận: CHƯA ĐẠT — 6/7**, chỉ còn **AI-08**. Main 8845ec2 + TL-06b.
+
+| # | Tiêu chí | Lần 1 | Lần 2 | Bằng chứng |
+|---|---|---|---|---|
+| 1 | Nhập nhiều dòng + validation + reload | ✅ | ✅ | E2E F1+F3 — lỗi mất dữ liệu khi reload sửa ở DATA-HOTFIX-01 (#16) |
+| 2 | Biểu đồ | ✅ | ✅ | E2E F2 |
+| 3 | CTR/CPC/CPA đúng | ✅ ⚠️ | ✅ | R-01 (giá trị ↔ delta) sửa ở #12 |
+| 4 | AI thật 3 gợi ý + fallback | ❌ | ✅ code · ⏳ thử thật | BA-03 vào main (#21), E26 sửa (#24), few-shot + nhãn model (TL-06b). Cần Thắng thử Gemini thật trên Vercel + AI-10 eval thật |
+| 5 | Copy báo cáo | ❌ | ❌ | **AI-08** chưa có (`buildReport`/`copyText` stub) — E2E F5 `test.fail` |
+| 6 | CI xanh | ✅ | ✅ | 4.012 test, 0 `it.fails`, E2E 20/20 |
+| 7 | Link Vercel | ✅ | ✅ | https://vibecode-three-xi.vercel.app/ |
+
+Ký G1 khi: AI-08 merge → bỏ `test.fail` F5 → Thắng thử trên điện thoại (Gemini thật, copy dán Zalo).

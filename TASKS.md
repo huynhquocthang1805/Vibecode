@@ -42,22 +42,23 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | AI-03 | Provider adapter Gemini (+ OpenAI, + stub cho test) | ai-engineer | Hoàng Anh | P0 | AI-01 |
 | [x] | AI-04 | enforceGuardrails (7 bước) | ai-engineer | Hoàng Anh | P0 | AI-01, BA-02 |
 | [x] | AI-05 | fallbackInsight rule-based | ai-engineer | Hoàng Anh | P0 | BA-02, FC-01 |
-| [~] (Hoàng Anh · sửa R-02..R-04 ở AI-FIX-01) | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
+| [x] (R-02..R-04 sửa ở AI-FIX-01, PR #24) | AI-06 | useInsights hook + cache client | ai-engineer | Hoàng Anh | P0 | AI-02 |
 | [x] | AI-07 | buildInsightRequest (nén payload) | ai-engineer | Hoàng Anh | P0 | FC-01 |
-| [ ] | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
+| [ ] **← chặn Gate G1 duy nhất** (mẫu BA-04 + `fillTemplate` đã có, xem handoffs/BA-04.md) | AI-08 | buildReport + copyText | forecast-engineer | Thắng 2 | P0 | BA-04 |
 | [x] | AI-FIX-01 | `useInsights`: không gọi khi chưa đủ dữ liệu (E26), gộp request trùng, khoá effect theo cacheKey (R-02..R-04 `handoffs/REVIEW-FD-FI-2026-11-04.md`) | ai-engineer | Hoàng Anh | P0 | AI-06 |
 | [x] | FI-01 | EntryForm nhiều dòng + validation inline + dialog trùng ngày | frontend-input | Trường | P0 | DATA-01, DATA-04 |
 | [x] | FI-02 | EntryTable (sửa/xoá/hoàn tác) — bản thường, ảo hoá ở FI-02b | frontend-input | Trường | P0 | DATA-04 |
 | [x] | FI-05 | DataManager: dữ liệu mẫu, backup xuất/nhập, xoá hết | frontend-input | Trường | P0 | DATA-04 |
 | [x] | FD-01 | DashboardShell responsive + header + tabs | frontend-dashboard | Trường | P0 | TL-03 |
-| [~] (Trường · chạy với dữ liệu thật; sửa R-01 giá trị ↔ delta) | FD-02 | KpiCards (delta, màu ngữ nghĩa, tooltip, "—") | frontend-dashboard | Trường | P0 | DATA-02 |
+| [x] (R-01 sửa ở PR #12) | FD-02 | KpiCards (delta, màu ngữ nghĩa, tooltip, "—") | frontend-dashboard | Trường | P0 | DATA-02 |
 | [x] | FD-03 | TrendChart + KpiRatioChart (ECharts, lazy) | frontend-dashboard | Trường | P0 | BA-05 |
-| [~] (Trường · chạy, có fallback; sửa R-02 cùng AI-06) | FD-05 | AiInsightCard (5 trạng thái) | frontend-dashboard | Trường | P0 | AI-06 |
+| [x] (R-02 sửa cùng AI-FIX-01) | FD-05 | AiInsightCard (5 trạng thái) | frontend-dashboard | Trường | P0 | AI-06 |
 | [~] (Trường · UI xong; chờ AI-08 của Thắng 2) | FD-06 | ExportReportButton (dialog, copy, tải .txt, toast) | frontend-dashboard | Trường | P0 | AI-08 |
 | [ ] | QA-01 | Test ca biên + property-based từ contracts | qa-engineer | Nhân | P0 | BA-01, TL-02 |
 | [~] (Thắng+Claude · bot review + review tích hợp) | TL-05 | Review PR liên tục (`/review`) | techlead | Thắng+Claude | P0 | — |
+| [~] (Thắng+Claude · PR mở) | TL-06b | Rà soát sau BA-03: AI thật nhận few-shot + nhãn `AI_MODEL@PROMPT_VERSION` + Gemini mặc định `gemini-flash-latest`; lazy AccountMenu/tab phụ/dự báo → bundle 277 → 256 KB | techlead | Thắng+Claude | P0 | BA-03 |
 | [x] | TL-06a | Ghép trang (today thật) + E2E smoke G1 desktop/iPhone + chấm G1 lần 1 | techlead | Thắng+Claude | P0 | TL-03 |
-| [~] (G1 lần 1: CHƯA ĐẠT — handoffs/GATE-G1.md) | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
+| [~] (G1 lần 2 · 2026-11-05: 6/7 — chỉ còn AI-08; handoffs/GATE-G1.md) | TL-06 | Tích hợp end-to-end + **Gate G1** | techlead | Thắng+Claude | P0 | tất cả P0 |
 
 ## Wave 4 — P1 (Dữ liệu lớn · Tháng/Quý · Dự báo)
 | | ID | Task | Owner | Người | P | Phụ thuộc |
@@ -77,8 +78,9 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FI-04 | Quản lý chiến dịch + bộ chọn chiến dịch | frontend-input | Trường | P1 | DATA-04 |
 | [x] | FI-06 | Form mobile (thẻ dọc, inputMode, format khi gõ) | frontend-input | Trường | P1 | FI-01 |
 | [x] | FD-04 | GrainSwitcher + ForecastPanel + vùng dự báo trên biểu đồ | frontend-dashboard | Trường | P1 | FC-06, DATA-06 |
-| [x] | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
-| [~] (Nhân · đặc tả đã merge, chưa có 8 fixture) | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
+| [x] (runner + báo cáo **mock** — chưa chạy Gemini thật, xem AI-10) | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
+| [x] (8 fixture do Hoàng Anh làm trong AI-09 PR #25 theo đặc tả của Nhân; Nhân rà nội dung) | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
+| [ ] | AI-10 | Chạy `npm run eval:ai` với **Gemini thật** (Thắng cấp `AI_API_KEY`, `AI_MODEL=gemini-flash-latest`) sau TL-06b; commit `docs/ai-eval-report.md` thật; kiểm tra 8 kịch bản qua guardrail | ai-engineer | Hoàng Anh | P0 | TL-06b |
 | [ ] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
 | [ ] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |
 | [ ] | QA-03 | Test API + guardrails với provider giả (8 lỗi) | qa-engineer | Nhân | P1 | AI-04 |
@@ -102,6 +104,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | ACC-04 | Đồng bộ dữ liệu: `/api/account/data` (revision, 409), không gian localStorage theo user, chuyển dữ liệu khách (A9, A10) | data-engineer | Huy | P1 | ACC-02, DATA-03 |
 | [x] | ACC-05 | UI: `AccountMenu`, `AuthDialog`, `ProfileDialog`, nén avatar 256 px bằng canvas, dialog xung đột đồng bộ (A12) | data-engineer | Huy | P1 | ACC-03, ACC-04 |
 | [x] | ACC-06 | Test: unit + integration route trên PGlite (A1–A11) + E2E `tests/e2e/account.spec.ts`; `g1-smoke` vẫn xanh khi không có DB | data-engineer | Huy | P1 | ACC-05 |
+| [ ] | ACC-FIX-01 | `lib/server/auth.ts` tạo `betterAuth()` lúc import → `npm run build` in `BetterAuthError: default secret` + cảnh báo baseURL khi chưa cấu hình (docs/14 §1.2 yêu cầu im lặng, 503). Khởi tạo lười (chỉ khi `accountConfigured()`), giữ `export const auth` qua getter/CR | data-engineer | Huy | P1 | ACC-02 |
 | [ ] | ACC-07 | Bật trên Vercel: tạo Neon (Storage → Neon), đặt `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, chạy `npm run db:migrate` | techlead | Thắng | P1 | ACC-02 |
 
 ## Wave 5 — P2 (Realtime nâng cao) + Hardening + Release
@@ -113,7 +116,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FC-08 | Target pacing (`pacing.ts`) | ai-engineer | Hoàng Anh | P2 | FC-06 |
 | [x] | FD-07 | LiveModeToggle + AnomalyFeed + animation thẻ | frontend-dashboard | Trường | P2 | DATA-08, FC-07 |
 | [x] | FD-08 | Rà soát trạng thái rỗng/lỗi, a11y, dark mode | frontend-dashboard | Trường | P2 | — |
-| [ ] | FD-10 | Bundle đầu < 250 KB (lazy `reviewFixture`), renderer canvas khi nhiều điểm, bỏ tên hard-code (R-05, R-06) | frontend-dashboard | Trường | P1 | FD-01 |
+| [~] (Trường xong R-05/R-06/canvas; bundle 256.139 B gzip modern sau TL-06b, còn ~6 KB — cần CR zod phía client; brotli thực tế 217 KiB) | FD-10 | Bundle đầu < 250 KB (lazy `reviewFixture`), renderer canvas khi nhiều điểm, bỏ tên hard-code (R-05, R-06) | frontend-dashboard | Trường | P1 | FD-01 |
 | [ ] | QA-04 | 8 E2E Playwright (cả mobile, cả trên deploy) | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-06 | Phiên test vai Marketer + `docs/bugs.md` | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-07 | Kiểm tra bảo mật nhanh | qa-engineer | Nhân | P0* | G1 |
