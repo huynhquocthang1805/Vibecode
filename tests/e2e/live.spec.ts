@@ -13,7 +13,6 @@ test('QA-04: live x60 tăng KPI hôm nay và cập nhật nowcast', async ({ pag
   await page.getByRole('switch', { name: 'Live mô phỏng' }).click();
   try {
     await expect(page.getByText('8 dòng', { exact: true })).toBeVisible();
-    test.fail(!process.env.QA_VERIFY_FIXES, 'BUG-QA04-03: snapshot debounce bị trì hoãn liên tục ở Live x60');
     await expect
       .poll(async () => Number((await page.getByTestId('kpi-value-reach').innerText()).replace(/\D/g, '')))
       .toBeGreaterThan(reachBefore);

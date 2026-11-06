@@ -2,7 +2,7 @@ vi.mock('server-only', () => ({}));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { requireUser } from '@/lib/server/auth';
+import { auth, requireUser } from '@/lib/server/auth';
 import { ensureMigrated, resetDb } from '@/lib/server/db/client';
 
 import { GET, POST } from './[...all]/route';
@@ -241,5 +241,12 @@ describe('ACC-02 · better-auth integration & requireUser on PGlite', () => {
     const u2 = await requireUser(authReq2);
     expect(u2).toBeInstanceOf(Response);
     expect((u2 as Response).status).toBe(401);
+  });
+
+  it('ACC-FIX-01: auth được khởi tạo lười qua Proxy, không gọi betterAuth khi chưa cấu hình', () => {
+    delete process.env.DATABASE_URL;
+    delete process.env.BETTER_AUTH_SECRET;
+
+    expect(() => auth.handler).toThrow('ACCOUNT_NOT_CONFIGURED');
   });
 });

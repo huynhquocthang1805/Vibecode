@@ -148,4 +148,25 @@ describe('DATA-06 · AnalyticsWorker & Client', () => {
     expect(periodKeys).toContain('2026-10');
     expect(periodKeys).toContain('2026-Q4');
   });
+
+  it('DATA-FIX-03 · BUG-QA04-02: bù khoảng trống từ dòng cuối (2026-10-31) đến today (2026-11-06) để có đủ nowcast quý', async () => {
+    const client = getAnalyticsClient();
+    const entries: DailyEntry[] = [];
+    for (let day = 1; day <= 31; day++) {
+      const dStr = String(day).padStart(2, '0');
+      entries.push(makeEntry('default', `2026-10-${dStr}`, 1000, 20, 100000, 2));
+    }
+    await client.init(entries);
+
+    const snap = await client.snapshot({
+      campaignId: 'default',
+      grain: 'quarter',
+      horizonDays: 30,
+      today: '2026-11-06',
+    });
+
+    const periodKeys = snap.nowcasts.map((n) => n.periodKey);
+    expect(periodKeys).toContain('2026-11');
+    expect(periodKeys).toContain('2026-Q4');
+  });
 });

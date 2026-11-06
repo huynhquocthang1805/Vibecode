@@ -77,7 +77,7 @@ export function startLiveSimulator(opts: { speed: 1 | 10 | 60; campaignId: strin
     const diurnalWeight = DIURNAL_HOURLY_WEIGHTS[hour] ?? 1.0;
 
     // Tính phần tăng reach mỗi tick
-    const baseReachStep = 10 + Math.round(prng() * 20);
+    const baseReachStep = 40 + Math.round(prng() * 40);
     const reachInc = Math.max(1, Math.round(baseReachStep * diurnalWeight));
 
     // CTR dao động ± 20%
@@ -94,7 +94,10 @@ export function startLiveSimulator(opts: { speed: 1 | 10 | 60; campaignId: strin
     // CVR dao động ± 20%
     const cvrNoise = 0.8 + prng() * 0.4;
     const cvr = Math.min(1.0, Math.max(0.001, baseline.cvr * cvrNoise));
-    const ordersInc = Math.min(clicksInc, Math.round(clicksInc * cvr));
+    const ordersInc = Math.min(
+      clicksInc,
+      Math.max(clicksInc > 0 && cvrNoise > 1.05 ? 1 : 0, Math.round(clicksInc * cvr)),
+    );
 
     const today = todayVN();
 

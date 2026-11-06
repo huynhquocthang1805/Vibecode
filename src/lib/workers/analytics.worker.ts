@@ -181,8 +181,18 @@ export function createAnalyticsEngine(options?: { isCompatibilityMode?: boolean 
       const monthKey = bucketKey(q.today, 'month');
       const quarterKey = bucketKey(q.today, 'quarter');
       const qRange = bucketRange(quarterKey, 'quarter');
+      let lastCompletedDate: string | null = null;
+      for (let i = daily.buckets.length - 1; i >= 0; i--) {
+        const b = daily.buckets[i];
+        if (b && b.daysWithData > 0 && !b.isPartial) {
+          lastCompletedDate = b.start;
+          break;
+        }
+      }
+      // BUG-QA04-02: forecastAll bắt đầu sau ngày hoàn tất cuối cùng, nên bù khoảng cách tới q.today
+      const gapToToday = lastCompletedDate ? Math.max(0, daysBetween(lastCompletedDate, q.today)) : 0;
       const daysToQuarterEnd = Math.max(0, daysBetween(q.today, qRange.end) + 1);
-      const forecastHorizon = Math.max(q.horizonDays, daysToQuarterEnd);
+      const forecastHorizon = Math.max(q.horizonDays, daysToQuarterEnd) + gapToToday;
 
       const dataSpan = getRollupDataSpan(rollupIndex, q.campaignId);
       const checksum = getRollupChecksum(rollupIndex);

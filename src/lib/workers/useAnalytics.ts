@@ -14,12 +14,15 @@ export interface UseAnalyticsResult {
   error: Error | null;
 }
 
+const SNAPSHOT_DEBOUNCE_MS = 50;
+const SNAPSHOT_MAX_WAIT_MS = 100;
+
 /**
  * Hook useAnalytics theo hợp đồng docs/10 §C.
  * - R-01: Ổn định khoá truy vấn (qKey) tránh vòng lặp re-render vô tận khi UI truyền object mới.
  * - R-02: Cập nhật tăng dần qua bus.on('entries/changed') và client.applyDelta, chỉ init khi gặp REVISION_GAP.
- * - Debounce 50ms khi có nhiều delta dồn dập.
- * - Tự chữa lệch (self-healing) nếu checksum không khớp.
+ * - BUG-QA04-03: Debounce 50ms kèm maxWait 100ms (throttle) + single-flight để Live x60 (~16ms/tick) không làm đói cập nhật.
+ * - Tự chữa lệch (self-healing) nếu checksum không khớp ở cùng revision.
  * - Huỷ kết quả cũ theo revision (latest-wins).
  * - KHÔNG bao giờ throw trong quá trình render (trả { data, loading, error }).
  */
@@ -33,6 +36,7 @@ export function useAnalytics(q: AnalyticsQuery): UseAnalyticsResult {
 
   const clientRef = useRef(getAnalyticsClient());
   const initializedRef = useRef(false);
+  const revisionOffsetRef = useRef(0);
   const reqIdRef = useRef(0);
   const qRef = useRef(q);
 
@@ -55,28 +59,42 @@ export function useAnalytics(q: AnalyticsQuery): UseAnalyticsResult {
   const scheduleSnapshot = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let firstWaitTime: number | null = null;
+    let inFlight = false;
+    let pendingAfterFlight = false;
+    let unmounted = false;
 
-    scheduleSnapshot.current = () => {
-      reqIdRef.current++;
-      const currentReqId = reqIdRef.current;
-      setLoading(true);
+    const runSnapshot = async () => {
+      timer = null;
+      firstWaitTime = null;
 
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(async () => {
-        try {
-          const client = clientRef.current;
-          const currentEntries = store.getState().entries;
+      if (inFlight) {
+        pendingAfterFlight = true;
+        return;
+      }
 
-          if (!initializedRef.current) {
-            await client.init(currentEntries);
-            initializedRef.current = true;
-          }
+      inFlight = true;
+      pendingAfterFlight = false;
+      const currentReqId = ++reqIdRef.current;
 
-          let snap = await client.snapshot(qRef.current);
+      try {
+        const client = clientRef.current;
+        const stateBefore = store.getState();
+        const revBefore = stateBefore.revision;
 
-          // Tự chữa lệch (self-healing): nếu checksum không khớp store
-          const currentStoreChecksum = store.getState().checksum;
+        if (!initializedRef.current) {
+          await client.init(stateBefore.entries);
+          revisionOffsetRef.current = 1 - stateBefore.revision;
+          initializedRef.current = true;
+        }
+
+        let snap = await client.snapshot(qRef.current);
+
+        // Tự chữa lệch (self-healing): chỉ đối chiếu khi store chưa nhảy sang revision mới trong lúc chờ worker
+        const stateAfter = store.getState();
+        if (stateAfter.revision === revBefore) {
+          const currentStoreChecksum = stateAfter.checksum;
           if (
             snap.checksum.rows !== currentStoreChecksum.rows ||
             snap.checksum.reach !== currentStoreChecksum.reach ||
@@ -84,7 +102,8 @@ export function useAnalytics(q: AnalyticsQuery): UseAnalyticsResult {
             snap.checksum.cost !== currentStoreChecksum.cost ||
             snap.checksum.orders !== currentStoreChecksum.orders
           ) {
-            await client.init(currentEntries);
+            await client.init(stateAfter.entries);
+            revisionOffsetRef.current = 1 - stateAfter.revision;
             snap = await client.snapshot(qRef.current);
             bus.emit({
               type: 'system/health',
@@ -93,22 +112,52 @@ export function useAnalytics(q: AnalyticsQuery): UseAnalyticsResult {
               message: 'Đã tự động chữa lệch rollup index.',
             });
           }
-
-          if (currentReqId === reqIdRef.current) {
-            setData(snap);
-            setLoading(false);
-            setError(null);
-          }
-        } catch (err) {
-          if (currentReqId === reqIdRef.current) {
-            setError(err instanceof Error ? err : new Error(String(err)));
-            setLoading(false);
-          }
         }
-      }, 50);
+
+        if (!unmounted && currentReqId === reqIdRef.current) {
+          setData(snap);
+          setLoading(false);
+          setError(null);
+        }
+      } catch (err) {
+        if (!unmounted && currentReqId === reqIdRef.current) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setLoading(false);
+        }
+      } finally {
+        inFlight = false;
+        if (!unmounted && pendingAfterFlight) {
+          pendingAfterFlight = false;
+          scheduleSnapshot.current?.();
+        }
+      }
+    };
+
+    scheduleSnapshot.current = () => {
+      setLoading(true);
+
+      if (inFlight) {
+        pendingAfterFlight = true;
+        return;
+      }
+
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      if (firstWaitTime === null) {
+        firstWaitTime = now;
+      }
+
+      const elapsed = Math.max(0, now - firstWaitTime);
+      const remainingMaxWait = Math.max(0, SNAPSHOT_MAX_WAIT_MS - elapsed);
+      const delay = Math.min(SNAPSHOT_DEBOUNCE_MS, remainingMaxWait);
+
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        void runSnapshot();
+      }, delay);
     };
 
     return () => {
+      unmounted = true;
       if (timer) clearTimeout(timer);
     };
   }, [store]);
@@ -119,15 +168,19 @@ export function useAnalytics(q: AnalyticsQuery): UseAnalyticsResult {
       try {
         const client = clientRef.current;
         if (!initializedRef.current) {
-          await client.init(store.getState().entries);
+          const s = store.getState();
+          await client.init(s.entries);
+          revisionOffsetRef.current = 1 - s.revision;
           initializedRef.current = true;
         } else {
           try {
-            await client.applyDelta(e.delta, e.revision);
+            await client.applyDelta(e.delta, e.revision + revisionOffsetRef.current);
           } catch (err) {
             // Nếu gặp REVISION_GAP -> self-heal bằng init lại toàn bộ
             if (err instanceof Error && err.message === 'REVISION_GAP') {
-              await client.init(store.getState().entries);
+              const s = store.getState();
+              await client.init(s.entries);
+              revisionOffsetRef.current = 1 - s.revision;
             } else {
               throw err;
             }
@@ -136,7 +189,9 @@ export function useAnalytics(q: AnalyticsQuery): UseAnalyticsResult {
       } catch {
         // Lưới an toàn: init lại từ store
         try {
-          await clientRef.current.init(store.getState().entries);
+          const s = store.getState();
+          await clientRef.current.init(s.entries);
+          revisionOffsetRef.current = 1 - s.revision;
         } catch {
           // ignore
         }
