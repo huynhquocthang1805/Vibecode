@@ -14,6 +14,7 @@ import { LIMITS } from '@/types/domain';
 import { downloadText } from './entryActions';
 import { ArchiveManager } from './ArchiveManager';
 import { CampaignManager } from './CampaignManager';
+import { SampleGallery } from './SampleGallery';
 
 export function DataManager() {
   const storage = useDataStore((s) => s.storage);
@@ -175,6 +176,7 @@ export function DataManager() {
             Xoá toàn bộ
           </button>
         </div>
+        <SampleGallery />
         <div className="manage-tile sm:col-span-2">
           <h3>Chiến dịch của bạn</h3>
           <CampaignManager />

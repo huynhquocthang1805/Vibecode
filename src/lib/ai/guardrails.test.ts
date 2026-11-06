@@ -133,7 +133,8 @@ describe('AI-04 Guardrails (7 bước)', () => {
     const res = enforceGuardrails(rawObj, req);
     expect(res.ok).toBe(true);
     if (res.ok) {
-      expect(res.value.warnings.some((w) => w.includes('88.5%'))).toBe(true);
+      // định dạng vi-VN (UI audit 2026-11-06)
+      expect(res.value.warnings.some((w) => w.includes('88,5%'))).toBe(true);
     }
   });
 

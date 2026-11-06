@@ -81,6 +81,24 @@ describe('FD-07 — Live và cảnh báo', () => {
     });
     vi.unstubAllGlobals();
   });
+  it('UI audit: nhiều cảnh báo → hiện 4, nút "Xem thêm", ngày dd/MM, chip % lệch so với kỳ vọng', () => {
+    const list: Anomaly[] = Array.from({ length: 7 }, (_, i) => ({
+      date: `2026-10-${String(20 + i).padStart(2, '0')}`,
+      metric: 'cpa',
+      value: 15000,
+      expected: 10000,
+      score: 3,
+      direction: 'spike',
+      severity: i % 2 ? 'warning' : 'critical',
+    }));
+    render(<AnomalyFeed anomalies={list} />);
+    expect(screen.getAllByRole('button', { name: /CPA ▲ tăng bất thường/ })).toHaveLength(4);
+    expect(screen.getAllByText('+50%').length).toBe(4);
+    expect(screen.getByText(/26\/10 ·/)).toBeInTheDocument(); // mới nhất lên đầu, dạng dd/MM
+    fireEvent.click(screen.getByRole('button', { name: 'Xem thêm 3 cảnh báo' }));
+    expect(screen.getAllByRole('button', { name: /CPA ▲ tăng bất thường/ })).toHaveLength(7);
+    expect(screen.getByRole('button', { name: 'Thu gọn' })).toHaveAttribute('aria-expanded', 'true');
+  });
   it('giới hạn nhịp hiển thị Live 250ms và 1s khi hơn 50k dòng', () => {
     vi.useFakeTimers();
     useDataStore.getState().setSettings({ liveMode: true });

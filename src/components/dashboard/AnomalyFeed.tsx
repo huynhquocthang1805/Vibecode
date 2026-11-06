@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleCheck, TriangleAlert } from 'lucide-react';
+import { ChevronDown, CircleCheck, TriangleAlert } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -13,8 +13,19 @@ import { useDataStore } from '@/lib/data/store';
 
 import { ReviewContext } from './ReviewContext';
 
+/** Số cảnh báo hiện sẵn; phần còn lại ở nút "Xem thêm" (UI audit 2026-11-06: 10 dòng làm cột phải quá dài) */
+const COLLAPSED = 4;
+const dayMonth = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+/** Lệch so với kỳ vọng, dạng "+65%" — dễ hiểu hơn hai con số tuyệt đối */
+function deviation(a: Anomaly): string | null {
+  if (!a.expected) return null;
+  const pct = Math.round(((a.value - a.expected) / Math.abs(a.expected)) * 100);
+  return `${pct > 0 ? '+' : ''}${new Intl.NumberFormat('vi-VN').format(pct)}%`;
+}
+
 export function AnomalyFeed({ anomalies }: { anomalies: Anomaly[] }) {
   const preview = useContext(ReviewContext);
+  const [expanded, setExpanded] = useState(false);
   const [events, setEvents] = useState<{ campaignId: string; anomaly: Anomaly }[]>([]);
   const active = useDataStore((s) => s.settings.activeCampaignId);
   useEffect(() => {
@@ -50,22 +61,26 @@ export function AnomalyFeed({ anomalies }: { anomalies: Anomaly[] }) {
           </p>
         </>
       ) : (
-        <ul className="space-y-3" aria-live="polite">
+        <>
+        <p className="card-description mb-3">
+          {displayed.length > 10
+            ? `10 cảnh báo gần nhất (trong ${displayed.length})`
+            : `${displayed.length} cảnh báo gần đây`}{' '}
+          · bấm để xem trên biểu đồ
+        </p>
+        <ul className="anomaly-list" aria-live="polite">
           {displayed
             .slice(-10)
             .reverse()
+            .slice(0, expanded ? 10 : COLLAPSED)
             .map((a, i) => {
               const meta = METRIC_META[a.metric];
               const format = meta.unit === 'vnd' ? fmtVnd : meta.unit === 'ratio' ? fmtPct : fmtInt;
               return (
-                <li key={`${a.date}-${a.metric}-${i}`} className="flex gap-2 text-xs leading-6">
-                  <TriangleAlert
-                    className="mt-1 shrink-0"
-                    size={15}
-                    style={{ color: a.severity === 'critical' ? 'var(--red)' : '#bc851c' }}
-                  />
+                <li key={`${a.date}-${a.metric}-${i}`} className={`anomaly-item ${a.severity}`}>
+                  <TriangleAlert className="mt-0.5 shrink-0" size={15} aria-hidden />
                   <button
-                    className="text-left min-h-11"
+                    className="min-h-11 flex-1 text-left"
                     disabled={!!preview}
                     onClick={() => {
                       useDataStore
@@ -77,17 +92,32 @@ export function AnomalyFeed({ anomalies }: { anomalies: Anomaly[] }) {
                       });
                     }}
                   >
-                    <strong className="font-medium">
-                      {meta.short} {a.direction === 'spike' ? '▲ tăng' : '▼ giảm'} bất thường
-                    </strong>
-                    <p className="muted">
-                      {a.date} · {format(a.value)} / kỳ vọng {format(a.expected)}
-                    </p>
+                    <span className="anomaly-head">
+                      <strong className="font-medium">
+                        {meta.short} {a.direction === 'spike' ? '▲ tăng' : '▼ giảm'} bất thường
+                      </strong>
+                      {deviation(a) && <span className="anomaly-chip">{deviation(a)}</span>}
+                    </span>
+                    <span className="muted block">
+                      {dayMonth(a.date)} · {format(a.value)}{' '}
+                      <span className="whitespace-nowrap">(thường khoảng {format(a.expected)})</span>
+                    </span>
                   </button>
                 </li>
               );
             })}
         </ul>
+        {Math.min(displayed.length, 10) > COLLAPSED && (
+          <button
+            className="anomaly-more"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+          >
+            {expanded ? 'Thu gọn' : `Xem thêm ${Math.min(displayed.length, 10) - COLLAPSED} cảnh báo`}
+            <ChevronDown size={14} style={{ transform: expanded ? 'rotate(180deg)' : undefined }} aria-hidden />
+          </button>
+        )}
+        </>
       )}
     </div>
   );

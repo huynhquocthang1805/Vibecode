@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useContext, useSyncExternalStore } from 'react';
 
 import { METRIC_META } from '@/config/metricMeta';
+import { addDays } from '@/lib/domain/dates';
 import { fmtInt, fmtPct, fmtVnd, fmtVndShort } from '@/lib/domain/format';
 import type { AnalyticsSnapshot, Metric } from '@/types/domain';
 
@@ -54,11 +55,17 @@ export function CampaignChart({
   const metrics: Metric[] = ratio ? ['ctr', 'cpc', 'cpa'] : ['reach', 'cost', 'orders'];
   const labels = buckets.map((b) => b.key);
   const partialKeys = new Set(buckets.filter((b) => b.isPartial).map((b) => b.key));
+  // UI audit 2026-11-06: dự báo dài tới cuối quý (cho nowcast) làm phần tương lai lấn phần thực tế.
+  // Biểu đồ chỉ hiện ~½ số ngày đang xem (14–30 ngày); dải tin cậy chỉ cho 1 chỉ số chính để đỡ rối.
+  const lastActual = buckets.at(-1)?.end ?? '';
+  const forecastEnd = lastActual ? addDays(lastActual, Math.min(30, Math.max(14, Math.round(buckets.length / 2)))) : '';
+  const inForecastWindow = (date: string) => date > lastActual && date <= forecastEnd;
+  const bandMetric: Metric = ratio ? 'cpa' : 'orders';
   if (showForecast && data.series.grain === 'day') {
     const future = data.forecasts
       .filter((f) => metrics.includes(f.metric))
       .flatMap((f) => f.points.map((p) => p.date))
-      .filter((date) => date > (buckets.at(-1)?.end ?? ''));
+      .filter(inForecastWindow);
     labels.push(...[...new Set(future)].sort());
     if (data.query.today >= labels[0]! && data.query.today <= labels.at(-1)! && !labels.includes(data.query.today)) {
       labels.push(data.query.today);
@@ -98,7 +105,7 @@ export function CampaignChart({
     for (const forecast of data.forecasts) {
       if (!metrics.includes(forecast.metric)) continue;
       const metricIndex = metrics.indexOf(forecast.metric);
-      const points = forecast.points.filter((p) => p.date > (buckets.at(-1)?.end ?? ''));
+      const points = forecast.points.filter((p) => inForecastWindow(p.date));
       const pointMap = new Map(points.map((p) => [p.date, p]));
       const forecastData = labels.map((date) => pointMap.get(date)?.mean ?? null);
       const axis = metricIndex === 0 ? 0 : metricIndex === 1 ? 1 : 2;
@@ -117,6 +124,7 @@ export function CampaignChart({
           data: [{ xAxis: data.query.today }],
         },
       });
+      if (forecast.metric !== bandMetric) continue;
       series.push({
         name: `${forecast.metric}-lo80`,
         type: 'line',
@@ -140,7 +148,7 @@ export function CampaignChart({
         }),
         lineStyle: { opacity: 0 },
         showSymbol: false,
-        areaStyle: { color: METRIC_COLORS[forecast.metric], opacity: 0.1 },
+        areaStyle: { color: METRIC_COLORS[forecast.metric], opacity: 0.16 },
         silent: true,
         tooltip: { show: false },
       });

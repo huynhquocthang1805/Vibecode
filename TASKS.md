@@ -125,6 +125,9 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FD-07 | LiveModeToggle + AnomalyFeed + animation thẻ | frontend-dashboard | Trường | P2 | DATA-08, FC-07 |
 | [x] | FD-08 | Rà soát trạng thái rỗng/lỗi, a11y, dark mode | frontend-dashboard | Trường | P2 | — |
 | [~] (Trường xong R-05/R-06/canvas; bundle 256.139 B gzip modern sau TL-06b, còn ~6 KB — cần CR zod phía client; brotli thực tế 217 KiB) | FD-10 | Bundle đầu < 250 KB (lazy `reviewFixture`), renderer canvas khi nhiều điểm, bỏ tên hard-code (R-05, R-06) | frontend-dashboard | Trường | P1 | FD-01 |
+| [x] | FD-11 | Kiểm thử UI/UX bằng ảnh (desktop/mobile): gọn log kiểm định AI (bỏ số thô, chữ 9px), dự báo biểu đồ ≤ ½ số ngày + 1 dải tin cậy, bất thường 4 dòng + Xem thêm + chip %, dải "Bắt đầu nhanh" khi trống, thanh công cụ mobile 2 hàng, ẩn nút đăng nhập khi server chưa bật (hết 503) | techlead (phần frontend) | Thắng+Claude | P1 | FD-08 |
+| [x] | DATA-12 | Bộ dữ liệu test 8 tình huống (sinh có seed, tính lùi từ hôm nay): tăng trưởng, CPA vọt, CTR giảm, cuối tuần, flash sale, 3 chiến dịch × 2 năm, 50.000 dòng, file có lỗi — "Dùng ngay" / "Tải CSV" trong tab Dữ liệu | techlead | Thắng+Claude | P1 | DATA-07 |
+| [ ] | DATA-FIX-04 | Thông báo lỗi nhập liệu dùng tên trường tiếng Anh ("Vui lòng nhập cost", "reach không được âm", "clicks phải là số nguyên") → đổi sang nhãn tiếng Việt từ `METRIC_META` (Chi phí, Lượt tiếp cận, Lượt click) | data-engineer | Huy | P1 | DATA-01 |
 | [x] | QA-04 | 8 E2E Playwright (cả mobile, cả trên deploy) | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-06 | Phiên test vai Marketer + `docs/bugs.md` | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-07 | Kiểm tra bảo mật nhanh | qa-engineer | Nhân | P0* | G1 |

@@ -642,8 +642,28 @@ body:has(.kpi-workspace[data-theme='dark']) .mvp-dialog {
   padding-top: 14px;
   border-top: 1px solid var(--line);
   color: var(--subtle);
-  font-size: 9px;
-  line-height: 1.8;
+  font-size: 11px; /* UI audit 2026-11-06: 9px khó đọc */
+  line-height: 1.7;
+}
+.insight-checks {
+  margin: 6px 0;
+}
+.insight-checks summary {
+  cursor: pointer;
+  color: var(--blue);
+  font-weight: 600;
+  list-style: none;
+}
+.insight-checks summary::-webkit-details-marker {
+  display: none;
+}
+.insight-checks summary::before {
+  content: '✓ ';
+}
+.insight-checks ul {
+  margin: 6px 0 2px;
+  padding-left: 16px;
+  list-style: disc;
 }
 .forecast-visual {
   display: flex;
@@ -1314,5 +1334,165 @@ body:has(.kpi-workspace[data-theme='dark']) .mvp-dialog {
 @media (max-width: 639px) {
   .topbar-avatar {
     display: none;
+  }
+}
+
+/* UI audit 2026-11-06 — danh sách bất thường gọn: 4 dòng + "Xem thêm", chip % lệch, màu theo mức */
+.anomaly-list {
+  display: grid;
+  gap: 8px;
+}
+.anomaly-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.55;
+  color: #bc851c;
+}
+.anomaly-item.critical {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 6%, transparent);
+  border-color: color-mix(in srgb, var(--red) 22%, transparent);
+}
+.anomaly-item button {
+  color: var(--ink);
+}
+.anomaly-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.anomaly-chip {
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+}
+.anomaly-item:not(.critical) .anomaly-chip {
+  color: #9a6a10;
+  background: color-mix(in srgb, #bc851c 12%, transparent);
+}
+.anomaly-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue);
+}
+
+
+/* UI audit 2026-11-06 — điện thoại: bộ lọc + điều khiển thành 2 hàng vuốt ngang (trước 4 hàng, đẩy KPI xuống) */
+@media (max-width: 639px) {
+  .filter-group,
+  .header-controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, #000 88%, transparent);
+  }
+  .filter-group::-webkit-scrollbar,
+  .header-controls::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-group > *,
+  .header-controls > * {
+    flex: none;
+  }
+  .filter-group .mvp-select {
+    flex: none;
+    width: 11rem;
+  }
+  .workspace-filters {
+    gap: 8px;
+  }
+}
+
+/* Dải "Bắt đầu nhanh" trên KPI khi chưa có dữ liệu (UI audit 2026-11-06) */
+.quick-start {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) 2fr;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 22px 24px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--blue) 25%, var(--line));
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--blue) 14%, transparent), transparent 60%),
+    var(--surface);
+}
+.quick-start-intro .card-title {
+  margin: 6px 0 4px;
+  font-size: 18px;
+}
+.quick-start-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.quick-start-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.quick-start-action:hover,
+.quick-start-action:focus-visible {
+  border-color: var(--blue);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--blue) 18%, transparent);
+  transform: translateY(-1px);
+}
+.quick-start-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+@media (max-width: 959px) {
+  .quick-start {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 639px) {
+  .quick-start {
+    padding: 16px;
+  }
+  .quick-start-actions {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-start-action {
+    transition: none;
+  }
+  .quick-start-action:hover {
+    transform: none;
   }
 }

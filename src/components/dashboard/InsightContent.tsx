@@ -48,9 +48,22 @@ export default function InsightContent({ data }: { data: InsightResponse }) {
           timeStyle: 'short',
         }).format(data.generatedAt)}
         <br />
-        {data.corrected && 'Đã tự động hiệu chỉnh số liệu cho khớp dữ liệu. '}
-        {data.warnings.join(' ')}
-        <br />
+        {/* Chi tiết kiểm định gói lại — marketer chỉ cần biết số đã được đối chiếu (UI audit 2026-11-06) */}
+        {(data.corrected || data.warnings.length > 0) && (
+          <details className="insight-checks" data-testid="insight-checks">
+            <summary>
+              {data.corrected ? 'Đã tự động hiệu chỉnh số liệu cho khớp dữ liệu' : 'Đã kiểm tra đối chiếu số liệu'}
+              {data.warnings.length > 0 && ` · xem ${data.warnings.length} chi tiết`}
+            </summary>
+            {data.warnings.length > 0 && (
+              <ul>
+                {data.warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            )}
+          </details>
+        )}
         Nhận xét do AI tạo — hãy kiểm tra trước khi gửi.
       </footer>
     </>

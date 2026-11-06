@@ -6,9 +6,15 @@ import type {
   TrendDirection,
 } from '@/types/domain';
 import { BANNED_PHRASES } from '@/config/bannedPhrases';
+import { METRIC_META } from '@/config/metricMeta';
 
 import { fallbackInsight } from './fallback';
 import { insightSuggestionSchema, rawInsightOutputSchema } from './schemas';
+
+// Câu cảnh báo cho người đọc (marketer): tên chỉ số tiếng Việt, hướng tăng/giảm, số làm tròn kiểu vi-VN
+const DIRECTION_LABEL: Record<TrendDirection, string> = { up: 'tăng', down: 'giảm', flat: 'đi ngang', volatile: 'biến động' };
+const metricLabel = (m: Metric) => METRIC_META[m]?.short ?? m;
+const pctLabel = (n: number) => `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(n)}%`;
 
 // Cụm chung chung do BA soạn (config/bannedPhrases.ts), so khớp sau khi bỏ dấu + chữ thường
 const BANNED_PATTERNS = BANNED_PHRASES.map((p) => removeVietnameseDiacritics(p.toLowerCase()));
@@ -76,7 +82,7 @@ export function enforceGuardrails(
   if (overall !== req.trend.overall) {
     overall = req.trend.overall;
     corrected = true;
-    warnings.push(`Đã tự động điều chỉnh xu hướng tổng quan từ "${data.overall}" sang "${overall}" theo dữ liệu tính toán.`);
+    warnings.push(`Xu hướng chung: AI ghi "${DIRECTION_LABEL[data.overall]}", đã sửa thành "${DIRECTION_LABEL[overall]}" theo số liệu.`);
   }
 
   // Bước 3 & 4 (phần 2): Đối chiếu số liệu changePct và direction từng metric
@@ -92,7 +98,7 @@ export function enforceGuardrails(
       if (mc.direction !== trendMetric.direction) {
         finalDirection = trendMetric.direction;
         corrected = true;
-        warnings.push(`Chỉ số ${mc.metric} được sửa hướng từ "${mc.direction}" thành "${finalDirection}".`);
+        warnings.push(`${metricLabel(mc.metric)}: AI ghi "${DIRECTION_LABEL[mc.direction]}", đã sửa thành "${DIRECTION_LABEL[finalDirection]}".`);
       }
 
       // Đối chiếu changePct (sai số ±0.5 điểm %)
@@ -100,7 +106,7 @@ export function enforceGuardrails(
         if (Math.abs(mc.changePct - trendMetric.changePct) > 0.5) {
           finalChangePct = trendMetric.changePct;
           corrected = true;
-          warnings.push(`Chỉ số ${mc.metric} được sửa % thay đổi từ ${mc.changePct}% thành ${finalChangePct}%.`);
+          warnings.push(`${metricLabel(mc.metric)}: AI ghi ${pctLabel(mc.changePct)}, đã sửa thành ${pctLabel(finalChangePct)}.`);
         }
       } else if (trendMetric.changePct !== mc.changePct) {
         finalChangePct = trendMetric.changePct;
@@ -159,7 +165,7 @@ export function enforceGuardrails(
       }
     }
     if (!matched) {
-      warnings.push(`AI nhắc số ${pct}% không có trong dữ liệu đã cung cấp.`);
+      warnings.push(`AI nhắc ${pctLabel(pct)} — con số này không có trong dữ liệu.`);
     }
   }
 
