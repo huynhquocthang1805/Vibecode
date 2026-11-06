@@ -85,7 +85,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [ ] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
 | [x] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |
 | [x] | QA-03 | Test API + guardrails với provider giả (8 lỗi) | qa-engineer | Nhân | P1 | AI-04 |
-| [ ] | QA-05 | Perf benchmark + `docs/perf-report.md` | qa-engineer | Nhân | P1 | DATA-06, FC-04 |
+| [x] | QA-05 | Perf benchmark + `docs/perf-report.md` | qa-engineer | Nhân | P1 | DATA-06, FC-04 |
 | [x] | DATA-10 | Lưu trữ phân vùng theo năm + ghi 2 pha + checksum + Web Locks (docs/13 §2) | data-engineer | Huy | P1 | DATA-03 |
 | [x] | DATA-11 | Worker supervisor + cache theo phần + tự chữa lệch checksum (docs/13 §3–4) | data-engineer | Huy | P1 | DATA-06 |
 | [ ] | FC-10 | Dự báo bền vững: stale/thưa/winsorize/forecastStatus (docs/13 §5) | forecast-engineer | Thắng 2 | P1 | FC-04 |
