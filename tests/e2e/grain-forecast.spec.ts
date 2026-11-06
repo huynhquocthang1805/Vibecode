@@ -16,8 +16,6 @@ for (const [grain, expected] of [
     await button.click();
     await expect(button).toHaveAttribute('aria-pressed', 'true');
     await expect(forecast).toContainText('Dự kiến cuối tháng', { timeout: 20000 });
-    if (grain === 'Quý')
-      test.fail(!process.env.QA_VERIFY_FIXES, 'BUG-QA04-02: forecast thiếu khoảng từ dòng cuối đến hôm nay');
     await expect(forecast).toContainText(expected);
     await expect(forecast.locator('progress').first()).toBeVisible();
   });

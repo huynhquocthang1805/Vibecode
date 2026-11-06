@@ -115,9 +115,9 @@ export function createIndexedDbAdapter(opts?: { strict?: boolean }): StorageAdap
 
             // Đọc settings từ localStorage (nếu có) theo tiêu chuẩn "settings vẫn ở localStorage"
             let settings = settingsMeta?.value ?? DEFAULT_SETTINGS;
-            if (typeof window !== 'undefined' && window.localStorage) {
+            if (typeof window !== 'undefined') {
               try {
-                const rawLocal = window.localStorage.getItem(IDB_SETTINGS_STORAGE_KEY);
+                const rawLocal = window.localStorage?.getItem(IDB_SETTINGS_STORAGE_KEY);
                 if (rawLocal) {
                   settings = { ...DEFAULT_SETTINGS, ...JSON.parse(rawLocal) };
                 }
@@ -150,11 +150,11 @@ export function createIndexedDbAdapter(opts?: { strict?: boolean }): StorageAdap
 
     async save(state: PersistedState): Promise<void> {
       // 1. Lưu settings vào localStorage để sẵn sàng bootstrap nhanh
-      if (typeof window !== 'undefined' && window.localStorage) {
+      if (typeof window !== 'undefined') {
         try {
-          window.localStorage.setItem(IDB_SETTINGS_STORAGE_KEY, JSON.stringify(state.settings));
+          window.localStorage?.setItem(IDB_SETTINGS_STORAGE_KEY, JSON.stringify(state.settings));
         } catch {
-          // Bỏ qua lỗi hạn ngạch localStorage đối với settings nhỏ
+          // Bỏ qua lỗi hạn ngạch hoặc SecurityError localStorage đối với settings nhỏ
         }
       }
 
@@ -192,9 +192,9 @@ export function createIndexedDbAdapter(opts?: { strict?: boolean }): StorageAdap
     },
 
     async clear(): Promise<void> {
-      if (typeof window !== 'undefined' && window.localStorage) {
+      if (typeof window !== 'undefined') {
         try {
-          window.localStorage.removeItem(IDB_SETTINGS_STORAGE_KEY);
+          window.localStorage?.removeItem(IDB_SETTINGS_STORAGE_KEY);
         } catch {
           // Bỏ qua
         }
@@ -300,9 +300,9 @@ export async function migrateToIndexedDb(
   await migrateStorage(from, to);
 
   // R-01: Chỉ đặt ACTIVE_STORAGE_TYPE_KEY khi việc di chuyển thành công
-  if (typeof window !== 'undefined' && window.localStorage) {
+  if (typeof window !== 'undefined') {
     try {
-      window.localStorage.setItem(ACTIVE_STORAGE_TYPE_KEY, 'indexedDB');
+      window.localStorage?.setItem(ACTIVE_STORAGE_TYPE_KEY, 'indexedDB');
     } catch {
       // Bỏ qua
     }
@@ -322,9 +322,9 @@ export async function migrateToLocalStorage(
 
   await migrateStorage(from, to);
 
-  if (typeof window !== 'undefined' && window.localStorage) {
+  if (typeof window !== 'undefined') {
     try {
-      window.localStorage.setItem(ACTIVE_STORAGE_TYPE_KEY, 'localStorage');
+      window.localStorage?.setItem(ACTIVE_STORAGE_TYPE_KEY, 'localStorage');
     } catch {
       // Bỏ qua
     }

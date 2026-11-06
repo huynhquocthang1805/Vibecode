@@ -962,7 +962,13 @@ export const useDataStore = create<DataState>()(
 
 // Tự động nạp dữ liệu từ storage (hydration) khi khởi tạo
 if (typeof window !== 'undefined') {
-  const activeType = window.localStorage?.getItem(ACTIVE_STORAGE_TYPE_KEY);
+  let activeType: string | null = null;
+  try {
+    activeType = window.localStorage?.getItem(ACTIVE_STORAGE_TYPE_KEY) ?? null;
+  } catch {
+    // BUG-QA02-01: Trình duyệt chặn getter window.localStorage (SecurityError) -> rơi về RAM fallback trong adapter
+    activeType = null;
+  }
   if (activeType === 'indexedDB') {
     storageAdapter = createIndexedDbAdapter();
     useDataStore.setState((prev) => ({
@@ -990,7 +996,10 @@ if (typeof window !== 'undefined') {
         revision: rev,
       });
     } else {
-      useDataStore.setState({ hydrated: true });
+      useDataStore.setState((prev) => ({
+        hydrated: true,
+        revision: Math.max(1, prev.revision),
+      }));
     }
   });
 }

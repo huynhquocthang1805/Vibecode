@@ -123,8 +123,7 @@ describe('QA-02 · store → persistence → reload', () => {
     expect(business((await adapter.load())!.entries)).toEqual(business(rows.slice(0, 2)));
   });
 
-  // BUG-QA02-01: expected failure keeps the required behavior executable; remove .fails after owner fixes.
-  it.fails('BUG-QA02-01: store khởi tạo được khi getter localStorage ném SecurityError', async () => {
+  it('BUG-QA02-01: store khởi tạo được khi getter localStorage ném SecurityError', async () => {
     vi.resetModules();
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
       throw new DOMException('blocked', 'SecurityError');

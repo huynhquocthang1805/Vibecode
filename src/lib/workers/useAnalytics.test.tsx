@@ -162,4 +162,44 @@ describe('DATA-06 · useAnalytics hook (R-01, R-02, R-04)', () => {
 
     initSpy.mockRestore();
   });
+
+  it('DATA-FIX-03 · BUG-QA04-03: không bị đói snapshot khi nhận chuỗi delta liên tục mỗi 16ms (Live x60)', async () => {
+    const q: AnalyticsQuery = {
+      campaignId: 'default',
+      grain: 'day',
+      horizonDays: 30,
+      today: '2026-10-20',
+    };
+
+    const { result } = renderHook(() => useAnalytics(q));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.data?.totals.reach).toBe(1000);
+    });
+
+    // Mô phỏng chuỗi tick dồn dập (mỗi ~15ms < 50ms debounce) nhưng nhờ maxWait 100ms vẫn cập nhật
+    let stopStream = false;
+    const interval = setInterval(() => {
+      if (stopStream) return;
+      act(() => {
+        useDataStore.getState().addEntries(
+          [{ date: '2026-10-20', campaignId: 'default', reach: 100, clicks: 5, cost: 10000, orders: 1 }],
+          'sum',
+        );
+      });
+    }, 15);
+
+    try {
+      await waitFor(
+        () => {
+          expect(result.current.data?.totals.reach).toBeGreaterThan(1000);
+        },
+        { timeout: 1500 },
+      );
+    } finally {
+      stopStream = true;
+      clearInterval(interval);
+    }
+  });
 });
