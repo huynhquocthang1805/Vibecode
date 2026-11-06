@@ -73,7 +73,12 @@ export function AnalyticsStatus({
         </button>
       )}
       {FORECAST_MESSAGES[snapshot.forecastStatus] && (
-        <span className="card-description">{FORECAST_MESSAGES[snapshot.forecastStatus]}</span>
+        <span className="card-description">
+          {/* FC-10 (docs/13 §5): báo ngày có số liệu cuối để người dùng biết cần nhập từ đâu */}
+          {snapshot.forecastStatus === 'stale' && snapshot.dataSpan.last
+            ? `Số liệu đã cũ (lần cuối ${snapshot.dataSpan.last.slice(8, 10)}/${snapshot.dataSpan.last.slice(5, 7)}/${snapshot.dataSpan.last.slice(0, 4)}). Thêm số liệu gần đây để có dự báo.`
+            : FORECAST_MESSAGES[snapshot.forecastStatus]}
+        </span>
       )}
     </div>
   );

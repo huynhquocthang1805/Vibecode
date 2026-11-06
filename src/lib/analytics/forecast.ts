@@ -9,6 +9,7 @@ import { naive } from './models/baselines';
 import { predictModel } from './models/fitModel';
 import { assertInteger } from './models/modelMath';
 import { prepareDaily } from './prepareDaily';
+import { robustSeries } from './robust';
 
 export const BASE_METRICS: readonly BaseMetric[] = ['reach', 'clicks', 'cost', 'orders'];
 
@@ -23,8 +24,24 @@ export function forecastMetric(daily: number[], dates: ISODate[], metric: BaseMe
     backtest: { smape: null, mae: null, baselineSmape: null },
     confidence: 'low',
   };
-  const prepared = prepareDaily(daily, dates);
-  if (horizon === 0 || prepared.observed.filter(Boolean).length < CFG.minDays) return empty;
+  // Kiểm đầu vào (ngày sai/trùng/đảo, NaN, âm) TRƯỚC mọi xử lý — ném RangeError như cũ
+  const raw = prepareDaily(daily, dates);
+  if (horizon === 0 || raw.observed.filter(Boolean).length < CFG.minDays) return empty;
+  // FC-10 (docs/13 §5): bỏ 0 đầu chuỗi, chỉ fit đoạn sau khoảng trống > 28 ngày, winsorize ngày gõ nhầm.
+  const robust = robustSeries(daily, dates);
+  if (robust.values.length < CFG.minDays) {
+    // Đoạn dùng được quá ngắn → baseline naive trên đoạn đó (không bỏ trống, không fit mô hình phức tạp)
+    const tail = prepareDaily(robust.values, robust.dates);
+    const yTail = fillMissing(tail.values, tail.observed);
+    const lastTail = tail.dates[tail.dates.length - 1]!;
+    const base = naive(yTail, horizon);
+    const points = base.forecast.map((prediction, index) =>
+      forecastPoint(addDays(lastTail, index + 1), prediction, base.residualSd, index + 1),
+    );
+    return { ...empty, horizonDays: points.length, points };
+  }
+  const prepared = prepareDaily(robust.values, robust.dates);
+  if (prepared.observed.filter(Boolean).length < CFG.minDays) return empty;
   const y = fillMissing(prepared.values, prepared.observed);
   const lastDate = prepared.dates[prepared.dates.length - 1]!;
   try {

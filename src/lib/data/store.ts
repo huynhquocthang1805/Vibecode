@@ -206,6 +206,11 @@ export function applyRemoteDelta(delta: EntryDelta, revision?: number): void {
     origin: 'remote',
     revision: nextRevision,
   });
+
+  // TL-06d (BUG-QA04-01): tab nhận cũng lên lịch lưu. Tab gửi lưu sau debounce 300 ms — nếu tab nhận reload
+  // trong khoảng đó sẽ mất dữ liệu vừa đồng bộ. pagehide flush đồng bộ (DATA-HOTFIX-01); Web Locks tuần tự hoá
+  // hai tab ghi cùng nội dung (partition không đổi hash → không ghi lại).
+  schedulePersist(useDataStore.getState);
 }
 
 function schedulePersist(getState: () => DataState): void {

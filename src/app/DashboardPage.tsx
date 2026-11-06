@@ -5,7 +5,7 @@
  * Mỗi khu bọc SectionBoundary (docs/13 §7). TL-06 nối dữ liệu thật khi các module xong.
  */
 import dynamic from 'next/dynamic';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 import { AiInsightCard } from '@/components/dashboard/AiInsightCard';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
@@ -18,6 +18,7 @@ import { EntryForm } from '@/components/input/EntryForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInsights } from '@/lib/ai/useInsights';
+import { startCrossTabSync } from '@/lib/data/realtime/crossTab';
 import { useDataStore } from '@/lib/data/store';
 import { todayVN } from '@/lib/domain/dates';
 import { useAnalytics } from '@/lib/workers/useAnalytics';
@@ -67,6 +68,8 @@ const PasteImportDialog = dynamic(
 const noopSubscribe = () => () => undefined;
 
 export function DashboardPage({ accountsEnabled = false }: { accountsEnabled?: boolean }) {
+  // TL-06d (BUG-QA04-01): đồng bộ nhiều tab — nhập ở tab A, tab B nhận ngay (BroadcastChannel, fallback 'storage')
+  useEffect(() => startCrossTabSync(), []);
   const settings = useDataStore((s) => s.settings);
   // Ngày hôm nay theo giờ VN chỉ đọc ở client: Next 16 (Cache Components) cấm new Date() lúc prerender
   const today = useSyncExternalStore(noopSubscribe, todayVN, () => '');
