@@ -53,3 +53,5 @@ npx tsx tests/perf/browser.ts
 ```
 
 JSON đầy đủ ở `test-results/qa05-node.json`, `qa05-browser.json`, `qa05-deploy.json` (ignored local). Script trả lỗi khi đo không hợp lệ; ngân sách được ghi `pass:false`, không biến benchmark phụ thuộc máy thành CI gate. Owner frontend-chart/data xem chart; frontend-core/data xem Long Task; techlead/frontend xem bundle. QA không sửa nguồn ngoài quyền.
+
+**Ghi chú QA-06 sau lượt đo:** JSON local gốc đã bị một lượt Playwright dọn output chung; mẫu thô trong bảng đã commit trước đó và vẫn giữ nguyên. Các đường dẫn trên là output khi chạy lại, không khẳng định file gốc còn trên máy. Dùng Playwright trực tiếp với output riêng và sao lưu artifact cần giữ ngoài test-results.
