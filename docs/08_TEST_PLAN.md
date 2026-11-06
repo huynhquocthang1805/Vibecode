@@ -53,3 +53,13 @@ Chạy cả trên bản deploy (`BASE_URL=https://...`) trước khi nộp.
 
 ## 6. Báo cáo
 `docs/test-report.md` (kết quả + độ phủ) · `docs/perf-report.md` (bảng số đo trên máy dev + Vercel) · `docs/bugs.md` (bug tìm được khi đóng vai Marketer: bước tái hiện, mức độ, owner, trạng thái).
+
+### Tái lập QA-04 (PowerShell)
+```powershell
+npm run check
+npm run test:e2e -- happy-path.spec.ts validation.spec.ts persistence.spec.ts import.spec.ts grain-forecast.spec.ts mobile.spec.ts crosstab.spec.ts live.spec.ts --workers=2 --output=test-results/qa04-local
+$env:BASE_URL = 'https://vibecode-three-xi.vercel.app'
+npm run test:e2e -- happy-path.spec.ts validation.spec.ts persistence.spec.ts import.spec.ts grain-forecast.spec.ts mobile.spec.ts crosstab.spec.ts live.spec.ts --workers=2 --output=test-results/qa04-deploy
+Remove-Item Env:BASE_URL
+```
+Local dùng route thật với AI stub. Deploy chỉ intercept AI ở test runner; guest data trong context mới. QA_VERIFY_FIXES=1 để chạy nguyên kỳ vọng ba lỗi BUG-QA04-01/02/03, xem docs/bugs.md. Không coi expected failures là functional pass. Test IDs dùng khi có, control còn lại dùng accessible roles/labels.
