@@ -88,7 +88,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | QA-05 | Perf benchmark + `docs/perf-report.md` | qa-engineer | Nhân | P1 | DATA-06, FC-04 |
 | [x] | DATA-10 | Lưu trữ phân vùng theo năm + ghi 2 pha + checksum + Web Locks (docs/13 §2) | data-engineer | Huy | P1 | DATA-03 |
 | [x] | DATA-11 | Worker supervisor + cache theo phần + tự chữa lệch checksum (docs/13 §3–4) | data-engineer | Huy | P1 | DATA-06 |
-| [~] (Thắng+Claude làm thay Thắng 2 · PR mở) | FC-10 | Dự báo bền vững: stale/thưa/winsorize/forecastStatus (docs/13 §5) | forecast-engineer | Thắng 2 | P1 | FC-04 |
+| [x] | FC-10 | Dự báo bền vững: stale/thưa/winsorize/forecastStatus (docs/13 §5) | forecast-engineer | Thắng 2 | P1 | FC-04 |
 | [x] | FI-07 | Chống phình ở khu nhập: đồng hồ dung lượng, lưu trữ năm cũ, hoàn tác import (docs/13 §7) | frontend-input | Trường | P1 | FI-03, DATA-04 |
 | [x] | FD-09 | UI dữ liệu lớn & trạng thái suy giảm (docs/13 §7) | frontend-dashboard | Trường | P1 | FD-04, DATA-11 |
 | [x] | BA-08 | Ca biên E31–E50 + bộ dữ liệu stress / CSV thực tế (docs/13 §10) | ba-analyst | Nhân | P1 | BA-05 |
@@ -107,7 +107,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | ACC-06 | Test: unit + integration route trên PGlite (A1–A11) + E2E `tests/e2e/account.spec.ts`; `g1-smoke` vẫn xanh khi không có DB | data-engineer | Huy | P1 | ACC-05 |
 | [x] | DATA-FIX-03 | Sửa BUG-QA02-01 (store crash khi getter localStorage ném SecurityError) · BUG-QA04-03 (Live x60: debounce snapshot bị reset → cần throttle/maxWait) · phần data của BUG-QA04-02 (horizon bù khoảng dòng cuối → hôm nay). Test `it.fails`/`test.fail` có sẵn — sửa xong đổi thành test thường (docs/bugs.md) | data-engineer | Huy | P1 | QA-02, QA-04 |
 | [ ] | AI-FIX-02 | Sửa BUG-QA03-01: lỗi 413 PAYLOAD_TOO_LARGE phải kèm `fallback` (docs/05 §1); đổi `it.fails` trong `tests/integration/insights-api.test.ts` thành `it` | ai-engineer | Hoàng Anh | P1 | QA-03 |
-| [~] (Thắng+Claude · PR mở) | TL-06d | Sửa BUG-QA04-01: gọi `startCrossTabSync()` trong vòng đời trang (DashboardPage) để tab B nhận dòng tab A nhập; bỏ `test.fail` ở `tests/e2e/crosstab.spec.ts` | techlead | Thắng+Claude | P1 | DATA-08 |
+| [x] | TL-06d | Sửa BUG-QA04-01: gọi `startCrossTabSync()` trong vòng đời trang (DashboardPage) để tab B nhận dòng tab A nhập; bỏ `test.fail` ở `tests/e2e/crosstab.spec.ts` | techlead | Thắng+Claude | P1 | DATA-08 |
 | [x] | ACC-FIX-01 | `lib/server/auth.ts` tạo `betterAuth()` lúc import → `npm run build` in `BetterAuthError: default secret` + cảnh báo baseURL khi chưa cấu hình (docs/14 §1.2 yêu cầu im lặng, 503). Khởi tạo lười (chỉ khi `accountConfigured()`), giữ `export const auth` qua getter/CR | data-engineer | Huy | P1 | ACC-02 |
 | [x] | ACC-FIX-02 | `npm run db:migrate` hỏng (drizzle.config thiếu `dbCredentials`) → Neon không có bảng, đăng ký lỗi 500. `npm run build` tự migrate qua `scripts/db-migrate.mjs` (neon-http, idempotent, bỏ qua khi không có DB) | techlead | Thắng+Claude | P1 | ACC-06 |
 | [x] | ACC-08b | Sau review PR #36: "Gửi lại mã" bắt lỗi mạng; nhắc bấm Gửi lại mã khi đăng ký lại email chưa xác nhận | techlead | Thắng+Claude | P1 | ACC-08 |
