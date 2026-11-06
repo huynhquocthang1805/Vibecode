@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthDialog } from './AuthDialog';
@@ -93,5 +93,30 @@ describe('ACC-08 · AuthDialog bước nhập mã xác nhận email', () => {
     fillSignup();
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
     expect(screen.queryByTestId('verify-email-form')).toBeNull();
+  });
+
+  it('Gửi lại mã bị lỗi mạng → báo lỗi, không ném ra ngoài (review PR #36)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      signUpEmail.mockResolvedValue({ data: { token: null, user: { id: 'u1' } }, error: null });
+      sendVerificationOtp.mockRejectedValue(new TypeError('Failed to fetch'));
+      render(<AuthDialog isOpen onClose={() => {}} />);
+      fillSignup();
+      await screen.findByTestId('verify-email-form');
+      // đếm ngược 60 s tạo timer mới mỗi giây → tua từng giây trong act()
+      for (let i = 0; i < 61; i++) {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1000);
+        });
+      }
+      fireEvent.click(await screen.findByRole('button', { name: 'Gửi lại mã' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Failed to fetch');
+      expect(sendVerificationOtp).toHaveBeenCalledWith({
+        email: 'quocthanghuynh180504@gmail.com',
+        type: 'email-verification',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
