@@ -130,7 +130,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [ ] | DATA-FIX-04 | Thông báo lỗi nhập liệu dùng tên trường tiếng Anh ("Vui lòng nhập cost", "reach không được âm", "clicks phải là số nguyên") → đổi sang nhãn tiếng Việt từ `METRIC_META` (Chi phí, Lượt tiếp cận, Lượt click) | data-engineer | Huy | P1 | DATA-01 |
 | [x] | QA-04 | 8 E2E Playwright (cả mobile, cả trên deploy) | qa-engineer | Nhân | P0* | G1 |
 | [ ] | QA-06 | Phiên test vai Marketer + `docs/bugs.md` | qa-engineer | Nhân | P0* | G1 |
-| [ ] | QA-07 | Kiểm tra bảo mật nhanh | qa-engineer | Nhân | P0* | G1 |
+| [x] | QA-07 | Kiểm tra bảo mật nhanh | qa-engineer | Nhân | P0* | G1 |
 | [ ] | TL-08 | Tài liệu kiến trúc cuối + **Gate G3** | techlead | Thắng+Claude | P0* | — |
 | [~] | PM-01 | Duy trì TASKS + `docs/STATUS.md` hằng ngày | pm-release | Thắng+Claude | P0 | — |
 | [ ] | PM-02 | README đầy đủ | pm-release | Thắng+Claude | P0 | G1 |
