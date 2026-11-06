@@ -1,34 +1,72 @@
-# Test report — Nhân · 2026-11-06
+# Test report — Nhân · BA-08, QA-01 đến QA-07
 
-## Môi trường và cách đọc
-Windows, Node22, Chromium156, Playwright1.64.1; iPhone12 là viewport/touch emulation trên Chromium, không phải WebKit/iOS thật. Ngày nghiệp vụ cố định 2026-11-06.
-Expected failure là yêu cầu đang **không đạt**, không phải lỗi đã sửa. Artifact test-results/** giữ local, không commit dữ liệu lớn/trace.
+Mốc 2026-11-06. Windows, Node 22.16.0, Chromium 156.0.8078.4, Playwright 1.64.1; iPhone12 là Chromium touch/viewport emulation, không phải iOS/WebKit thật. Ngày nghiệp vụ cố định 2026-11-06. Local production build c4816a7; deploy https://vibecode-three-xi.vercel.app chưa xác minh SHA. Test dùng AI stub.
 
-## Kết quả từng lớp
-| Task | Kết quả xác minh |
+## Kết quả
+
+| Task | Kết quả đã xác minh |
 |---|---|
-| BA-08 | 9 tests generator/fixtures; stress200k, sparse và ba encoding CSV; PR30 đã merge |
-| QA-01 | 85 tests fixture/invariant, 6 property × 200 lượt seed20261106; PR31 đã merge |
-| QA-02 | 7 pass + 1 expected failure BUG-QA02-01; suite74files:4160pass+1expected; PR32 đã merge |
-| QA-04 local | 18 functional pass + 6 expected failures, 12cases×2projects, build production AI stub |
-| QA-04 deploy | 18 functional pass + 6 expected failures; https://vibecode-three-xi.vercel.app; AI intercept stub |
-| QA-03/05/06/07 | Đang triển khai; chưa coi là đạt |
+| BA-08 | 9 tests generator/fixtures; stress 200k, sparse, 3 encoding CSV, E31–E50; PR30 |
+| QA-01 | 85 tests fixture/invariant, 6 property × 200 lượt, seed 20261106; PR31 |
+| QA-02 | Sau PR38: 8/8 pass, gồm storage getter bị chặn; PR32 |
+| QA-03 | 13 pass + 1 expected failure BUG-QA03-01 (fallback 413); PR34 |
+| QA-04 local | Sau owner sửa: 22 functional pass + 2 expected cross-tab, 12 cases × 2 projects; PR33 |
+| QA-04 deploy | 22 functional pass + 2 expected cross-tab; AI intercept stub ở test runner |
+| QA-05 | Năm mẫu median CPU/browser local/deploy; 3 ngân sách chưa đạt, xem perf-report.md; PR40 |
+| QA-06 | Phiên thực 45 phút 41.65 giây; 141 hành động, 124 pass + 17 harness fail CRLF, 0 pageerror; smoke sau sửa 9/9 |
+| QA-07 | API 4/4 pass; XSS 2/2 local + 2/2 deploy; 46 client chunks/222 source files không phát hiện canary giả hoặc public KEY variable; PR41 |
 
-## E2E local
-| Spec | Desktop | iPhone12 |
+`npm run check` trên lượt bao gồm QA-07: **80 test files, 4214 pass + 1 expected fail, 0 unexpected fail**, lint 0 warning, TypeScript strict xanh. Build production xanh. Expected failure là yêu cầu sản phẩm chưa đạt. Playwright in 26 passed cho QA04+QA07 nhưng thực tế **24 functional pass + 2 expected fail** mỗi môi trường.
+
+## E2E sau retest PR38
+
+| Spec | Local desktop/iPhone | Deploy desktop/iPhone |
 |---|---|---|
-| happy-path | Pass | Pass |
-| validation (4cases) | Pass | Pass |
-| persistence | Pass | Pass |
-| import (1000rows/10errors + TSV) | Pass | Pass |
-| grain-forecast: month | Pass | Pass |
-| grain-forecast: quarter | BUG-QA04-02 | BUG-QA04-02 |
-| mobile375px | Pass | Pass |
-| crosstab | BUG-QA04-01 | BUG-QA04-01 |
-| live | BUG-QA04-03 | BUG-QA04-03 |
+| happy-path: 7 ngày, KPI, chart, AI3, clipboard | Pass/Pass | Pass/Pass |
+| validation: 4 ca lỗi/cảnh báo | Pass/Pass | Pass/Pass |
+| persistence: reload, xóa, undo | Pass/Pass | Pass/Pass |
+| import: 1000 dòng/10 lỗi và TSV | Pass/Pass | Pass/Pass |
+| grain-forecast: tháng và quý | Pass/Pass | Pass/Pass |
+| mobile 375px | Pass/Pass | Pass/Pass |
+| crosstab | BUG-QA04-01/BUG-QA04-01 | BUG-QA04-01/BUG-QA04-01 |
+| live: x60, KPI, nowcast cập nhật | Pass/Pass | Pass/Pass |
+| security: XSS tên campaign sau reload | Pass/Pass | Pass/Pass |
 
-## Coverage và phạm vi
-Chưa đo coverage V8; không báo đạt ≥85% chỉ từ số test. QA-08 stress/chaos ngoài đợt giao. Gemini thật/G1 manual không được chứng minh bằng test stub.
+## Coverage V8
 
-## Lỗi cần owner
-Xem docs/bugs.md: localStorage SecurityError, thiếu wiring cross-tab, thiếu forecast cuối quý khi dữ liệu trễ, Live x60 trì hoãn snapshot. Không sửa nguồn ngoài quyền QA.
+Đo bằng `npx vitest run --coverage --coverage.reporter=json-summary --coverage.reporter=text`, cùng 80 files/4214 pass + 1 expected. Config include src/lib/** và src/types/**. Trừ 4 statement/line của domain.ts khỏi aggregate:
+
+| src/lib/ | Covered/total | % (làm tròn) |
+|---|---:|---:|
+| Lines | 3282/3619 | **90.69%** |
+| Statements | 3534/3956 | 89.33% |
+| Functions | 492/542 | 90.77% |
+| Branches | 2131/2796 | 76.22% |
+
+Mục tiêu ≥85% lines đạt; không khẳng định branches ≥85%. Domain group 90.31% lines, analytics 93.93%, guardrails 97.50%. Provider Gemini/OpenAI thấp (28%/12.5% lines) vì suite dùng stub; không phải bằng chứng chất lượng AI thật. JSON summary local: coverage/coverage-summary.json.
+
+Repo chưa khai báo @vitest/coverage-v8. Lượt đo dùng package 5.0.5 cài tạm ngoài repo và junction vào node_modules, không đổi manifest/lock. Máy mới cần techlead thêm dev dependency cùng phiên bản Vitest trước chạy coverage; `npm run check` không cần plugin này.
+
+## Phiên Marketer và bằng chứng
+
+Phiên dài bắt đầu 11:19:56.788Z, kết thúc 12:05:38.439Z ngày 2026-11-06, elapsed 2741650.777 ms. Nhập tay 7 ngày, dán Excel, nhập sai rồi sửa, chuyển campaign, tháng/quý, Live x60, AI/copy và bản nháp gửi Zalo. 17 assertion fail đều do CRLF của Windows so với LF trong textarea; giữ kết quả gốc, không ghi thành pass sau sửa. Smoke 60 giây 9/9 xác minh lại đoạn sửa.
+
+Không gửi Zalo hoặc thông điệp ra ngoài. AI stub; tự động thao tác theo vai Marketer. Không thay thế usability người thật. G1/manual evaluation với AI thật vẫn do techlead nghiệm thu.
+
+Artifact phiên dài và JSON benchmark ban đầu đã bị Playwright dọn output chung; số liệu đã đọc vào log, mẫu benchmark lưu trong docs/perf-report.md. Trace/ảnh gốc 45 phút **không còn**. Script hiện ghi trace/JSON/ảnh vào `%TEMP%/vibecode-qa06/{session,smoke}` hoặc QA_ARTIFACT_DIR để tránh mất lần nữa. Artifact smoke mới không thay thế trace phiên dài. Retest local/deploy: test-results/qa06-retest-{local,deploy}/.
+
+## Còn cần owner
+
+Cross-tab thiếu wiring (major), 413 fallback/spec mismatch (minor), ba ngân sách hiệu năng chưa đạt. Chi tiết trong docs/bugs.md. Storage getter, forecast quý, Live đã verified fixed. QA-08 stress/chaos và account.spec.ts của Huy ngoài phạm vi lượt giao này.
+
+## Chạy lại
+
+```powershell
+npm run check
+$env:BASE_URL='http://localhost:3000' # production server AI stub đã chạy
+npx playwright test happy-path.spec.ts validation.spec.ts persistence.spec.ts import.spec.ts grain-forecast.spec.ts mobile.spec.ts crosstab.spec.ts live.spec.ts security.spec.ts --workers=2 --output=test-results/qa06-retest-local
+npx tsx tests/e2e/marketer-session.ts --smoke #60giây; bỏ --smoke để chạy45phút thật
+$env:BASE_URL='https://vibecode-three-xi.vercel.app'
+npx playwright test happy-path.spec.ts validation.spec.ts persistence.spec.ts import.spec.ts grain-forecast.spec.ts mobile.spec.ts crosstab.spec.ts live.spec.ts security.spec.ts --workers=2 --output=test-results/qa06-retest-deploy
+Remove-Item Env:BASE_URL
+```
