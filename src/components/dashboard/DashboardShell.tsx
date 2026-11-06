@@ -5,7 +5,9 @@ import {
   ArrowRight,
   ChartNoAxesCombined,
   ChevronRight,
+  ClipboardPaste,
   Database,
+  FlaskConical,
   LayoutDashboard,
   Moon,
   Plus,
@@ -298,6 +300,48 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
                   liệu thật; thay đổi sẽ không cập nhật các thẻ minh hoạ.
                 </div>
               )}
+              {/* UI audit 2026-11-06: màn hình trống → dải chào mừng 3 lối vào ngay trên KPI (trước: chỉ thấy toàn số 0) */}
+              {hydrated && rowCount === 0 && !preview && (
+                <section className="quick-start" data-testid="quick-start" aria-labelledby="quick-start-title">
+                  <div className="quick-start-intro">
+                    <p className="eyebrow">Bắt đầu nhanh</p>
+                    <h2 id="quick-start-title" className="card-title">Chưa có số liệu? Chọn 1 trong 3 cách.</h2>
+                    <p className="muted">Dữ liệu chỉ lưu trên thiết bị của bạn. Không cần đăng ký.</p>
+                  </div>
+                  <div className="quick-start-actions">
+                    {(
+                      [
+                        ['Nhập tay vài ngày', 'Reach, click, chi phí, đơn — KPI tự tính ngay.', 'entry', Plus],
+                        ['Dán từ Excel / CSV', 'Copy bảng từ Excel, Google Sheets hoặc file xuất từ Facebook Ads.', 'import', ClipboardPaste],
+                        ['Thử bộ dữ liệu test', '8 tình huống: tăng trưởng, CPA vọt, cuối tuần, 2 năm…', 'manage', FlaskConical],
+                      ] as const
+                    ).map(([title, text, tab, Icon]) => (
+                      <button
+                        type="button"
+                        className="quick-start-action"
+                        key={title}
+                        onClick={() => {
+                          goToData(tab);
+                          if (tab === 'manage')
+                            setTimeout(
+                              () => document.querySelector('[data-testid="sample-gallery"]')?.scrollIntoView({ block: 'start' }),
+                              300,
+                            );
+                        }}
+                      >
+                        <span className="quick-start-icon">
+                          <Icon size={18} aria-hidden />
+                        </span>
+                        <span className="text-left">
+                          <strong className="block">{title}</strong>
+                          <span className="muted block text-xs">{text}</span>
+                        </span>
+                        <ArrowRight size={16} className="ml-auto shrink-0" aria-hidden />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
               {!hydrated ? (
                 <div aria-label="Đang tải dữ liệu" className="kpi-primary-grid">
                   {[1, 2, 3, 4].map((i) => (
@@ -326,26 +370,7 @@ export function DashboardShell({ controls, kpis, chart, forecast, insight, anoma
                 <div className="dashboard-stack side-stack">
                   <section aria-label="Dự báo">{forecast}</section>
                   <section aria-label="Cảnh báo">{anomalies}</section>
-                  <section className="bento-card card-pad onboarding-card">
-                    <p className="eyebrow">Bắt đầu thật đơn giản</p>
-                    <h2 className="card-title mt-3">Từ số liệu đến hành động.</h2>
-                    {[
-                      ['Nhập số liệu', 'Thêm reach, click, chi phí và đơn hàng.'],
-                      ['Đọc hiệu quả', 'Theo dõi CTR, CPC và CPA tại một nơi.'],
-                      ['Chia sẻ kết quả', 'Tạo báo cáo gửi đội ngũ của bạn.'],
-                    ].map(([title, text], i) => (
-                      <div className="onboarding-step" key={title}>
-                        <span className="step-number">{i + 1}</span>
-                        <div>
-                          <strong className="font-medium">{title}</strong>
-                          <p className="muted">{text}</p>
-                        </div>
-                      </div>
-                    ))}
-                    <button className="text-button" onClick={() => goToData()}>
-                      Thêm dòng đầu tiên <ArrowRight size={14} />
-                    </button>
-                  </section>
+
                 </div>
               </div>
               <section id="du-lieu" className="bento-card data-section" aria-label="Dữ liệu">

@@ -66,7 +66,7 @@ const PasteImportDialog = dynamic(
 
 const noopSubscribe = () => () => undefined;
 
-export function DashboardPage() {
+export function DashboardPage({ accountsEnabled = false }: { accountsEnabled?: boolean }) {
   const settings = useDataStore((s) => s.settings);
   // Ngày hôm nay theo giờ VN chỉ đọc ở client: Next 16 (Cache Components) cấm new Date() lúc prerender
   const today = useSyncExternalStore(noopSubscribe, todayVN, () => '');
@@ -87,7 +87,7 @@ export function DashboardPage() {
         <SectionBoundary name="Bộ lọc">
           <GrainSwitcher />
           <LiveModeToggle />
-          <AccountMenu />
+          {accountsEnabled && <AccountMenu />}
         </SectionBoundary>
       }
       kpis={

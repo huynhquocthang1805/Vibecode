@@ -72,3 +72,22 @@ describe('FD-10 — review loading/lỗi và nhãn workspace', () => {
     expect(screen.getByRole('button', { name: 'Xuất backup / Lưu trữ năm cũ' })).toBeInTheDocument();
   });
 });
+
+describe('UI audit 2026-11-06 — Bắt đầu nhanh', () => {
+  it('chưa có dữ liệu → dải 3 lối vào trên KPI; có dữ liệu → ẩn', () => {
+    const { rerender } = render(<DashboardShell {...slots} />);
+    const hero = screen.getByTestId('quick-start');
+    for (const name of [/Nhập tay vài ngày/, /Dán từ Excel \/ CSV/, /Thử bộ dữ liệu test/])
+      expect(screen.getByRole('button', { name })).toBeInTheDocument();
+    expect(hero.compareDocumentPosition(screen.getByLabelText('Chỉ số tổng quan')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    act(() => {
+      useDataStore.setState({
+        entries: [
+          { id: 'c1|2026-11-01', date: '2026-11-01', campaignId: 'c1', reach: 1, clicks: 1, cost: 1, orders: 0, source: 'manual', createdAt: 0, updatedAt: 0 },
+        ],
+      });
+    });
+    rerender(<DashboardShell {...slots} />);
+    expect(screen.queryByTestId('quick-start')).toBeNull();
+  });
+});
