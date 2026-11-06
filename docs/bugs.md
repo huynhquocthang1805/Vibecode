@@ -6,6 +6,10 @@ Các dòng open là lỗi sản phẩm còn tồn tại; expected failure trong 
 |---|---|---|---|---|---|---|
 | BUG-QA02-01 | major | data-engineer | Open, 2026-11-06 | Cho getter `window.localStorage` ném `SecurityError`, import store ở phiên mới | Khởi tạo với RAM fallback và cảnh báo | Import reject ở `store.ts` phần hydration đọc `ACTIVE_STORAGE_TYPE_KEY` ngoài try/catch. Adapter riêng vẫn hoạt động. Regression `storage-worker.test.ts` dùng `it.fails`, giữ nguyên kỳ vọng không crash. |
 
+| BUG-QA04-01 | major | techlead + data-engineer | Open, 2026-11-06 | Hai tab cùng context, nhập một dòng ở A | B nhận dòng và KPI trước reload | B giữ 0 dòng. startCrossTabSync chỉ được export, chưa có caller trong app. crosstab.spec.ts, desktop/iPhone. |
+| BUG-QA04-02 | major | data-engineer + forecast-engineer | Open, 2026-11-06 | Today 2026-11-06, nạp campaign-2y, chọn Quý | Có nowcast cuối quý | Chỉ có tháng. Horizon tính từ today nhưng forecast bắt đầu sau dòng cuối; thiếu phần bù khoảng trống đến today. grain-forecast.spec.ts, hai viewport. |
+| BUG-QA04-03 | major | data-engineer | Open, 2026-11-06 | Nhập 7 ngày 30/10–05/11, bật Live x60 | KPI hôm nay và nowcast tăng khi Live đang bật | Row count tăng 7→8 nhưng KPI reach giữ1000, nowcast đứng yên. Debounce snapshot50ms bị reset bởi tick~16ms; cần throttle/maxWait. live.spec.ts, hai viewport. |
+
 ## Phạm vi xác minh
 - QA-02: jsdom, lỗi storage được tiêm có kiểm soát. Không khẳng định mọi Safari private session đều chặn getter.
 - QA-06: phiên thao tác trên trình duyệt sẽ bổ sung riêng; chưa ghi nhận là đã thực hiện.
@@ -15,3 +19,4 @@ Các dòng open là lỗi sản phẩm còn tồn tại; expected failure trong 
 - Tái hiện: POST body JSON1MB vào handler; nhận413 PAYLOAD_TOO_LARGE không có fallback.
 - Kỳ vọng docs/05§1: mọi4xx/5xx trừ400 đều cófallback. Thực tế413 không đáp ứng; request bị từ chối trước validate nên thiếu dữ liệu để tạo fallback có nghĩa.
 - Cần owner quyết định sửa contract/spec hoặc route; QA giữ assertion nguyên bản qua it.fails trong insights-api.test.ts. Không coi đây là chức năng đã đạt.
+- QA-04: regression dùng test.fail sau setup; QA_VERIFY_FIXES=1 chạy kỳ vọng nguyên bản. Owner sửa xong phải bỏ marker. Không tính expected failure là functional pass.
