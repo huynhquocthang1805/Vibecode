@@ -87,13 +87,18 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
 
   const handleResend = async () => {
     setErrorMessage(null);
-    const res = await authClient.emailOtp.sendVerificationOtp({ email, type: 'email-verification' });
-    if (res.error) {
-      setErrorMessage(mapAuthError(res.error.code || res.error.message));
-      return;
+    try {
+      const res = await authClient.emailOtp.sendVerificationOtp({ email, type: 'email-verification' });
+      if (res.error) {
+        setErrorMessage(mapAuthError(res.error.code || res.error.message));
+        return;
+      }
+      setInfoMessage(`Đã gửi mã mới tới ${email}.`);
+      setResendIn(60);
+    } catch (err) {
+      // mạng đứt / server lỗi → báo lỗi, không để promise rejection chưa bắt (review PR #36 #1)
+      setErrorMessage(mapAuthError(String(err)));
     }
-    setInfoMessage(`Đã gửi mã mới tới ${email}.`);
-    setResendIn(60);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -206,7 +211,8 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
               {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Xác nhận'}
             </button>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Không thấy thư? Kiểm tra mục Spam / Quảng cáo trong Gmail, hoặc bấm &quot;Gửi lại mã&quot;.
+              Không thấy thư? Kiểm tra mục Spam / Quảng cáo trong Gmail, hoặc bấm &quot;Gửi lại mã&quot;. Email đã đăng ký
+              trước đó nhưng chưa xác nhận cũng bấm &quot;Gửi lại mã&quot; để nhận mã mới.
             </p>
             <div className="flex items-center justify-between gap-2 text-sm">
               <button

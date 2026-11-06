@@ -1,6 +1,6 @@
 # ACC-08 — Xác nhận đăng ký bằng mã 6 số gửi qua Gmail (+ ACC-FIX-03 origin Vercel)
 
-Người làm: Thắng (techlead) · Claude · 2026-11-06 · nhánh `feat/techlead/ACC-FIX-03` · yêu cầu chủ dự án: "đăng ký sẽ có Gmail gửi token về xác nhận, dán vào"
+Người làm: Thắng (techlead) · Claude · 2026-11-06 · nhánh `feat/techlead/ACC-08-ACC-FIX-03` (PR #36) · sửa sau review: `feat/techlead/ACC-08b` · yêu cầu chủ dự án: "đăng ký sẽ có Gmail gửi token về xác nhận, dán vào"
 
 ## Đã làm
 **ACC-08** (docs/14 §8)
@@ -20,6 +20,10 @@ Người làm: Thắng (techlead) · Claude · 2026-11-06 · nhánh `feat/techle
 1. Gmail `quocthanghuynh180504@gmail.com` → https://myaccount.google.com/security → bật **Xác minh 2 bước** → https://myaccount.google.com/apppasswords → tạo mật khẩu ứng dụng tên "KPI Mini" → copy 16 ký tự.
 2. Vercel → Settings → Environment Variables (Production + Preview): `SMTP_USER` = `quocthanghuynh180504@gmail.com` · `SMTP_PASS` = 16 ký tự vừa tạo (bật **Sensitive**).
 3. Redeploy → đăng ký bằng email thật → nhận thư "xxxxxx là mã xác nhận đăng ký KPI Mini" → dán mã. Không có thư → xem Spam; Vercel → Logs lọc `[mailer]`.
+
+## Sửa sau review PR #36 (ACC-08b)
+- `handleResend` bọc `try/catch` → mạng đứt hiện lỗi tiếng Việt thay vì rejection chưa bắt.
+- Đăng ký lại email chưa xác nhận: better-auth trả thành công chung (chống dò email) và **không gửi mã** → dòng nhắc trong bước nhập mã hướng dẫn bấm "Gửi lại mã".
 
 ## Cần người khác làm
 - **Huy**: review (file của data-engineer). **Trường**: có thể chỉnh giao diện bước nhập mã qua CR.
