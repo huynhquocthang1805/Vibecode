@@ -110,31 +110,29 @@ async function run() {
           .getByRole('group', { name: 'Độ chi tiết thời gian' })
           .getByRole('button', { name: 'Ngày', exact: true });
         await dayButton.scrollIntoViewIfNeeded();
-        await dayButton.evaluate((button) => {
-          button.addEventListener(
-            'click',
-            () => {
-              const started = performance.now();
-              const paintTimer = setInterval(() => {
-                const chart = document.querySelector('section[aria-label="Biểu đồ"]');
-                if (chart?.textContent?.includes('1095 kỳ') && chart.querySelector('canvas')) {
-                  clearInterval(paintTimer);
-                  requestAnimationFrame(() =>
-                    requestAnimationFrame(() => {
-                      Object.assign(window, { qaChartMs: performance.now() - started });
-                    }),
-                  );
-                }
-              }, 16);
-            },
-            { once: true },
-          );
-        });
+        await dayButton.evaluate((button) => button.setAttribute('data-qa-chart-trigger', '1'));
+        // Raw browser script avoids tsx keepNames helpers inside serialized callbacks.
+        await page.evaluate(`document.querySelector('[data-qa-chart-trigger]').addEventListener('click', () => {
+          const started = performance.now();
+          const timer = setInterval(() => {
+            const chart = document.querySelector('section[aria-label="Biểu đồ"]');
+            if (chart && chart.textContent.includes('1095 kỳ') && chart.querySelector('canvas')) {
+              clearInterval(timer);
+              requestAnimationFrame(() => requestAnimationFrame(() => { window.qaChartMs = performance.now() - started; }));
+            }
+          }, 16);
+        }, { once: true })`);
         await dayButton.click();
-        await page.waitForFunction(() => typeof (window as unknown as { qaChartMs?: number }).qaChartMs === 'number');
+        // waitForFunction evaluates code inside the page and is blocked by this app's CSP.
+        // Polling only reads an already recorded browser timestamp, so it adds no measurement delay.
+        await expect
+          .poll(() => page.evaluate(() => (window as unknown as { qaChartMs?: number }).qaChartMs), { timeout: 20000 })
+          .toBeGreaterThan(0);
+        const renderMs: unknown = await page.evaluate(() => (window as unknown as { qaChartMs?: number }).qaChartMs);
+        if (typeof renderMs !== 'number' || !Number.isFinite(renderMs)) throw new Error('Invalid render measurement');
         await expect(chart).toContainText('1095 kỳ');
         await expect(chart.locator('canvas').first()).toBeVisible();
-        renderSamples.push(await page.evaluate(() => (window as unknown as { qaChartMs: number }).qaChartMs));
+        renderSamples.push(renderMs);
         process.stdout.write(`render run ${i + 1}: ${renderSamples.at(-1)}ms\n`);
       } finally {
         await context.close();
