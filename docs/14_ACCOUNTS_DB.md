@@ -66,7 +66,7 @@ Kiểm tra bắt buộc:
 | `BETTER_AUTH_URL` | production | `https://vibecode-three-xi.vercel.app` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | tuỳ chọn | có thì hiện nút "Đăng nhập bằng Google" |
 
-Script: `npm run db:generate` (drizzle-kit generate) · `npm run db:migrate` (áp migration — chạy trên Vercel bằng build step hoặc tay một lần).
+Script: `npm run db:generate` (drizzle-kit generate) · **`npm run build` tự áp migration** khi có `DATABASE_URL` (`scripts/db-migrate.mjs`, neon-http, idempotent; lỗi → build đỏ, Vercel giữ bản cũ) · `npm run db:migrate` chạy tay (đọc `.env.local`).
 
 ## 7. Nghiệm thu (Huy phải có test cho từng dòng)
 | # | Ca | Kỳ vọng |

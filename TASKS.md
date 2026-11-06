@@ -105,8 +105,12 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | ACC-04 | Đồng bộ dữ liệu: `/api/account/data` (revision, 409), không gian localStorage theo user, chuyển dữ liệu khách (A9, A10) | data-engineer | Huy | P1 | ACC-02, DATA-03 |
 | [x] | ACC-05 | UI: `AccountMenu`, `AuthDialog`, `ProfileDialog`, nén avatar 256 px bằng canvas, dialog xung đột đồng bộ (A12) | data-engineer | Huy | P1 | ACC-03, ACC-04 |
 | [x] | ACC-06 | Test: unit + integration route trên PGlite (A1–A11) + E2E `tests/e2e/account.spec.ts`; `g1-smoke` vẫn xanh khi không có DB | data-engineer | Huy | P1 | ACC-05 |
+| [ ] | DATA-FIX-03 | Sửa BUG-QA02-01 (store crash khi getter localStorage ném SecurityError) · BUG-QA04-03 (Live x60: debounce snapshot bị reset → cần throttle/maxWait) · phần data của BUG-QA04-02 (horizon bù khoảng dòng cuối → hôm nay). Test `it.fails`/`test.fail` có sẵn — sửa xong đổi thành test thường (docs/bugs.md) | data-engineer | Huy | P1 | QA-02, QA-04 |
+| [ ] | AI-FIX-02 | Sửa BUG-QA03-01: lỗi 413 PAYLOAD_TOO_LARGE phải kèm `fallback` (docs/05 §1); đổi `it.fails` trong `tests/integration/insights-api.test.ts` thành `it` | ai-engineer | Hoàng Anh | P1 | QA-03 |
+| [ ] | TL-06d | Sửa BUG-QA04-01: gọi `startCrossTabSync()` trong vòng đời trang (DashboardPage) để tab B nhận dòng tab A nhập; bỏ `test.fail` ở `tests/e2e/crosstab.spec.ts` | techlead | Thắng+Claude | P1 | DATA-08 |
 | [ ] | ACC-FIX-01 | `lib/server/auth.ts` tạo `betterAuth()` lúc import → `npm run build` in `BetterAuthError: default secret` + cảnh báo baseURL khi chưa cấu hình (docs/14 §1.2 yêu cầu im lặng, 503). Khởi tạo lười (chỉ khi `accountConfigured()`), giữ `export const auth` qua getter/CR | data-engineer | Huy | P1 | ACC-02 |
-| [ ] | ACC-07 | Bật trên Vercel: tạo Neon (Storage → Neon), đặt `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, chạy `npm run db:migrate` | techlead | Thắng | P1 | ACC-02 |
+| [~] (Thắng+Claude · PR mở) | ACC-FIX-02 | `npm run db:migrate` hỏng (drizzle.config thiếu `dbCredentials`) → Neon không có bảng, đăng ký lỗi 500. `npm run build` tự migrate qua `scripts/db-migrate.mjs` (neon-http, idempotent, bỏ qua khi không có DB) | techlead | Thắng+Claude | P1 | ACC-06 |
+| [ ] (code đã sẵn sàng — luồng tài khoản 18/18 với DB thật PGlite; chỉ còn thao tác Vercel, xem handoffs/ACC-FIX-02.md) | ACC-07 | Bật trên Vercel: tạo Neon (Storage → Neon, tự đặt `DATABASE_URL`), đặt `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` → Redeploy (build tự migrate) | techlead | Thắng | P1 | ACC-FIX-02 |
 
 ## Wave 5 — P2 (Realtime nâng cao) + Hardening + Release
 | | ID | Task | Owner | Người | P | Phụ thuộc |
