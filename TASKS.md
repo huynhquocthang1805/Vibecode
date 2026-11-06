@@ -110,6 +110,8 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [ ] | TL-06d | Sửa BUG-QA04-01: gọi `startCrossTabSync()` trong vòng đời trang (DashboardPage) để tab B nhận dòng tab A nhập; bỏ `test.fail` ở `tests/e2e/crosstab.spec.ts` | techlead | Thắng+Claude | P1 | DATA-08 |
 | [ ] | ACC-FIX-01 | `lib/server/auth.ts` tạo `betterAuth()` lúc import → `npm run build` in `BetterAuthError: default secret` + cảnh báo baseURL khi chưa cấu hình (docs/14 §1.2 yêu cầu im lặng, 503). Khởi tạo lười (chỉ khi `accountConfigured()`), giữ `export const auth` qua getter/CR | data-engineer | Huy | P1 | ACC-02 |
 | [x] | ACC-FIX-02 | `npm run db:migrate` hỏng (drizzle.config thiếu `dbCredentials`) → Neon không có bảng, đăng ký lỗi 500. `npm run build` tự migrate qua `scripts/db-migrate.mjs` (neon-http, idempotent, bỏ qua khi không có DB) | techlead | Thắng+Claude | P1 | ACC-06 |
+| [x] | ACC-FIX-03 | Mở web qua địa chỉ deploy Vercel → đăng ký 403 "Invalid origin": `trustedOrigins` thêm đúng `VERCEL_URL`/`VERCEL_BRANCH_URL`/`VERCEL_PROJECT_PRODUCTION_URL` (không wildcard) | techlead | Thắng+Claude | P1 | ACC-02 |
+| [x] | ACC-08 | Xác nhận đăng ký bằng **mã 6 số gửi Gmail** (emailOTP, 10 phút, 5 lần sai, lưu băm), bước nhập mã trong AuthDialog, gửi lại mã, log lỗi SMTP có gợi ý (docs/14 §8) | techlead (phần data-engineer) | Thắng+Claude | P1 | ACC-05 |
 | [ ] (code đã sẵn sàng — luồng tài khoản 18/18 với DB thật PGlite; chỉ còn thao tác Vercel, xem handoffs/ACC-FIX-02.md) | ACC-07 | Bật trên Vercel: tạo Neon (Storage → Neon, tự đặt `DATABASE_URL`), đặt `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` → Redeploy (build tự migrate) | techlead | Thắng | P1 | ACC-FIX-02 |
 
 ## Wave 5 — P2 (Realtime nâng cao) + Hardening + Release

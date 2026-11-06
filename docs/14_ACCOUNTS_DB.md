@@ -85,3 +85,11 @@ Script: `npm run db:generate` (drizzle-kit generate) · **`npm run build` tự �
 | A12 | 375 px: AuthDialog, ProfileDialog, AccountMenu | không tràn, nút ≥ 44 px |
 
 Tầng test: unit (Zod, magic bytes, merge local↔cloud) · integration route handler với **PGlite** (tạo schema bằng migration thật) · E2E Playwright `tests/e2e/account.spec.ts` (server với `DATABASE_URL=pglite://memory`, `BETTER_AUTH_SECRET=test…`). Không mock better-auth trong integration — chạy thật trên PGlite.
+
+## 8. Xác nhận đăng ký bằng mã email (ACC-08, chủ dự án yêu cầu 2026-11-06)
+- better-auth plugin `emailOTP` (`overrideDefaultEmailVerification`, `sendVerificationOnSignUp`) + `requireEmailVerification`; mã **6 số**, hiệu lực **10 phút**, sai tối đa **5 lần**, DB chỉ lưu **băm** (`storeOTP: 'hashed'`), gửi lại tối đa 3 lần/phút.
+- Luồng: Đăng ký → server gửi mã, **chưa có phiên** → AuthDialog bước "Xác nhận email" (ô 6 số, `autocomplete="one-time-code"`, Gửi lại mã sau 60 s) → đúng mã thì **đăng nhập luôn** (`autoSignInAfterVerification`). Đăng nhập khi chưa xác nhận → 403 `EMAIL_NOT_VERIFIED` + tự gửi mã mới.
+- Gửi qua SMTP (`nodemailer`, `lib/server/mailer.ts`), mặc định Gmail `smtp.gmail.com:465`. Biến: `SMTP_USER`, `SMTP_PASS` (Mật khẩu ứng dụng), tuỳ chọn `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`. **Thiếu SMTP → tắt**, đăng ký như cũ (CI/E2E/dev không đổi).
+- better-auth không báo lỗi gửi thư về client (vẫn 200) → server ghi `[mailer] Gửi mã … thất bại: <gợi ý>` vào log (không ghi mã/mật khẩu); UI nhắc kiểm tra Spam và nút Gửi lại mã.
+- Tài khoản tạo trước khi bật: lần đăng nhập đầu sẽ được gửi mã để xác nhận.
+- Gmail giới hạn ~500 thư/ngày — đủ cho demo; production lớn nên dùng dịch vụ gửi mail (Resend/SendGrid) qua cùng `SMTP_*`.
