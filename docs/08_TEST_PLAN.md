@@ -62,4 +62,22 @@ $env:BASE_URL = 'https://vibecode-three-xi.vercel.app'
 npm run test:e2e -- happy-path.spec.ts validation.spec.ts persistence.spec.ts import.spec.ts grain-forecast.spec.ts mobile.spec.ts crosstab.spec.ts live.spec.ts --workers=2 --output=test-results/qa04-deploy
 Remove-Item Env:BASE_URL
 ```
-Local dùng route thật với AI stub. Deploy chỉ intercept AI ở test runner; guest data trong context mới. QA_VERIFY_FIXES=1 để chạy nguyên kỳ vọng ba lỗi BUG-QA04-01/02/03, xem docs/bugs.md. Không coi expected failures là functional pass. Test IDs dùng khi có, control còn lại dùng accessible roles/labels.
+Local dùng route thật với AI stub. Deploy chỉ intercept AI ở test runner; guest data trong context mới. QA_VERIFY_FIXES=1 để chạy nguyên kỳ vọng lỗi cross-tab BUG-QA04-01; marker của BUG-QA04-02/03 đã được owner bỏ trong PR38. Không coi expected failures là functional pass. Test IDs dùng khi có, control còn lại dùng accessible roles/labels. Nếu npm trên PowerShell nuốt cờ CLI, dùng `npx playwright test ... --workers=2 --output=...` trực tiếp.
+
+### Tái lập QA-07 (PowerShell)
+```powershell
+npx vitest run tests/integration/security-api.test.ts
+$env:AI_PROVIDER='stub'
+$env:ALLOW_STUB='1'
+$env:AI_API_KEY='QA_PUBLIC_BUNDLE_CANARY_20261106' # giá trị giả, không phải credential
+npm run build
+npx tsx tests/integration/security-bundle.ts
+# Chạy npm run start trong terminal riêng với AI_PROVIDER=stub/ALLOW_STUB=1.
+$env:BASE_URL='http://localhost:3000'
+npx playwright test security.spec.ts --workers=2
+$env:BASE_URL='https://vibecode-three-xi.vercel.app'
+npx playwright test security.spec.ts --workers=2
+Remove-Item Env:BASE_URL
+Remove-Item Env:AI_API_KEY
+```
+Route test không gửi burst vào deploy/provider. Bundle scan chỉ đọc src/, next.config.ts và .next/static JS; dùng canary giả thay cho đọc/in secret. Không mở .env*. XSS dùng guest browser context mới và kiểm tra literal name sau reload.
