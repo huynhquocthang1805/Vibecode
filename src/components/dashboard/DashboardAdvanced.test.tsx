@@ -152,6 +152,12 @@ describe('FD-04/09 — dự báo và dữ liệu lớn', () => {
     expect(screen.getByText('Đang cập nhật…')).toBeInTheDocument();
     expect(screen.getByText(/Số liệu đã cũ/)).toBeInTheDocument();
   });
+  it('FC-10: dữ liệu cũ ghi rõ ngày có số liệu cuối (docs/13 §5)', () => {
+    render(
+      <AnalyticsStatus snapshot={{ ...snapshot, forecastStatus: 'stale', dataSpan: { first: '2026-06-01', last: '2026-07-12' } }} />,
+    );
+    expect(screen.getByText(/Số liệu đã cũ \(lần cuối 12\/07\/2026\)/)).toBeInTheDocument();
+  });
   it('chưa đủ dữ liệu dự báo hiển thị yêu cầu 7 ngày', () => {
     render(<ForecastPanel nowcasts={[]} forecasts={[]} />);
     expect(screen.getByText(/Cần ≥ 7 ngày/)).toBeInTheDocument();
