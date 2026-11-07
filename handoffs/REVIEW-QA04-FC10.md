@@ -45,3 +45,33 @@ Thăm dò trên bộ dữ liệu test (DATA-12) và fixture:
 | 2026-11-07 | qa-engineer (techlead làm) | REVIEW-QA04-FC10 | Chạy crosstab.spec trên deploy, phân loại 2 lỗi A1 là do môi trường | Test | — | docs/bugs.md |
 | 2026-11-07 | data-engineer review | REVIEW-QA04-FC10 | Tìm race delta trước hydrate ghi đè dữ liệu do chính TL-06d gây ra; thêm hàng đợi + test đỏ→xanh | Review/Fix | Bản TL-06d của AI thiếu guard hydrate | store.ts |
 | 2026-11-07 | forecast-engineer review | REVIEW-QA04-FC10 | Thăm dò winsorize trên bộ dữ liệu test → kẹp sai cuối tuần/tăng trưởng; viết lại theo cùng thứ + đỉnh đơn lẻ | Review/Fix | Bản sửa đầu vẫn kẹp 2 ngày đầu chuỗi và Tết — test tích hợp campaign-2y bắt được | robust.ts |
+
+---
+
+# Review — Vòng 1 · REVIEW-QA04-FC10 · **APPROVE**
+Reviewer: techlead (Claude bot) · 2026-11-07
+
+| Hạng mục | Kết quả |
+|---|---|
+| PR guard | ✅ không có lỗi chặn |
+| `npm run check` (lint + typecheck + test) | ✅ 82 file, 4234 passed + 1 expected fail (BUG-QA03-01, đã biết) |
+| `npm run build` | ✅ thành công |
+| Hợp đồng (`domain.ts`, docs/10) | ✅ không đổi chữ ký public; `winsorize` là hàm nội bộ `robust.ts`; `drainPendingRemote` chỉ export nội bộ lib/data |
+| Test ca lỗi/ca biên | ✅ chưa hydrate → xếp hàng, không ghi; ngày mới nhất; chuỗi hằng/MAD=0; weekend; tăng ×20; đợt nhiều ngày vs đỉnh lẻ; đơn ít; cửa sổ 365 ngày |
+| Handoff + log AI | ✅ có |
+| Phạm vi file | ✅ chạm file của data/forecast-engineer nhưng ghi rõ techlead làm thay theo yêu cầu chủ dự án |
+| docs/13 §5, bugs.md, TASKS.md | ✅ khớp với code |
+
+## Lỗi phải sửa
+Không có.
+
+## Lưu ý không chặn
+- `drainPendingRemote()` chỉ gọi trong `.then()` của `storageAdapter.load()`. Nếu `load()` reject thì `hydrated` không bao giờ true và hàng đợi không xả; nên thêm `.catch` đặt `hydrated: true` + drain (adapter hiện tại đã nuốt lỗi nên chưa xảy ra).
+- `remotePersist.test.ts` có dòng trống thừa cuối file.
+- Hàng đợi tối đa 100 delta, vượt thì bỏ — chấp nhận được vì tab vẫn đọc bản lưu khi hydrate.
+- account.spec A1 chưa chạy được từ môi trường cloud tới deploy (proxy) — nên chạy lại từ máy thường/CI.
+
+## Điểm tốt
+- Tìm và sửa đúng race ghi đè dữ liệu do chính TL-06d gây ra, có test đỏ→xanh.
+- Winsorize được thăm dò trên dữ liệu thật (weekend, ×20, campaign-2y), có test hồi quy từng ca; robust giới hạn trong cửa sổ fit 365 ngày, khớp docs/04 §3.
+- Retest BUG-QA04-01 trên deploy có bằng chứng; lỗi môi trường được phân loại trung thực.
