@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_SETTINGS, useDataStore } from '@/lib/data/store';
@@ -30,6 +30,29 @@ afterEach(() => {
 });
 
 describe('FD-04/09 — biểu đồ dự báo', () => {
+  it('dùng chuỗi ngày sẵn có khi đổi kỳ trong cùng chiến dịch và khoảng lọc', async () => {
+    const base = fixture as AnalyticsSnapshot;
+    const snapshot: AnalyticsSnapshot = {
+      ...base,
+      query: { ...base.query, grain: 'quarter' },
+      series: { ...base.series, grain: 'quarter', buckets: [{ ...base.series.buckets[0]!, key: '2026-Q4' }] },
+    };
+    useDataStore.setState({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        activeCampaignId: snapshot.query.campaignId,
+        range: snapshot.query.range ?? null,
+        grain: 'quarter',
+      },
+    });
+    render(<CampaignChart snapshot={snapshot} />);
+    await waitFor(() => expect(captured.option?.xAxis.data).toEqual(['2026-Q4']));
+    act(() => useDataStore.getState().setSettings({ grain: 'day' }));
+    expect(captured.option?.xAxis.data).toEqual(snapshot.daily.buckets.map((bucket) => bucket.key));
+    act(() => useDataStore.getState().setSettings({ activeCampaignId: 'another-campaign' }));
+    expect(captured.option?.xAxis.data).toEqual(['2026-Q4']);
+  });
+
   it('đồng nhất trục ngày cho mọi dải dự báo khi horizon khác nhau, tắt animation ở thiết bị ít RAM', async () => {
     const make = (metric: 'cost' | 'orders', dates: string[]): MetricForecast => ({
       metric,
@@ -51,8 +74,14 @@ describe('FD-04/09 — biểu đồ dự báo', () => {
     expect(option.xAxis.data.slice(-2)).toEqual(['2026-11-02', '2026-11-03']);
     const forecastSeries = option.series.filter((series) => /dự báo|lo80|hi80/.test(series.name));
     // UI audit 2026-11-06: mỗi chỉ số 1 đường dự báo; dải tin cậy chỉ cho chỉ số chính (Đơn) → 2 đường + 2 biên
-    expect(forecastSeries.map((x) => x.name).sort()).toEqual(['Chi phí dự báo', 'orders-hi80', 'orders-lo80', 'Đơn dự báo'].sort());
-    for (const series of forecastSeries) expect(series.data).toHaveLength(option.xAxis.data.length);
+    expect(forecastSeries.map((x) => x.name).sort()).toEqual(
+      ['Chi phí dự báo', 'orders-hi80', 'orders-lo80', 'Đơn dự báo'].sort(),
+    );
+    expect(forecastSeries.find((series) => series.name === 'Chi phí dự báo')?.data).toEqual([['2026-11-02', 10]]);
+    expect(forecastSeries.find((series) => series.name === 'orders-lo80')?.data).toEqual([
+      ['2026-11-02', 8],
+      ['2026-11-03', 8],
+    ]);
   });
 
   it('UI audit: dự báo dài tới cuối quý chỉ hiện ~½ số ngày đang xem (14–30 ngày) sau ngày thực tế cuối', async () => {

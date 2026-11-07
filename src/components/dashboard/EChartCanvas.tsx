@@ -1,6 +1,5 @@
 'use client';
 
-import ReactECharts from 'echarts-for-react/lib/core';
 import { BarChart, LineChart } from 'echarts/charts';
 import {
   AriaComponent,
@@ -14,6 +13,8 @@ import * as echarts from 'echarts/core';
 import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
 import { useEffect, useRef } from 'react';
+
+import { CANVAS_POINT_THRESHOLD } from './chartRendering';
 
 echarts.use([
   BarChart,
@@ -29,46 +30,40 @@ echarts.use([
 ]);
 
 export default function EChartCanvas({ option, pointCount }: { option: EChartsOption; pointCount: number }) {
-  const renderer = pointCount > 1_000 ? 'canvas' : 'svg';
+  const renderer = pointCount > CANVAS_POINT_THRESHOLD ? 'canvas' : 'svg';
   const container = useRef<HTMLDivElement>(null);
-  const chart = useRef<ReactECharts>(null);
+  const chart = useRef<echarts.EChartsType | null>(null);
   useEffect(() => {
+    const element = container.current;
+    if (!element) return;
+    const instance = echarts.init(element, undefined, { renderer });
+    chart.current = instance;
     function zoom(event: Event) {
       const date: unknown = (event as CustomEvent<unknown>).detail;
       if (typeof date !== 'string') return;
-      chart.current?.getEchartsInstance()?.dispatchAction({ type: 'dataZoom', startValue: date, endValue: date });
+      instance.dispatchAction({ type: 'dataZoom', startValue: date, endValue: date });
     }
     window.addEventListener('kpi:zoom-date', zoom);
-    return () => window.removeEventListener('kpi:zoom-date', zoom);
-  }, []);
-  useEffect(() => {
     let frame = 0;
     const observer = new ResizeObserver(() => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() =>
-        chart.current?.getEchartsInstance()?.resize({ width: 'auto', height: 'auto' }),
-      );
+      frame = requestAnimationFrame(() => {
+        if (element.clientWidth !== instance.getWidth() || element.clientHeight !== instance.getHeight()) {
+          instance.resize({ width: 'auto', height: 'auto' });
+        }
+      });
     });
-    if (container.current) observer.observe(container.current);
+    observer.observe(element);
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
+      window.removeEventListener('kpi:zoom-date', zoom);
+      instance.dispose();
+      chart.current = null;
     };
   }, [renderer]);
-  return (
-    <div ref={container} style={{ height: '100%', width: '100%', minWidth: 0 }}>
-      <ReactECharts
-        ref={chart}
-        key={renderer}
-        echarts={echarts}
-        option={option}
-        notMerge={false}
-        replaceMerge={['series', 'yAxis', 'dataZoom']}
-        lazyUpdate
-        autoResize={false}
-        opts={{ renderer }}
-        style={{ height: '100%', width: '100%' }}
-      />
-    </div>
-  );
+  useEffect(() => {
+    chart.current?.setOption(option, { replaceMerge: ['series', 'yAxis', 'dataZoom'], lazyUpdate: true });
+  }, [option, renderer]);
+  return <div ref={container} style={{ height: '100%', width: '100%', minWidth: 0 }} />;
 }

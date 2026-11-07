@@ -9,6 +9,7 @@ import { fmtInt, fmtPct, fmtVnd } from '@/lib/domain/format';
 import type { Anomaly } from '@/types/domain';
 import { bus } from '@/lib/data/realtime/bus';
 import { addDays } from '@/lib/domain/dates';
+import { safeDiv } from '@/lib/domain/kpi';
 import { useDataStore } from '@/lib/data/store';
 
 import { ReviewContext } from './ReviewContext';
@@ -18,9 +19,10 @@ const COLLAPSED = 4;
 const dayMonth = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 /** Lệch so với kỳ vọng, dạng "+65%" — dễ hiểu hơn hai con số tuyệt đối */
 function deviation(a: Anomaly): string | null {
-  if (!a.expected) return null;
-  const pct = Math.round(((a.value - a.expected) / Math.abs(a.expected)) * 100);
-  return `${pct > 0 ? '+' : ''}${new Intl.NumberFormat('vi-VN').format(pct)}%`;
+  const ratio = safeDiv(a.value - a.expected, Math.abs(a.expected));
+  if (ratio === null || !Number.isFinite(ratio)) return null;
+  const pct = Math.round(ratio * 100);
+  return `${pct > 0 ? '+' : ''}${fmtInt(pct)}%`;
 }
 
 export function AnomalyFeed({ anomalies }: { anomalies: Anomaly[] }) {
@@ -62,61 +64,60 @@ export function AnomalyFeed({ anomalies }: { anomalies: Anomaly[] }) {
         </>
       ) : (
         <>
-        <p className="card-description mb-3">
-          {displayed.length > 10
-            ? `10 cảnh báo gần nhất (trong ${displayed.length})`
-            : `${displayed.length} cảnh báo gần đây`}{' '}
-          · bấm để xem trên biểu đồ
-        </p>
-        <ul className="anomaly-list" aria-live="polite">
-          {displayed
-            .slice(-10)
-            .reverse()
-            .slice(0, expanded ? 10 : COLLAPSED)
-            .map((a, i) => {
-              const meta = METRIC_META[a.metric];
-              const format = meta.unit === 'vnd' ? fmtVnd : meta.unit === 'ratio' ? fmtPct : fmtInt;
-              return (
-                <li key={`${a.date}-${a.metric}-${i}`} className={`anomaly-item ${a.severity}`}>
-                  <TriangleAlert className="mt-0.5 shrink-0" size={15} aria-hidden />
-                  <button
-                    className="min-h-11 flex-1 text-left"
-                    disabled={!!preview}
-                    onClick={() => {
-                      useDataStore
-                        .getState()
-                        .setSettings({ grain: 'day', range: { from: addDays(a.date, -7), to: a.date } });
-                      window.dispatchEvent(new CustomEvent('kpi:zoom-date', { detail: a.date }));
-                      document.querySelector('[aria-label="Biểu đồ"]')?.scrollIntoView({
-                        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
-                      });
-                    }}
-                  >
-                    <span className="anomaly-head">
-                      <strong className="font-medium">
-                        {meta.short} {a.direction === 'spike' ? '▲ tăng' : '▼ giảm'} bất thường
-                      </strong>
-                      {deviation(a) && <span className="anomaly-chip">{deviation(a)}</span>}
-                    </span>
-                    <span className="muted block">
-                      {dayMonth(a.date)} · {format(a.value)}{' '}
-                      <span className="whitespace-nowrap">(thường khoảng {format(a.expected)})</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-        </ul>
-        {Math.min(displayed.length, 10) > COLLAPSED && (
-          <button
-            className="anomaly-more"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-          >
-            {expanded ? 'Thu gọn' : `Xem thêm ${Math.min(displayed.length, 10) - COLLAPSED} cảnh báo`}
-            <ChevronDown size={14} style={{ transform: expanded ? 'rotate(180deg)' : undefined }} aria-hidden />
-          </button>
-        )}
+          <p className="card-description mb-3">
+            {displayed.length > 10
+              ? `10 cảnh báo gần nhất (trong ${displayed.length})`
+              : `${displayed.length} cảnh báo gần đây`}{' '}
+            · bấm để xem trên biểu đồ
+          </p>
+          <ul className="anomaly-list" aria-live="polite">
+            {displayed
+              .slice(-10)
+              .reverse()
+              .slice(0, expanded ? 10 : COLLAPSED)
+              .map((a, i) => {
+                const meta = METRIC_META[a.metric];
+                const format = meta.unit === 'vnd' ? fmtVnd : meta.unit === 'ratio' ? fmtPct : fmtInt;
+                const change = deviation(a);
+                return (
+                  <li key={`${a.date}-${a.metric}-${i}`} className={`anomaly-item ${a.severity}`}>
+                    <TriangleAlert className="mt-0.5 shrink-0" size={15} aria-hidden />
+                    <button
+                      className="min-h-11 flex-1 text-left"
+                      disabled={!!preview}
+                      onClick={() => {
+                        useDataStore
+                          .getState()
+                          .setSettings({ grain: 'day', range: { from: addDays(a.date, -7), to: a.date } });
+                        window.dispatchEvent(new CustomEvent('kpi:zoom-date', { detail: a.date }));
+                        document.querySelector('[aria-label="Biểu đồ"]')?.scrollIntoView({
+                          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                            ? 'instant'
+                            : 'smooth',
+                        });
+                      }}
+                    >
+                      <span className="anomaly-head">
+                        <strong className="font-medium">
+                          {meta.short} {a.direction === 'spike' ? '▲ tăng' : '▼ giảm'} bất thường
+                        </strong>
+                        {change && <span className="anomaly-chip">{change}</span>}
+                      </span>
+                      <span className="muted block">
+                        {dayMonth(a.date)} · {format(a.value)}{' '}
+                        <span className="whitespace-nowrap">(thường khoảng {format(a.expected)})</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+          </ul>
+          {Math.min(displayed.length, 10) > COLLAPSED && (
+            <button className="anomaly-more" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
+              {expanded ? 'Thu gọn' : `Xem thêm ${Math.min(displayed.length, 10) - COLLAPSED} cảnh báo`}
+              <ChevronDown size={14} style={{ transform: expanded ? 'rotate(180deg)' : undefined }} aria-hidden />
+            </button>
+          )}
         </>
       )}
     </div>
