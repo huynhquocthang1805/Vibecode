@@ -169,7 +169,27 @@ bus.on('storage/warning', () => {
   }
 });
 
+/**
+ * Review TL-06d (vai Huy, 2026-11-07): delta từ tab khác tới TRƯỚC khi tab này hydrate xong thì xếp hàng.
+ * Nếu áp ngay, tab nhận lấy [] + delta rồi lưu → ghi đè/xoá dữ liệu đã lưu (IndexedDB lớn hydrate > 300 ms),
+ * hoặc ghi lại bản vừa tải (thiếu dòng mới) đè lên bản tab gửi vừa lưu. Hydrate xong mới áp lần lượt.
+ */
+const MAX_PENDING_REMOTE = 100;
+let pendingRemote: Array<{ delta: EntryDelta; revision?: number }> = [];
+
+/** Gọi sau khi hydrate: áp các delta đã xếp hàng lên dữ liệu thật (idempotent theo id) */
+export function drainPendingRemote(): number {
+  const queued = pendingRemote;
+  pendingRemote = [];
+  for (const q of queued) applyRemoteDelta(q.delta, q.revision);
+  return queued.length;
+}
+
 export function applyRemoteDelta(delta: EntryDelta, revision?: number): void {
+  if (!useDataStore.getState().hydrated) {
+    if (pendingRemote.length < MAX_PENDING_REMOTE) pendingRemote.push({ delta, revision });
+    return;
+  }
   const state = useDataStore.getState();
   const removedIds = new Set(delta.removed.map((e) => e.id));
   const addedMap = new Map(delta.added.map((e) => [e.id, e]));
@@ -1006,5 +1026,6 @@ if (typeof window !== 'undefined') {
         revision: Math.max(1, prev.revision),
       }));
     }
+    drainPendingRemote(); // thay đổi từ tab khác tới trong lúc đang tải
   });
 }

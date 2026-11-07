@@ -111,7 +111,7 @@ all:          cộng dồn tương tự + Uint16Array campaignsWithData[day]
 | Khoảng trống dài > 28 ngày giữa chuỗi | chỉ fit đoạn **sau** khoảng trống cuối (nếu ≥ 7 ngày), else baseline | `ok` + `dataQuality.missingDays` |
 | Khoảng trống ngắn ≤ 7 ngày | nội suy tuyến tính **chỉ để fit** (docs/04 §1) | nhắc "Thiếu N ngày" |
 | Ngày đầu tiên có dữ liệu | cắt bỏ phần 0 phía trước | — |
-| Một ngày gõ nhầm (cost ×100) | **winsorize** khi fit: kẹp vào median ± 5·MAD (dữ liệu gốc không đổi; anomaly vẫn báo) | dự báo không "bay" |
+| Một ngày gõ nhầm (cost ×100) | **winsorize** khi fit (chỉ trong cửa sổ 365 ngày): tham chiếu = median cùng thứ 4 tuần trước; kẹp phía trên tại tham chiếu + max(5·MAD phần dư, 125% tham chiếu, 5 đơn vị), **chỉ đỉnh đơn lẻ** (đợt nhiều ngày như Tết/sale giữ nguyên); ngày giảm/0 không kẹp. Dữ liệu gốc không đổi; anomaly vẫn báo | dự báo không "bay"; cuối tuần cao / chiến dịch tăng nhanh không bị cắt |
 | Hôm nay (chưa hết ngày) | **không** đưa vào fit; chỉ dùng cho nowcast | — |
 | Chuỗi toàn 0 / hằng số / NaN | trả dự báo hằng, kiểm `Number.isFinite` mọi tham số; không hữu hạn → naive | không bao giờ NaN |
 | Dữ liệu > 365 ngày | fit 365 ngày đã kết thúc gần nhất (docs/04 §3) | — |
