@@ -9,8 +9,10 @@ import { DataManager } from './DataManagerContent';
 import { EntryTable } from './EntryTableContent';
 import { ImportDialog } from './ImportDialog';
 import { downloadText } from './entryActions';
+import { createCsvImportSession } from './csvImportSession';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+vi.mock('./csvImportSession', () => ({ createCsvImportSession: vi.fn() }));
 vi.mock('./entryActions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./entryActions')>()),
   downloadText: vi.fn(),
@@ -39,6 +41,7 @@ beforeEach(async () => {
 });
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -134,6 +137,49 @@ describe('Nhập liệu nâng cao của Trường', () => {
     });
     expect(screen.getByRole('alert')).toHaveTextContent('Hãy chọn file có đuôi .csv.');
     expect(useDataStore.getState().entries).toHaveLength(1);
+  });
+
+  it('huỷ CSV khi worker đang kiểm tra thì kết quả trả muộn không ghi dữ liệu', async () => {
+    vi.stubGlobal('Worker', function CsvWorker() {});
+    type Prepared = Awaited<ReturnType<ReturnType<typeof createCsvImportSession>['prepare']>>;
+    let finish: ((result: Prepared) => void) | undefined;
+    vi.mocked(createCsvImportSession).mockReturnValue({
+      dispose: vi.fn(),
+      read: vi.fn().mockResolvedValue({
+        headers: ['Ngày', 'Reach', 'Click', 'Chi phí', 'Đơn hàng'],
+        rows: [{ Ngày: '2026-11-01', Reach: '100', Click: '10', 'Chi phí': '1000', 'Đơn hàng': '1' }],
+        rowCount: 50000,
+        encoding: 'utf-8',
+        delimiter: ',',
+      }),
+      prepare: vi.fn().mockImplementation(
+        () =>
+          new Promise<Prepared>((resolve) => {
+            finish = resolve;
+          }),
+      ),
+    });
+    render(<ImportDialog mode="csv" initiallyOpen />);
+    fireEvent.change(screen.getByLabelText('Chọn file CSV'), { target: { files: [new File(['csv'], 'test.csv')] } });
+    expect(await screen.findByText(/50000 dòng/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Nhập dữ liệu' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Đang kiểm tra dữ liệu');
+    fireEvent.click(screen.getByRole('button', { name: 'Huỷ' }));
+    expect(vi.mocked(createCsvImportSession).mock.calls.at(-1)?.[0].aborted).toBe(true);
+    const { prepareImport } = await import('./importPreparation');
+    await act(async () =>
+      finish?.(
+        prepareImport(
+          [{ date: '2026-11-01', reach: '100', clicks: '10', cost: '1000', orders: '1' }],
+          { date: 'date', reach: 'reach', clicks: 'clicks', cost: 'cost', orders: 'orders' },
+          'default',
+          'csv',
+          '2026-11-05',
+        ),
+      ),
+    );
+    expect(useDataStore.getState().entries).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Nhập dữ liệu' })).not.toBeInTheDocument();
   });
 
   it('R-04 nạp đúng bộ mẫu campaign-2y sau xác nhận', async () => {

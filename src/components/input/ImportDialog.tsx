@@ -8,21 +8,20 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useDataStore } from '@/lib/data/store';
 import { autoMapHeaders, parseCsv, parsePastedTable } from '@/lib/data/import';
 import { todayVN } from '@/lib/domain/dates';
-import { validateBatch } from '@/lib/domain/validation';
 import { LIMITS, type DuplicatePolicy, type ImportReport } from '@/types/domain';
 
 import { assertEntriesCanBeSaved, downloadText } from './entryActions';
+import { createCsvImportSession } from './csvImportSession';
 import { importErrorCsv } from './importErrorCsv';
+import { IMPORT_FIELDS as FIELDS, prepareImport, type ImportMapping } from './importPreparation';
 
-const FIELDS = [
-  ['date', 'Ngày'],
-  ['reach', 'Reach'],
-  ['clicks', 'Click'],
-  ['cost', 'Chi phí'],
-  ['orders', 'Đơn hàng'],
-] as const;
-type Field = (typeof FIELDS)[number][0];
-type Preview = { rows: Record<string, string>[]; headers: string[]; encoding?: string; delimiter?: string };
+type Preview = {
+  rows: Record<string, string>[];
+  rowCount: number;
+  headers: string[];
+  encoding?: string;
+  delimiter?: string;
+};
 
 export function ImportDialog({
   mode,
@@ -38,14 +37,15 @@ export function ImportDialog({
   const [open, setOpen] = useState(initiallyOpen);
   const [text, setText] = useState(initialText);
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [mapping, setMapping] = useState<Partial<Record<Field, string>>>({});
+  const [mapping, setMapping] = useState<ImportMapping>({});
   const [policy, setPolicy] = useState<DuplicatePolicy>('skip');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'reading' | 'preparing' | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const [report, setReport] = useState<ImportReport | null>(null);
   const [importRevision, setImportRevision] = useState<number | null>(null);
   const controller = useRef<AbortController | null>(null);
+  const csvSession = useRef<ReturnType<typeof createCsvImportSession> | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const hydrated = useDataStore((s) => s.hydrated);
   const active = useDataStore((s) => s.settings.activeCampaignId);
@@ -53,16 +53,24 @@ export function ImportDialog({
   const [campaignId, setCampaignId] = useState(active === 'all' ? 'default' : active);
   useEffect(() => () => controller.current?.abort(), []);
 
+  function cancel() {
+    controller.current?.abort();
+    controller.current = null;
+    csvSession.current = null;
+    setBusy(null);
+    setPreview(null);
+  }
+
   function changeOpen(next: boolean) {
     setOpen(next);
     if (!next) {
-      controller.current?.abort();
-      setBusy(false);
+      cancel();
       onClose?.();
     }
   }
 
   async function parse(file?: File) {
+    if (busy === 'preparing') return;
     if (mode === 'csv' && !file) return;
     if (file && !file.name.toLowerCase().endsWith('.csv')) {
       setError('Hãy chọn file có đuôi .csv.');
@@ -73,63 +81,77 @@ export function ImportDialog({
       return;
     }
     controller.current?.abort();
+    csvSession.current = null;
     const request = new AbortController();
     controller.current = request;
-    setBusy(true);
+    setBusy('reading');
     setProgress(0);
     setError('');
     setReport(null);
     setPreview(null);
     try {
-      const result =
-        mode === 'csv' && file
-          ? await parseCsv(
-              file,
-              (p) => {
-                if (!request.signal.aborted) setProgress(p);
-              },
-              request.signal,
-            )
-          : parsePastedTable(text);
+      const progress = (p: number) => {
+        if (!request.signal.aborted) setProgress(p);
+      };
+      let result: Preview;
+      if (mode === 'csv' && file && typeof Worker !== 'undefined') {
+        const session = createCsvImportSession(request.signal);
+        csvSession.current = session;
+        result = await session.read(file, progress);
+      } else {
+        const parsed = mode === 'csv' && file ? await parseCsv(file, progress, request.signal) : parsePastedTable(text);
+        result = { ...parsed, rowCount: parsed.rows.length };
+      }
       if (request.signal.aborted) return;
       setPreview(result);
       setMapping(autoMapHeaders(result.headers));
       if (!result.rows.length) setError('Bảng chưa có dòng dữ liệu.');
     } catch (err) {
       if (request.signal.aborted) return;
+      csvSession.current?.dispose();
+      csvSession.current = null;
       setError(
         err instanceof Error && err.message.includes('NOT_IMPLEMENTED')
           ? 'Nhập CSV và dán Excel chưa sẵn sàng trong bản này. Bạn vẫn có thể nhập từng dòng ở tab Nhập số liệu.'
           : 'Không đọc được bảng. Hãy kiểm tra nội dung và thử lại.',
       );
     } finally {
-      if (controller.current === request) setBusy(false);
+      if (controller.current === request) setBusy(null);
     }
   }
 
-  function commit() {
-    if (!preview) return;
+  async function commit() {
+    const request = controller.current;
+    if (!preview || !request || busy) return;
+    const session = csvSession.current;
+    const source = mode === 'csv' ? 'csv' : 'paste';
+    const today = todayVN();
+    setBusy('preparing');
+    setError('');
+    setReport(null);
     try {
-      const raw = preview.rows.map((row) =>
-        Object.assign(Object.fromEntries(FIELDS.map(([field]) => [field, row[mapping[field] ?? '']])), {
-          campaignId,
-          source: mode === 'csv' ? 'csv' : 'paste',
-        }),
-      );
-      const checked = validateBatch(raw, { today: todayVN() });
+      const checked = session
+        ? await session.prepare(mapping, campaignId, today)
+        : prepareImport(preview.rows, mapping, campaignId, source, today);
+      if (request.signal.aborted) return;
       const store = useDataStore.getState();
       assertEntriesCanBeSaved(checked.valid, policy);
-      const result = store.importBatch(checked.valid, mode === 'csv' ? 'csv' : 'paste', policy);
+      const result = store.importBatch(checked.valid, source, policy);
       setImportRevision(useDataStore.getState().revision);
       setReport({ ...checked.report, accepted: result.accepted, aborted: result.aborted });
       if (result.aborted)
         setError('Không đủ sức chứa hoặc lần nhập đã bị huỷ. Hãy lọc khoảng ngày hoặc lưu trữ năm cũ rồi thử lại.');
       else {
+        session?.dispose();
+        csvSession.current = null;
         toast.success(`Đã nhập ${result.accepted} dòng`);
         setPreview(null);
       }
     } catch (error) {
+      if (request.signal.aborted) return;
       setError(error instanceof Error ? error.message : 'Nhập chưa hoàn tất. Hãy kiểm tra bảng và thử lại.');
+    } finally {
+      if (controller.current === request) setBusy(null);
     }
   }
 
@@ -153,6 +175,7 @@ export function ImportDialog({
               className="mvp-select"
               id={`import-campaign-${mode}`}
               value={campaignId}
+              disabled={!!busy}
               onChange={(e) => setCampaignId(e.target.value)}
             >
               {campaigns.map((c) => (
@@ -185,7 +208,7 @@ export function ImportDialog({
             >
               <Upload size={30} />
               <p>Kéo thả file CSV tại đây · tối đa 20 MB</p>
-              <button className="mvp-button" disabled={busy} onClick={() => fileInput.current?.click()}>
+              <button className="mvp-button" disabled={!!busy} onClick={() => fileInput.current?.click()}>
                 Chọn file CSV
               </button>
               <input
@@ -212,22 +235,18 @@ export function ImportDialog({
                 onChange={(e) => setText(e.target.value)}
                 placeholder={'Ngày\tReach\tClick\tChi phí\tĐơn hàng'}
               />
-              <button className="mvp-button" disabled={!text.trim() || busy} onClick={() => void parse()}>
+              <button className="mvp-button" disabled={!text.trim() || !!busy} onClick={() => void parse()}>
                 Xem trước bảng
               </button>
             </>
           )}
           {busy && (
             <div role="status">
-              <p className="text-xs">Đang đọc file… {Math.round(progress)}%</p>
-              <progress className="w-full" max={100} value={progress} />
-              <button
-                className="mvp-button"
-                onClick={() => {
-                  controller.current?.abort();
-                  setBusy(false);
-                }}
-              >
+              <p className="text-xs">
+                {busy === 'reading' ? `Đang đọc file… ${Math.round(progress)}%` : 'Đang kiểm tra dữ liệu…'}
+              </p>
+              <progress className="w-full" max={100} value={busy === 'reading' ? progress : undefined} />
+              <button className="mvp-button" onClick={cancel}>
                 <X />
                 Huỷ
               </button>
@@ -241,7 +260,7 @@ export function ImportDialog({
           {preview && (
             <>
               <p className="muted text-xs">
-                {preview.rows.length} dòng · {preview.encoding ?? 'Văn bản'} · phân cách{' '}
+                {preview.rowCount} dòng · {preview.encoding ?? 'Văn bản'} · phân cách{' '}
                 {preview.delimiter === '\t' ? 'Tab' : preview.delimiter || 'tự nhận'} · hiển thị tối đa 20 dòng
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -251,6 +270,7 @@ export function ImportDialog({
                     <select
                       className="mvp-select w-full mt-2"
                       value={mapping[field] ?? ''}
+                      disabled={!!busy}
                       onChange={(e) => setMapping((prev) => ({ ...prev, [field]: e.target.value }))}
                     >
                       <option value="">Chọn cột</option>
@@ -287,6 +307,7 @@ export function ImportDialog({
                   <select
                     className="mvp-select ml-2"
                     value={policy}
+                    disabled={!!busy}
                     onChange={(e) => setPolicy(e.target.value as DuplicatePolicy)}
                   >
                     <option value="skip">Bỏ qua</option>
@@ -296,8 +317,8 @@ export function ImportDialog({
                 </label>
                 <button
                   className="mvp-button primary"
-                  disabled={FIELDS.some(([field]) => !mapping[field]) || !preview.rows.length}
-                  onClick={commit}
+                  disabled={!!busy || FIELDS.some(([field]) => !mapping[field]) || !preview.rowCount}
+                  onClick={() => void commit()}
                 >
                   <Upload />
                   Nhập dữ liệu

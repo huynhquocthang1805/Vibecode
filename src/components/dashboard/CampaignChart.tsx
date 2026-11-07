@@ -3,15 +3,17 @@
 import type { EChartsOption } from 'echarts';
 import { ChartNoAxesCombined } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useContext, useSyncExternalStore } from 'react';
+import { memo, useContext, useSyncExternalStore } from 'react';
 
 import { METRIC_META } from '@/config/metricMeta';
+import { useDataStore } from '@/lib/data/store';
 import { addDays } from '@/lib/domain/dates';
 import { fmtInt, fmtPct, fmtVnd, fmtVndShort } from '@/lib/domain/format';
 import type { AnalyticsSnapshot, Metric } from '@/types/domain';
 
 import { ChartAppearanceContext, useDisplaySnapshot } from './ReviewContext';
 import { METRIC_COLORS, CHART_FONT } from './chartTheme';
+import { CANVAS_POINT_THRESHOLD } from './chartRendering';
 
 const EChart = dynamic(() => import('./EChartCanvas'), {
   ssr: false,
@@ -23,7 +25,7 @@ const subscribeMotion = (listener: () => void) => {
   return () => media.removeEventListener('change', listener);
 };
 
-export function CampaignChart({
+export const CampaignChart = memo(function CampaignChart({
   snapshot,
   ratio = false,
   showForecast = false,
@@ -34,6 +36,15 @@ export function CampaignChart({
 }) {
   const data = useDisplaySnapshot(snapshot);
   const dark = useContext(ChartAppearanceContext);
+  const canShowDaily = useDataStore(
+    ({ settings }) =>
+      settings.grain === 'day' &&
+      settings.activeCampaignId === data?.query.campaignId &&
+      settings.range?.from === data?.query.range?.from &&
+      settings.range?.to === data?.query.range?.to,
+  );
+  // Snapshot đã có chuỗi ngày của cùng chiến dịch/khoảng lọc. Dùng ngay khi người dùng chọn Ngày.
+  const visibleSeries = canShowDaily && data === snapshot && data?.series.grain !== 'day' ? data?.daily : data?.series;
   const reduced = useSyncExternalStore(
     subscribeMotion,
     () =>
@@ -41,7 +52,7 @@ export function CampaignChart({
       ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 2,
     () => true,
   );
-  if (!data?.series.buckets.length)
+  if (!data || !visibleSeries?.buckets.length)
     return (
       <div className="chart-empty">
         <span className="empty-icon">
@@ -51,7 +62,7 @@ export function CampaignChart({
         <p>Nhập số liệu để bắt đầu, hoặc chọn “Xem giao diện mẫu” để khám phá biểu đồ.</p>
       </div>
     );
-  const buckets = data.series.buckets;
+  const buckets = visibleSeries.buckets;
   const metrics: Metric[] = ratio ? ['ctr', 'cpc', 'cpa'] : ['reach', 'cost', 'orders'];
   const labels = buckets.map((b) => b.key);
   const partialKeys = new Set(buckets.filter((b) => b.isPartial).map((b) => b.key));
@@ -61,7 +72,7 @@ export function CampaignChart({
   const forecastEnd = lastActual ? addDays(lastActual, Math.min(30, Math.max(14, Math.round(buckets.length / 2)))) : '';
   const inForecastWindow = (date: string) => date > lastActual && date <= forecastEnd;
   const bandMetric: Metric = ratio ? 'cpa' : 'orders';
-  if (showForecast && data.series.grain === 'day') {
+  if (showForecast && visibleSeries.grain === 'day') {
     const future = data.forecasts
       .filter((f) => metrics.includes(f.metric))
       .flatMap((f) => f.points.map((p) => p.date))
@@ -76,14 +87,15 @@ export function CampaignChart({
     name: METRIC_META[metric].short,
     type: !ratio && metric === 'reach' ? 'bar' : 'line',
     yAxisIndex: index === 0 ? 0 : index === 1 ? 1 : ratio ? 1 : 2,
-    data: buckets.map((b) => ({
-      value:
-        metric in b.kpis ? b.kpis[metric as keyof typeof b.kpis] : b[metric as 'reach' | 'clicks' | 'cost' | 'orders'],
-      itemStyle: { opacity: b.isPartial ? 0.5 : 1 },
-    })),
+    data: buckets.map((b) => {
+      const value =
+        metric in b.kpis ? b.kpis[metric as keyof typeof b.kpis] : b[metric as 'reach' | 'clicks' | 'cost' | 'orders'];
+      return b.isPartial ? { value, itemStyle: { opacity: 0.5 } } : value;
+    }),
     itemStyle: { color: METRIC_COLORS[metric], borderRadius: metric === 'reach' ? [3, 3, 0, 0] : undefined },
     lineStyle: { width: 2.5 },
     barMaxWidth: 14,
+    large: !ratio && metric === 'reach' && buckets.length > CANVAS_POINT_THRESHOLD && partialKeys.size === 0,
     showSymbol: buckets.length < 10,
     symbolSize: 5,
     connectNulls: false,
@@ -101,19 +113,17 @@ export function CampaignChart({
     },
     emphasis: { focus: 'series' },
   }));
-  if (showForecast && data.series.grain === 'day') {
+  if (showForecast && visibleSeries.grain === 'day') {
     for (const forecast of data.forecasts) {
       if (!metrics.includes(forecast.metric)) continue;
       const metricIndex = metrics.indexOf(forecast.metric);
       const points = forecast.points.filter((p) => inForecastWindow(p.date));
-      const pointMap = new Map(points.map((p) => [p.date, p]));
-      const forecastData = labels.map((date) => pointMap.get(date)?.mean ?? null);
-      const axis = metricIndex === 0 ? 0 : metricIndex === 1 ? 1 : 2;
+      const axis = metricIndex === 0 ? 0 : ratio || metricIndex === 1 ? 1 : 2;
       series.push({
         name: `${METRIC_META[forecast.metric].short} dự báo`,
         type: 'line',
         yAxisIndex: axis,
-        data: forecastData,
+        data: points.map((p) => [p.date, p.mean]),
         showSymbol: false,
         lineStyle: { type: 'dashed', color: METRIC_COLORS[forecast.metric], width: 2 },
         itemStyle: { color: METRIC_COLORS[forecast.metric] },
@@ -130,7 +140,7 @@ export function CampaignChart({
         type: 'line',
         yAxisIndex: axis,
         stack: `band-${forecast.metric}`,
-        data: labels.map((date) => pointMap.get(date)?.lo80 ?? null),
+        data: points.map((p) => [p.date, p.lo80]),
         lineStyle: { opacity: 0 },
         showSymbol: false,
         areaStyle: { opacity: 0 },
@@ -142,10 +152,7 @@ export function CampaignChart({
         type: 'line',
         yAxisIndex: axis,
         stack: `band-${forecast.metric}`,
-        data: labels.map((date) => {
-          const p = pointMap.get(date);
-          return p ? p.hi80 - p.lo80 : null;
-        }),
+        data: points.map((p) => [p.date, p.hi80 - p.lo80]),
         lineStyle: { opacity: 0 },
         showSymbol: false,
         areaStyle: { color: METRIC_COLORS[forecast.metric], opacity: 0.16 },
@@ -154,12 +161,13 @@ export function CampaignChart({
       });
     }
   }
+  const dense = labels.length > CANVAS_POINT_THRESHOLD;
   const labelColor = dark ? '#a1aabc' : '#8992a4';
   const option: EChartsOption = {
-    animation: !reduced && buckets.length <= 2000,
+    animation: !reduced && !dense,
     animationDuration: 450,
     textStyle: { fontFamily: CHART_FONT, fontSize: 10 },
-    aria: { enabled: true, decal: { show: true } },
+    aria: { enabled: true, decal: { show: !dense } },
     grid: { left: 6, right: ratio ? 8 : 36, top: 55, bottom: labels.length > 90 ? 60 : 14, containLabel: true },
     legend: {
       top: 6,
@@ -189,7 +197,7 @@ export function CampaignChart({
         fontSize: 9,
         hideOverlap: true,
         formatter: (value: string) =>
-          (data.series.grain === 'day' ? value.slice(8) + '/' + value.slice(5, 7) : value) +
+          (visibleSeries.grain === 'day' ? value.slice(8) + '/' + value.slice(5, 7) : value) +
           (partialKeys.has(value) ? ' *' : ''),
       },
     },
@@ -224,7 +232,10 @@ export function CampaignChart({
     ],
     dataZoom:
       labels.length > 90
-        ? [{ type: 'inside' }, { type: 'slider', height: 16, bottom: 0, borderColor: 'transparent' }]
+        ? [
+            { type: 'inside' },
+            { type: 'slider', height: 16, bottom: 0, borderColor: 'transparent', showDataShadow: !dense },
+          ]
         : [],
     series,
   };
@@ -247,4 +258,4 @@ export function CampaignChart({
       </div>
     </>
   );
-}
+});
