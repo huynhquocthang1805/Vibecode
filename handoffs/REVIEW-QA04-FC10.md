@@ -33,7 +33,7 @@ Thăm dò trên bộ dữ liệu test (DATA-12) và fixture:
 - `npm run lint` ✅ · `npm run typecheck` ✅ · `npm run test` → 4234 passed + 1 expected fail (BUG-QA03-01) ✅
 - `src/lib/analytics/robust.test.ts`: 17 test (thêm 7, sửa 2: ngày mới nhất, hằng + đỉnh (nay kẹp), ngày giảm, weekend, ×20, đơn ít, đợt nhiều ngày, cửa sổ 365).
 - `tests/integration/pipeline.review.test.ts` (campaign-2y chọn Holt-Winters) ✅ · FC-09 forecastValidation ✅.
-- build + e2e local: xem PR.
+- `npm run build` ✅ · e2e local (`next start`, AI stub) **46/46** ✅
 
 ## Hạn chế / nợ kỹ thuật
 - Đỉnh sale **1 ngày** thật (11/11) vẫn bị kẹp khi fit — chủ ý: không lặp theo tuần nên không nên kéo mức dự báo; dữ liệu gốc + anomaly vẫn thấy giá trị thật.
