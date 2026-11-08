@@ -4,6 +4,7 @@ import { fallbackInsight } from '@/lib/ai/fallback';
 import { enforceGuardrails } from '@/lib/ai/guardrails';
 import { buildUserPrompt } from '@/lib/ai/prompts';
 import { getProvider } from '@/lib/ai/provider';
+import { providerHint } from '@/lib/ai/provider/errors';
 import { defaultRateLimiter } from '@/lib/ai/rateLimit';
 import { INSIGHT_JSON_SCHEMA, insightRequestSchema } from '@/lib/ai/schemas';
 import { AI_TEMPERATURE, buildSystemPrompt, modelLabel } from '@/lib/ai/systemPrompt';
@@ -190,11 +191,14 @@ export async function POST(request: Request): Promise<Response> {
       callError instanceof Error &&
       (callError.message.includes('TIMEOUT') || callError.name === 'AbortError');
 
+    // AI-FIX-03: ghi nguyên nhân vào log server + gợi ý ngắn cho người vận hành (không bao giờ chứa key)
+    const detail = callError instanceof Error ? callError.message : String(callError ?? 'không có nội dung');
+    console.error(`[insights] ${provider.name} lỗi: ${detail.slice(0, 300)}`);
     const errorBody: InsightError = {
       code: isTimeout ? 'TIMEOUT' : 'PROVIDER_ERROR',
       message: isTimeout
         ? 'Quá thời gian chờ phản hồi từ nhà cung cấp AI.'
-        : 'Lỗi phản hồi từ nhà cung cấp AI hoặc chưa có API key.',
+        : `Lỗi phản hồi từ nhà cung cấp AI${providerHint(detail)}.`,
       fallback: fallbackInsight(req),
     };
     return Response.json(errorBody, { status: isTimeout ? 504 : 502 });
