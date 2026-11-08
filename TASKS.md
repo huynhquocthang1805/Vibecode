@@ -92,7 +92,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FI-07 | Chống phình ở khu nhập: đồng hồ dung lượng, lưu trữ năm cũ, hoàn tác import (docs/13 §7) | frontend-input | Trường | P1 | FI-03, DATA-04 |
 | [x] | FD-09 | UI dữ liệu lớn & trạng thái suy giảm (docs/13 §7) | frontend-dashboard | Trường | P1 | FD-04, DATA-11 |
 | [x] | BA-08 | Ca biên E31–E50 + bộ dữ liệu stress / CSV thực tế (docs/13 §10) | ba-analyst | Nhân | P1 | BA-05 |
-| [ ] | QA-08 | Stress & chaos test + bất biến #7–#10 (docs/13 §11) | qa-engineer | Nhân | P1 | DATA-10, DATA-11, BA-08 |
+| [x] | QA-08 | Stress & chaos test + bất biến #7–#10 (docs/13 §11) | qa-engineer | Nhân | P1 | DATA-10, DATA-11, BA-08 |
 | [ ] | TL-07 | Review hiệu năng/bảo mật/bundle + **Gate G2** | techlead | Thắng+Claude | P1 | P1 |
 
 ## Wave A — Tài khoản & database (CR-005, song song G1 — KHÔNG được làm hỏng P0) · đặc tả `docs/14_ACCOUNTS_DB.md`
