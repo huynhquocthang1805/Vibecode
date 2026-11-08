@@ -33,7 +33,7 @@ export class GeminiProvider implements LlmProvider {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
         this.model,
-      )}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
+      )}:generateContent`; // AI-FIX-03: key đi qua header, không nằm trong URL (URL hay bị ghi log)
 
       const geminiSchema = toGeminiSchema(jsonSchema as Record<string, unknown>);
 
@@ -58,6 +58,7 @@ export class GeminiProvider implements LlmProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': this.apiKey,
         },
         body: JSON.stringify(payload),
         signal: controller.signal,
@@ -65,7 +66,7 @@ export class GeminiProvider implements LlmProvider {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => '');
-        throw new Error(`PROVIDER_ERROR: Gemini API trả mã lỗi ${response.status}: ${errorText}`);
+        throw new Error(`PROVIDER_ERROR: Gemini API trả mã lỗi ${response.status}: ${summarizeGeminiError(errorText)}`);
       }
 
       const resData = (await response.json()) as {
@@ -95,3 +96,13 @@ export class GeminiProvider implements LlmProvider {
   }
 }
 
+/** Rút gọn body lỗi của Google ({ error: { status, message } }) — không chứa key, cắt 200 ký tự */
+export function summarizeGeminiError(body: string): string {
+  try {
+    const j = JSON.parse(body) as { error?: { status?: string; message?: string } };
+    if (j.error) return `${j.error.status ?? ''} ${j.error.message ?? ''}`.trim().slice(0, 200);
+  } catch {
+    // không phải JSON
+  }
+  return body.slice(0, 200);
+}
