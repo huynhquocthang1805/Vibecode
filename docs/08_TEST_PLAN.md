@@ -64,6 +64,8 @@ Remove-Item Env:BASE_URL
 ```
 Local dùng route thật với AI stub. Deploy chỉ intercept AI ở test runner; guest data trong context mới. QA_VERIFY_FIXES=1 để chạy nguyên kỳ vọng lỗi cross-tab BUG-QA04-01; marker của BUG-QA04-02/03 đã được owner bỏ trong PR38. Không coi expected failures là functional pass. Test IDs dùng khi có, control còn lại dùng accessible roles/labels. Nếu npm trên PowerShell nuốt cờ CLI, dùng `npx playwright test ... --workers=2 --output=...` trực tiếp.
 
+Retest 07/11 sau PR43: cross-tab đã bỏ marker và pass local/deploy. `QA_VERIFY_FIXES=1` hiện áp dụng cho cảnh báo mất partition QA-08, không còn cần cho cross-tab.
+
 ### Tái lập QA-07 (PowerShell)
 ```powershell
 npx vitest run tests/integration/security-api.test.ts
@@ -81,3 +83,36 @@ Remove-Item Env:BASE_URL
 Remove-Item Env:AI_API_KEY
 ```
 Route test không gửi burst vào deploy/provider. Bundle scan chỉ đọc src/, next.config.ts và .next/static JS; dùng canary giả thay cho đọc/in secret. Không mở .env*. XSS dùng guest browser context mới và kiểm tra literal name sau reload.
+
+## 7. QA-08 — stress và chaos
+
+Phụ thuộc DATA-10/DATA-11/BA-08 đã có trên main; dùng implementation thật. Chỉ giả lập memory adapter để tách property store khỏi lịch ghi, Worker/Comlink để tiêm lỗi, Web Lock để ép thứ tự writer. Kế hoạch draft cũ `docs/qa08-chaos-plan.md` được thay bằng ma trận và bằng chứng ở đây/handoff QA-08.
+
+| Yêu cầu | Test / phương pháp | Oracle |
+|---|---|---|
+| #7, E50 | `qa08-resilience.test.ts`: 200 chuỗi seed 20261107, đủ add/update/remove/import/undo/remote mỗi chuỗi | Sau từng thao tác: checksum store = engine worker = incremental = rebuild; series cả 4 grain khớp |
+| #8 | 200 property trên partition codec thật, 3 năm/6 campaign/nhiều source/rỗng | Business fields, rows và sums roundtrip; bỏ timestamps đúng contract |
+| #9 | 200 property quota tại từng vị trí ghi 3 partition + manifest, kèm trường hợp không lỗi | Adapter mới reload chính xác trước hoặc sau, không trạng thái lai |
+| #10 | 200 property giá trị sát LIMITS, 4 grain và chứng minh giới hạn tổng 200k | Mọi tổng là safe integer và bằng tổng thô |
+| E40 | `qa08-chaos.test.ts`: 199999 dòng + import 2 khóa mới | Không delta/save, entries/checksum/revision không đổi |
+| E49 | Missing/checksum/malformed-column partition, missing/malformed manifest; E2E reload | Năm lành còn, cảnh báo người dùng, không throw; lỗi chi tiết trong bugs.md |
+| Worker | `qa08-worker.test.ts`: timeout, snapshot throw, init rỗng rồi thêm/crash/fallback | Retry và giữ checksum, không giả định các worker dùng chung globals |
+| Hai writer | Adapter giữ snapshot cũ trong Web Lock; E2E hai tab đồng thời với/không BroadcastChannel | Reload đọc được cả hai dòng đã commit |
+| E48 | `qa08-live.ts`: Live ×60, 10 phút thực mỗi mức 50k/200k | Reach tăng, commit không cách >2000ms, retained heap trước/sau GC, pageerrors và sampling timeouts được ghi |
+| docs/13 §9 | `qa08-scale.ts`: 5 mẫu median ở 50k/200k | Startup, update, storage CPU/wall/durability, cached snapshot, CSV, Long Task, storage bytes |
+
+```powershell
+npm run check
+npx --no-install vitest run tests/integration/qa08-resilience.test.ts tests/integration/qa08-chaos.test.ts tests/integration/qa08-worker.test.ts
+$env:BASE_URL='http://localhost:3000' # production server đã chạy
+npx --no-install playwright test qa08-chaos.spec.ts crosstab.spec.ts --workers=2 --output=test-results/qa08-chaos-local
+$env:BASE_URL='https://vibecode-three-xi.vercel.app'
+npx --no-install playwright test qa08-chaos.spec.ts crosstab.spec.ts --workers=2 --output=test-results/qa08-chaos-deploy
+$env:BASE_URL='http://localhost:3000'
+# Chạy từng benchmark; không chạy scale cùng Live hoặc suite khác.
+npx --no-install tsx tests/perf/qa08-live.ts # --smoke chỉ 20 giây, không thay nghiệm thu 10 phút
+npx --no-install tsx tests/perf/qa08-scale.ts
+Remove-Item Env:BASE_URL
+```
+
+Benchmark mặc định ghi `%TEMP%/vibecode-qa08/live` và `/scale`; đặt `QA_ARTIFACT_DIR` để giữ từng lượt riêng. Live cần Date tiến đều (`setSystemTime`), không dùng fixed Date vì làm sai maxWait. Thời gian chờ là đồng hồ Node thật, có timeout lấy mẫu và JSON tiến độ khi renderer bận. Số đo budget không biến thành CI gate phụ thuộc máy; báo đạt/chưa đạt trong perf-report. `it.fails`/`test.fail` là bug còn mở, không được cộng thành functional pass. Không sửa source sản phẩm ngoài quyền QA.
