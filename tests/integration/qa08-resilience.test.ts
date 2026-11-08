@@ -1,150 +1,186 @@
 // @vitest-environment jsdom
-/** QA-08: property-based regression. Owner chỉ viết test, không sửa module data. */
+/** QA-08: specs #7–#10, including real store/import/undo/remote delta and partition codec. */
 import fc from 'fast-check';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildRollups, applyDelta, getSeries } from '@/lib/data/aggregate/rollup';
-import { DEFAULT_SETTINGS, decodeState, encodeState } from '@/lib/data/storage/codec';
+import { applyDelta, buildRollups, getRollupChecksum, getSeries } from '@/lib/data/aggregate';
+import { bus } from '@/lib/data/realtime/bus';
 import { createLocalStorageAdapter } from '@/lib/data/storage/localStorageAdapter';
-import { addDays } from '@/lib/domain/dates';
-import { CONTRACT_VERSION, LIMITS } from '@/types/domain';
-import type { DailyEntry, PersistedState } from '@/types/domain';
+import { decodePartition, encodePartition } from '@/lib/data/storage/partitionCodec';
+import { applyRemoteDelta, setStorageAdapter, useDataStore } from '@/lib/data/store';
+import { createAnalyticsEngine } from '@/lib/workers/analytics.worker';
+import { LIMITS, type EntryDelta, type Grain } from '@/types/domain';
 
-const keys = ['reach', 'clicks', 'cost', 'orders'] as const;
-const blank = { reach: 0, clicks: 0, cost: 0, orders: 0 };
-const inputArb = fc.record({
-  slot: fc.integer({ min: 0, max: 180 }),
-  campaign: fc.integer({ min: 0, max: 5 }),
-  reach: fc.integer({ min: 0, max: 1_000_000 }),
-  clicksPct: fc.integer({ min: 0, max: 100 }),
-  ordersPct: fc.integer({ min: 0, max: 100 }),
-  costPerClick: fc.integer({ min: 0, max: 12_000 }),
-  remove: fc.boolean(),
-});
+import { business, checksum, persisted, QA_TODAY, row } from './qa08-fixtures';
 
-type Action = {
-  slot: number; campaign: number; reach: number; clicksPct: number; ordersPct: number; costPerClick: number; remove: boolean;
-};
-function entry(a: Action): DailyEntry {
-  const campaignId = `camp-${a.campaign}`;
-  const date = addDays('2026-01-01', a.slot);
-  const clicks = Math.floor(a.reach * a.clicksPct / 100);
-  const orders = Math.floor(clicks * a.ordersPct / 100);
-  return { id: `${campaignId}|${date}`, date, campaignId,
-    reach: a.reach, clicks, orders, cost: clicks * a.costPerClick,
-    source: 'mock', createdAt: 0, updatedAt: 0 };
-}
-const compareSeries = (entries: DailyEntry[]) => {
-  const index = buildRollups(entries);
-  const series = getSeries(index, { campaignId: 'all', grain: 'month', today: '2026-12-31' });
-  return series.buckets.map(({ key, reach, clicks, cost, orders }) => ({ key, reach, clicks, cost, orders }));
-};
-const normalized = (entries: DailyEntry[]) => entries.map((e) => ({ id: e.id, date: e.date,
-  campaignId: e.campaignId, reach: e.reach, clicks: e.clicks, cost: e.cost, orders: e.orders,
-  source: e.source })).sort((a,b) => a.id.localeCompare(b.id));
-const persisted = (entries: DailyEntry[]): PersistedState => ({
-  v: CONTRACT_VERSION, entries,
-  campaigns: Array.from({ length: 6 }, (_, i) => ({ id: `camp-${i}`, name: `Chiến dịch ${i}`, createdAt: 0 })),
-  settings: DEFAULT_SETTINGS,
-});
+const options = { seed: 20261107, numRuns: 200 };
+const query = { campaignId: 'all', grain: 'day' as const, today: QA_TODAY, horizonDays: 0 };
+const rowsArb = fc
+  .uniqueArray(
+    fc.record({
+      day: fc.integer({ min: 0, max: 5 }),
+      campaign: fc.integer({ min: 0, max: 5 }),
+      year: fc.constantFrom('2015', '2020', '2026'),
+      reach: fc.integer({ min: 20, max: 1000000 }),
+      source: fc.constantFrom('manual' as const, 'csv' as const, 'live' as const, 'paste' as const, 'mock' as const),
+    }),
+    { maxLength: 40, selector: (x) => `${x.year}/${x.day}/${x.campaign}` },
+  )
+  .map((xs) => xs.map((x) => ({ ...row(x.day, x.campaign, x.reach, x.year), source: x.source })));
 
-describe('QA-08 — bất biến #7: incremental rollup == rebuild', () => {
-  it('200 chuỗi ngẫu nhiên add/update/remove, giữ đúng tổng theo kỳ', () => {
-    fc.assert(fc.property(fc.array(inputArb, { minLength: 1, maxLength: 50 }), (actions) => {
-      let incremental = buildRollups([]);
-      const state = new Map<string, DailyEntry>();
-      for (const action of actions) {
-        const next = entry(action);
-        const prev = state.get(next.id);
-        const added: DailyEntry[] = action.remove ? [] : [next];
-        const removed: DailyEntry[] = prev ? [prev] : [];
-        incremental = applyDelta(incremental, { added, removed });
-        if (action.remove) state.delete(next.id);
-        else state.set(next.id, next);
-        const direct = getSeries(incremental, { campaignId: 'all', grain: 'month', today: '2026-12-31' });
-        const current = direct.buckets.map(({ key, reach, clicks, cost, orders }) => ({ key, reach, clicks, cost, orders }));
-        expect(current).toEqual(compareSeries([...state.values()]));
-      }
-    }), { seed: 20261106, numRuns: 200 });
+beforeEach(async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-11-07T05:00:00Z'));
+  setStorageAdapter({
+    kind: 'memory',
+    load: async () => null,
+    save: async () => {},
+    clear: async () => {},
+    usage: async () => ({ usedBytes: 0, quotaBytes: 0 }),
   });
+  await useDataStore.getState().clearAll();
+  localStorage.clear();
+});
+afterEach(() => {
+  vi.clearAllTimers();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
-describe('QA-08 — bất biến #8: codec nhiều năm/nhiều chiến dịch', () => {
-  it('200 tập ngẫu nhiên codec roundtrip (bỏ timestamps)', () => {
-    fc.assert(fc.property(fc.array(inputArb, { minLength: 1, maxLength: 60 }), (actions) => {
-      const items = new Map<string, DailyEntry>();
-      for (const a of actions) {
-        const record = entry(a);
-        // Chia năm 2015 / 2020 / 2026, không đổi key một khi đã tạo.
-        const year = a.campaign % 3 === 0 ? '2015' : a.campaign % 3 === 1 ? '2020' : '2026';
-        record.date = `${year}${record.date.slice(4)}`;
-        record.id = `${record.campaignId}|${record.date}`;
-        items.set(record.id, record);
-      }
-      const state = persisted([...items.values()]);
-      const result = decodeState(encodeState(state));
-      expect(normalized(result.entries)).toEqual(normalized(state.entries));
-    }), { seed: 20261107, numRuns: 200 });
-  });
-});
-
-describe('QA-08 — bất biến #9: ghi lỗi bất kỳ bước nào', () => {
-  it('tiêm QuotaExceededError vào setItem: sau reload là trạng thái cũ hoặc mới, không trộn', async () => {
-    for (let failAt = 1; failAt <= 6; failAt++) {
-      const key = `qa08-2phase-${failAt}`;
-      const before = persisted([entry({ slot: 1, campaign: 0, reach: 100, clicksPct: 10, ordersPct: 50, costPerClick: 1000, remove: false })]);
-      const after = persisted([entry({ slot: 2, campaign: 1, reach: 200, clicksPct: 10, ordersPct: 50, costPerClick: 1000, remove: false })]);
-      const adapter = createLocalStorageAdapter(key);
-      await adapter.save(before);
-      const native = Storage.prototype.setItem;
-      let writes = 0;
-      const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, val: string) {
-        if (k.startsWith(key)) {
-          writes++;
-          if (writes === failAt) throw new DOMException('Simulated quota', 'QuotaExceededError');
+describe('QA-08 · 4 bất biến, mỗi bất biến 200 lượt seed cố định', () => {
+  it('#7/E50: add/update/remove/import/undo/remote giữ store = worker = incremental = rebuild sau từng thao tác', async () => {
+    const actionArb = fc.record({
+      kind: fc.constantFrom('add', 'update', 'remove', 'import', 'undo', 'remote'),
+      day: fc.integer({ min: 0, max: 5 }),
+      campaign: fc.integer({ min: 0, max: 2 }),
+      reach: fc.integer({ min: 20, max: 5000 }),
+    });
+    await fc.assert(
+      fc.asyncProperty(fc.array(actionArb, { maxLength: 20 }), async (randomActions) => {
+        await useDataStore.getState().clearAll();
+        useDataStore.setState({ revision: 1, campaigns: persisted([]).campaigns });
+        const engine = createAnalyticsEngine();
+        await engine.init([]);
+        let incremental = buildRollups([]);
+        const deltas: Array<{ delta: EntryDelta; revision: number }> = [];
+        const off = bus.on('entries/changed', (event) => {
+          deltas.push(event);
+        });
+        // Every run covers all six actions; then generated order explores interactions.
+        const prefix = ['add', 'update', 'remove', 'import', 'undo', 'remote'].map((kind) => ({
+          kind,
+          day: 0,
+          campaign: 0,
+          reach: kind === 'update' ? 246 : 123,
+        }));
+        try {
+          for (const action of [...prefix, ...randomActions]) {
+            const next = row(action.day, action.campaign, action.reach);
+            const current = useDataStore.getState();
+            const old = current.entries.find((entry) => entry.id === next.id);
+            if (action.kind === 'add') current.addEntries([next], 'overwrite');
+            if (action.kind === 'update' && old) current.updateEntry(old.id, { reach: action.reach });
+            if (action.kind === 'remove') current.removeEntries([next.id]);
+            if (action.kind === 'import') expect(current.importBatch([next], 'csv', 'overwrite').aborted).toBe(false);
+            if (action.kind === 'undo') current.undoLast();
+            if (action.kind === 'remote') applyRemoteDelta({ added: [next], removed: old ? [old] : [] });
+            for (const event of deltas.splice(0)) {
+              incremental = applyDelta(incremental, event.delta);
+              await engine.applyDelta(event.delta, event.revision);
+            }
+            const entries = useDataStore.getState().entries;
+            const rebuilt = buildRollups(entries);
+            const expected = checksum(entries);
+            expect(useDataStore.getState().checksum).toEqual(expected);
+            expect(getRollupChecksum(incremental)).toEqual(expected);
+            expect(getRollupChecksum(rebuilt)).toEqual(expected);
+            expect((await engine.snapshot(query)).checksum).toEqual(expected);
+            for (const grain of ['day', 'week', 'month', 'quarter'] satisfies Grain[])
+              expect(getSeries(incremental, { ...query, grain })).toEqual(getSeries(rebuilt, { ...query, grain }));
+          }
+        } finally {
+          off();
         }
-        return native.call(this, k, val);
-      });
-      try {
-        try { await adapter.save(after); } catch { /* Lỗi ghi được phép, dữ liệu không được hỏng. */ }
-      } finally { spy.mockRestore(); }
-      const afterReload = await createLocalStorageAdapter(key).load();
-      expect(afterReload, `failAt=${failAt}`).not.toBeNull();
-      const got = normalized(afterReload?.entries ?? []);
-      expect([normalized(before.entries), normalized(after.entries)], `failAt=${failAt}`).toContainEqual(got);
-      await createLocalStorageAdapter(key).clear();
-    }
-  });
-});
+        vi.clearAllTimers();
+      }),
+      options,
+    );
+  }, 60000);
 
-describe('QA-08 — bất biến #10: tổng của mỗi bucket là số nguyên an toàn', () => {
-  it('100 bộ dữ liệu tới giới hạn cost/reach vẫn không overflow', () => {
-    fc.assert(fc.property(fc.array(fc.record({
-      slot: fc.integer({ min: 0, max: 180 }),
-      reach: fc.integer({ min: 0, max: LIMITS.MAX_VALUE.reach }),
-      clicks: fc.integer({ min: 0, max: LIMITS.MAX_VALUE.clicks }),
-      cost: fc.integer({ min: 0, max: LIMITS.MAX_VALUE.cost }),
-      orders: fc.integer({ min: 0, max: LIMITS.MAX_VALUE.orders }),
-    }), { minLength: 1, maxLength: 75 }), (xs) => {
-      const entries = xs.map((x, i): DailyEntry => {
-        const date = addDays('2026-01-01', x.slot);
-        return { id: `camp-${i}|${date}`, campaignId: `camp-${i}`, date,
-          reach: x.reach, clicks: Math.min(x.clicks, x.reach), cost: x.cost,
-          orders: Math.min(x.orders, x.clicks, x.reach), source: 'mock', createdAt: 0, updatedAt: 0 };
-      });
-      const index = buildRollups(entries);
-      const series = getSeries(index, { campaignId: 'all', grain: 'quarter', today: '2026-12-31' });
-      const totals = { ...blank };
-      for (const bucket of series.buckets) {
-        for (const field of keys) {
-          expect(Number.isSafeInteger(bucket[field]), field).toBe(true);
-          totals[field] += bucket[field];
+  it('#8: partition thật giữ ngày, campaign, source và tổng qua nhiều năm, kể cả rỗng', () => {
+    fc.assert(
+      fc.property(rowsArb, (entries) => {
+        const campaigns = persisted(entries).campaigns;
+        const campIndex = new Map(campaigns.map((campaign, index) => [campaign.id, index]));
+        for (const year of ['2015', '2020', '2026']) {
+          const part = entries.filter((entry) => entry.date.startsWith(year));
+          const encoded = encodePartition(part, `${year}-01-01`, campIndex);
+          const decoded = decodePartition(encoded.payload, `${year}-01-01`, campaigns, 12345);
+          expect(business(decoded)).toEqual(business(part));
+          expect(encoded.rows).toBe(part.length);
+          const { reach, clicks, cost, orders } = checksum(part);
+          expect(encoded.sum).toEqual([reach, clicks, cost, orders]);
         }
-      }
-      for (const field of keys) {
-        expect(Number.isSafeInteger(totals[field]), field).toBe(true);
-        expect(totals[field]).toBe(entries.reduce((sum, e) => sum + e[field], 0));
-      }
-    }), { seed: 20261108, numRuns: 100 });
+      }),
+      options,
+    );
+  });
+
+  it('#9: quota ngẫu nhiên ở từng partition/manifest, reload chỉ nhận bản commit trước hoặc sau', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.integer({ min: 20, max: 100000 }), fc.integer({ min: 0, max: 4 }), async (reach, failAt) => {
+        localStorage.clear();
+        const key = 'qa08-atomic';
+        const before = persisted(['2015', '2020', '2026'].map((year) => row(0, 0, reach, year)));
+        const after = persisted(before.entries.map((entry) => ({ ...entry, reach: entry.reach + 7 })));
+        const adapter = createLocalStorageAdapter(key);
+        await adapter.save(before);
+        const native = Storage.prototype.setItem;
+        let writes = 0;
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+          this: Storage,
+          name: string,
+          value: string,
+        ) {
+          if (name.startsWith(key) && ++writes === failAt) throw new DOMException('QA quota', 'QuotaExceededError');
+          return native.call(this, name, value);
+        });
+        try {
+          await expect(adapter.save(after)).resolves.toBeUndefined();
+        } finally {
+          spy.mockRestore();
+        }
+        const loaded = await createLocalStorageAdapter(key).load();
+        expect(loaded).not.toBeNull();
+        expect([business(before.entries), business(after.entries)]).toContainEqual(business(loaded!.entries));
+        expect(business(loaded!.entries)).toEqual(business(failAt === 0 ? after.entries : before.entries));
+        if (failAt > 0) expect(writes).toBe(failAt);
+      }),
+      options,
+    );
+  });
+
+  it('#10: tổng mọi grain chính xác, không vượt số nguyên an toàn, kể cả cận LIMITS', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 1, max: 200 }), fc.integer({ min: 0, max: LIMITS.MAX_VALUE.cost }), (n, cost) => {
+        const entries = Array.from({ length: n }, (_, i) => ({
+          ...row(i % 5, Math.floor(i * 0.2), LIMITS.MAX_VALUE.reach),
+          clicks: LIMITS.MAX_VALUE.clicks,
+          orders: LIMITS.MAX_VALUE.orders,
+          cost,
+        }));
+        const index = buildRollups(entries);
+        for (const grain of ['day', 'week', 'month', 'quarter'] satisfies Grain[]) {
+          const buckets = getSeries(index, { ...query, grain }).buckets;
+          for (const metric of ['reach', 'clicks', 'cost', 'orders'] as const) {
+            expect(buckets.every((bucket) => Number.isSafeInteger(bucket[metric]))).toBe(true);
+            const total = buckets.reduce((sum, bucket) => sum + bucket[metric], 0);
+            expect(total).toBe(entries.reduce((sum, entry) => sum + entry[metric], 0));
+            expect(Number.isSafeInteger(LIMITS.MAX_ROWS_TOTAL * LIMITS.MAX_VALUE[metric])).toBe(true);
+          }
+        }
+      }),
+      options,
+    );
   });
 });
