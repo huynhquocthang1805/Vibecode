@@ -73,9 +73,9 @@ describe('AI-FIX-03 · Gemini gửi key qua header, lỗi upstream có mã + g�
 
   it('429 RESOURCE_EXHAUSTED → lỗi có mã + trạng thái Google, gợi ý "hết hạn mức"', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'Quota exceeded' } }, { status: 429 })));
-    const err = await new GeminiProvider({ apiKey: 'k', model: 'm' })
+    const err = (await new GeminiProvider({ apiKey: 'k', model: 'm' })
       .generateJson('s', 'u', {}, { timeoutMs: 1000, temperature: 0 })
-      .catch((e: unknown) => e as Error);
+      .catch((e: unknown) => e)) as Error;
     expect(err.message).toBe('PROVIDER_ERROR: Gemini API trả mã lỗi 429: RESOURCE_EXHAUSTED Quota exceeded');
     expect(providerHint(err.message)).toContain('hết hạn mức');
   });
