@@ -56,10 +56,5 @@ test('QA-08 E49: mất partition năm cũ vẫn mở trang, giữ năm lành và
   await expect(page.getByText('1 dòng', { exact: true })).toBeVisible();
   await expect(page.getByTestId('kpi-total-reach')).toContainText('2.000');
   test.fail(!process.env.QA_VERIFY_FIXES, 'BUG-QA08-06: lỗi partition khi hydration không tới banner người dùng');
-  await expect(
-    page
-      .getByRole('alert')
-      .filter({ hasText: /lưu|dữ liệu|2025/i })
-      .first(),
-  ).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: /2025/ }).first()).toBeVisible();
 });

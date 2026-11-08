@@ -35,6 +35,8 @@ async function deadline<T>(operation: Promise<T>, label: string, timeoutMs = 150
 async function run() {
   await mkdir(output, { recursive: true });
   const browser = await chromium.launch();
+  const lifecycle: Array<{ event: string; at: string }> = [];
+  browser.on('disconnected', () => lifecycle.push({ event: 'browser disconnected', at: new Date().toISOString() }));
   try {
     const results = await Promise.all(
       [50000, LIMITS.MAX_ROWS_TOTAL].map(async (count) => {
@@ -43,6 +45,7 @@ async function run() {
         const errors: string[] = [];
         const samplingErrors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));
+        page.on('crash', () => errors.push(`page crash at ${new Date().toISOString()}`));
         await context.addInitScript(`(() => {
         const commits = [];
         const durations = [];
@@ -100,11 +103,12 @@ async function run() {
               samples.push({ elapsedMs: performance.now() - start, usedHeap: heap.usedSize, commits });
             } catch (error: unknown) {
               samplingErrors.push(String(error));
+              if (!browser.isConnected() || page.isClosed()) throw error;
             }
             await writeFile(
               join(output, `${count}-progress.json`),
               JSON.stringify(
-                { count, durationMs, elapsedMs: performance.now() - start, samples, errors, samplingErrors },
+                { count, durationMs, elapsedMs: performance.now() - start, samples, errors, samplingErrors, lifecycle },
                 null,
                 2,
               ),
@@ -129,7 +133,6 @@ async function run() {
           const growth = safeDiv(finalHeap.usedSize - initialHeap.usedSize, initialHeap.usedSize);
           const reachAfter = Number((await page.getByTestId('kpi-total-reach').innerText()).replace(/\D/g, ''));
           expect(reachAfter).toBeGreaterThan(reachBefore);
-          await page.screenshot({ path: join(output, `${count}-end.png`), fullPage: true });
           const result = {
             count,
             durationMs,
@@ -149,9 +152,11 @@ async function run() {
             writes,
             errors,
             samplingErrors,
+            lifecycle,
             note: '50k and 200k run concurrently in separate guest contexts; GC only before/after; 15s warmup; no AI provider; Date advances.',
           };
           await writeFile(join(output, `${count}-result.json`), JSON.stringify(result, null, 2));
+          await page.screenshot({ path: join(output, `${count}-end.png`), fullPage: true });
           process.stdout.write(
             `${count}: ${JSON.stringify({ elapsedMs: result.elapsedMs, commitCount: result.commitCount, maxCommitGapMs: result.maxCommitGapMs, retainedGrowthRatio: growth, errors })}\n`,
           );
@@ -160,7 +165,7 @@ async function run() {
           errors.push(String(error));
           await writeFile(
             join(output, `${count}-failure.json`),
-            JSON.stringify({ count, durationMs, errors, samplingErrors }, null, 2),
+            JSON.stringify({ count, durationMs, errors, samplingErrors, lifecycle }, null, 2),
           );
           process.stderr.write(`${count}: ${String(error)}\n`);
           return { errors };

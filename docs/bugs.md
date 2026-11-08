@@ -38,3 +38,14 @@ Local production main `210b72f`; deploy chưa xác minh SHA. Năm lỗi integrat
 | BUG-QA08-06 | major | data-engineer + frontend-dashboard | Open | UI lưu 2025+2026; xoá partition 2025; reload | Giữ năm lành và banner báo năm bị mất/khôi phục backup | Form vẫn hiện, KPI 2026 đúng, nhưng không có alert. 2 viewport local + deploy đều tái hiện. `qa08-chaos.spec.ts`; health event lúc hydrate chưa đến banner. |
 
 Artifact E2E: `test-results/qa08-chaos-local-final/`, `test-results/qa08-chaos-deploy/` (trace/error-context, ignored). Dữ liệu guest, AI stub, không chạm tài khoản người dùng. Worker/lock ở integration là doubles có kiểm soát; E2E dùng browser thật để kiểm chứng luồng UI/cross-tab.
+
+### Retest và hiệu năng QA-08, 2026-11-08
+
+Đồng bộ main `1d0c019` sau review PR47, fixture property đặt hydrated=true để kiểm remote delta thật. Production build xanh; kết quả cuối trong test-report.md. BUG-QA08-04 ghi nhận snapshot reject không retry; không suy diễn thành trắng trang (hook useAnalytics có nhánh giữ lỗi); techlead/data chốt chính sách retry cho RPC reject ngoài onerror/timeout.
+
+| ID | Mức | Owner | Trạng thái | Bước tái hiện | Kỳ vọng | Thực tế / bằng chứng |
+|---|---|---|---|---|---|---|
+| BUG-QA08-07 | minor (P1) | data-engineer + frontend-dashboard | Open | `qa08-scale.ts`, production, 50k/200k, 5 mẫu median, range toàn bộ | docs/13 §9: startup 1.2/4s, update 100/300ms, storage CPU 30/60ms, live snapshot 5/10ms | 50k startup 1770ms; update 248/2807ms; storage CPU 97.68/4078.78ms; cache-hit snapshot 104.6/501.6ms. CSV Long Task 96/393ms tiếp tục BUG-QA05-02. Storage đọc lại đủ dữ liệu; không kết luận mất dữ liệu chỉ từ chậm. Chi tiết/mẫu thô/giới hạn ở perf-report.md. |
+| BUG-QA08-08 | major | data-engineer + frontend-dashboard | Open; cần retest từng mức độc lập | `qa08-live.ts`: Live ×60, full range, 2 contexts 50k/200k đồng thời, hơn 10 phút mỗi mức | E48 commit ≤2000ms, frame còn phản hồi, heap ổn định | 200k chỉ 3 commit, gap 511524ms, reach tăng; heap sau GC 81.27→251.36MB (+209.29%). 50k có 21 timeout heap, cuối lượt JS timeout15s, không lấy được heap cuối. 0 pageerror/disconnect, không gọi đây là browser crash hoặc memory leak đã chứng minh. Stress có cạnh tranh CPU/I/O; xem artifact live-1108 và giới hạn trong perf-report. |
+
+Retest 08/11 local/deploy (production main 1d0c019 ở local): 6 functional pass +2 expected E49 mỗi môi trường; artifacts `test-results/qa08-{local,deploy}-1108/`. `npm run check` xanh 4256 pass +6 expected fail, gồm 5 bug QA-08 integration và 1 bug API cũ; không phải toàn bộ yêu cầu chống mất dữ liệu đã đạt.

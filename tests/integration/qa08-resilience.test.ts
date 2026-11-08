@@ -58,7 +58,7 @@ describe('QA-08 · 4 bất biến, mỗi bất biến 200 lượt seed cố đ�
     await fc.assert(
       fc.asyncProperty(fc.array(actionArb, { maxLength: 20 }), async (randomActions) => {
         await useDataStore.getState().clearAll();
-        useDataStore.setState({ revision: 1, campaigns: persisted([]).campaigns });
+        useDataStore.setState({ revision: 1, campaigns: persisted([]).campaigns, hydrated: true });
         const engine = createAnalyticsEngine();
         await engine.init([]);
         let incremental = buildRollups([]);

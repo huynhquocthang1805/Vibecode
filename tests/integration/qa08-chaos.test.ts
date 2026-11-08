@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { generate } from '../../scripts/gen-mock';
 import { bus } from '@/lib/data/realtime/bus';
 import { createLocalStorageAdapter } from '@/lib/data/storage/localStorageAdapter';
 import type { ManifestPayload } from '@/lib/data/storage/partitionCodec';
 import { setStorageAdapter, useDataStore } from '@/lib/data/store';
 import { LIMITS } from '@/types/domain';
 
+import { generate } from '../../scripts/gen-mock';
 import { business, checksum, persisted, QA_TODAY, row } from './qa08-fixtures';
 
 beforeEach(async () => {
