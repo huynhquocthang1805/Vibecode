@@ -81,7 +81,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FD-04 | GrainSwitcher + ForecastPanel + vùng dự báo trên biểu đồ | frontend-dashboard | Trường | P1 | FC-06, DATA-06 |
 | [x] (runner + báo cáo **mock** — chưa chạy Gemini thật, xem AI-10) | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
 | [x] (8 fixture do Hoàng Anh làm trong AI-09 PR #25 theo đặc tả của Nhân; Nhân rà nội dung) | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
-| [ ] (runner đã sẵn sàng sau TL-06c — chỉ còn thiếu key; ai có key chạy 1 lệnh) | AI-10 | Chạy `npm run eval:ai` với **Gemini thật** (Thắng cấp `AI_API_KEY`, `AI_MODEL=gemini-flash-latest`) sau TL-06c; commit `docs/ai-eval-report.md` thật; kiểm tra 8 kịch bản qua guardrail | ai-engineer | Hoàng Anh | P0 | TL-06b |
+| [ ] (2026-11-08: key đã gắn nhưng Gemini trả 429 RESOURCE_EXHAUSTED — chờ Thắng đổi AI_MODEL/bật billing, xem docs/STATUS.md) | AI-10 | Chạy `npm run eval:ai` với **Gemini thật** (Thắng cấp `AI_API_KEY`, `AI_MODEL=gemini-flash-latest`) sau TL-06c; commit `docs/ai-eval-report.md` thật; kiểm tra 8 kịch bản qua guardrail | ai-engineer | Hoàng Anh | P0 | TL-06b |
 | [x] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
 | [x] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |
 | [x] | QA-03 | Test API + guardrails với provider giả (8 lỗi) | qa-engineer | Nhân | P1 | AI-04 |
@@ -129,16 +129,19 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | FD-11 | Kiểm thử UI/UX bằng ảnh (desktop/mobile): gọn log kiểm định AI (bỏ số thô, chữ 9px), dự báo biểu đồ ≤ ½ số ngày + 1 dải tin cậy, bất thường 4 dòng + Xem thêm + chip %, dải "Bắt đầu nhanh" khi trống, thanh công cụ mobile 2 hàng, ẩn nút đăng nhập khi server chưa bật (hết 503) | techlead (phần frontend) | Thắng+Claude | P1 | FD-08 |
 | [x] | DATA-12 | Bộ dữ liệu test 8 tình huống (sinh có seed, tính lùi từ hôm nay): tăng trưởng, CPA vọt, CTR giảm, cuối tuần, flash sale, 3 chiến dịch × 2 năm, 50.000 dòng, file có lỗi — "Dùng ngay" / "Tải CSV" trong tab Dữ liệu | techlead | Thắng+Claude | P1 | DATA-07 |
 | [ ] | DATA-FIX-04 | Thông báo lỗi nhập liệu dùng tên trường tiếng Anh ("Vui lòng nhập cost", "reach không được âm", "clicks phải là số nguyên") → đổi sang nhãn tiếng Việt từ `METRIC_META` (Chi phí, Lượt tiếp cận, Lượt click) | data-engineer | Huy | P1 | DATA-01 |
+| [x] | AI-FIX-03 | Lỗi Gemini trên deploy bị nuốt (502 chung chung, không log): key qua header `x-goog-api-key`, message có mã + gợi ý (429/400/403/404/5xx), `console.error` ở server — lộ ra nguyên nhân 429 RESOURCE_EXHAUSTED | techlead (phần ai-engineer) | Thắng+Claude | P0 | AI-03 |
+| [ ] | DATA-FIX-05 | Sửa lỗi QA-08 (major): BUG-QA08-01 mất manifest → quét partition khôi phục · 02 partition thiếu cột → cách ly năm hỏng, không throw · 03 2 adapter ghi đè nhau (merge theo generation) · 04 snapshot reject → supervisor restart + retry 1 lần · 05 fallback main-thread mất dòng thêm sau init rỗng · 06 banner báo năm bị mất khi hydrate. Đổi `it.fails`/`test.fail` ở `tests/integration/qa08-*.test.ts`, `tests/e2e/qa08-chaos.spec.ts` thành test thường | data-engineer (+ frontend-dashboard cho 06) | Huy (+ Trường) | P1 | QA-08 |
+| [ ] | DATA-PERF-01 | Hiệu năng QA-08: BUG-QA08-07 (50k startup 1,77 s > 1,2 s; update 200k 2,8 s) · BUG-QA08-08 (Live ×60 với 200k: commit thưa, heap +209%) — đo lại từng mức độc lập trước khi sửa | data-engineer | Huy | P1 | QA-08 |
 | [x] | QA-04 | 8 E2E Playwright (cả mobile, cả trên deploy) | qa-engineer | Nhân | P0* | G1 |
 | [x] | QA-06 | Phiên test vai Marketer + `docs/bugs.md` | qa-engineer | Nhân | P0* | G1 |
 | [x] | QA-07 | Kiểm tra bảo mật nhanh | qa-engineer | Nhân | P0* | G1 |
 | [ ] | TL-08 | Tài liệu kiến trúc cuối + **Gate G3** | techlead | Thắng+Claude | P0* | — |
 | [~] | PM-01 | Duy trì TASKS + `docs/STATUS.md` hằng ngày | pm-release | Thắng+Claude | P0 | — |
-| [ ] | PM-02 | README đầy đủ | pm-release | Thắng+Claude | P0 | G1 |
-| [ ] | PM-03 | Deploy production + smoke test | pm-release | Thắng+Claude | P0 | G3 |
-| [ ] | PM-04 | Tổng hợp `docs/11_AI_USAGE_LOG.md` (bằng chứng vibe coding) | pm-release | Thắng+Claude | P0 | — |
-| [ ] | PM-05 | Kịch bản demo + video + slide | pm-release | Thắng+Claude | P0 | G3 |
-| [ ] | PM-06 | Bộ 20 câu hỏi phản biện + đáp án | pm-release | Thắng+Claude | P0 | G2 |
-| [ ] | PM-07 | Checklist nộp bài | pm-release | Thắng+Claude | P0 | PM-03 |
+| [x] | PM-02 | README đầy đủ | pm-release | Thắng+Claude | P0 | G1 |
+| [~] (smoke deploy 2026-11-08 — chờ AI thật hết 429 để chạy lại lần cuối) | PM-03 | Deploy production + smoke test | pm-release | Thắng+Claude | P0 | G3 |
+| [x] | PM-04 | Tổng hợp `docs/11_AI_USAGE_LOG.md` (bằng chứng vibe coding) | pm-release | Thắng+Claude | P0 | — |
+| [~] (kịch bản + dàn ý slide xong `docs/12` — còn quay video + làm slide: Thắng) | PM-05 | Kịch bản demo + video + slide | pm-release | Thắng+Claude | P0 | G3 |
+| [x] | PM-06 | Bộ 20 câu hỏi phản biện + đáp án | pm-release | Thắng+Claude | P0 | G2 |
+| [x] | PM-07 | Checklist nộp bài | pm-release | Thắng+Claude | P0 | PM-03 |
 
 `P0*` = bắt buộc cho điểm kiểm thử/bàn giao dù nằm ở wave cuối.
