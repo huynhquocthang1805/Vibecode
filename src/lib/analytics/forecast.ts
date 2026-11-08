@@ -1,5 +1,5 @@
 import { addDays } from '@/lib/domain/dates';
-import type { BaseMetric, ISODate, MetricForecast, Series } from '@/types/domain';
+import { LIMITS, type BaseMetric, type ISODate, type MetricForecast, type Series } from '@/types/domain';
 
 import { FORECAST_CONFIG as CFG } from './forecastConfig';
 import { forecastPoint } from './intervals';
@@ -28,7 +28,10 @@ export function forecastMetric(daily: number[], dates: ISODate[], metric: BaseMe
   const raw = prepareDaily(daily, dates);
   if (horizon === 0 || raw.observed.filter(Boolean).length < CFG.minDays) return empty;
   // FC-10 (docs/13 §5): bỏ 0 đầu chuỗi, chỉ fit đoạn sau khoảng trống > 28 ngày, winsorize ngày gõ nhầm.
-  const robust = robustSeries(daily, dates);
+  // Review FC-10: robust chỉ trên cửa sổ fit 365 ngày (docs/04 §3) — lịch sử cũ hơn không ảnh hưởng ngưỡng kẹp
+  const windowStart = addDays(dates[dates.length - 1]!, 1 - LIMITS.FORECAST_WINDOW_DAYS);
+  const from = dates.findIndex((d) => d >= windowStart);
+  const robust = robustSeries(daily.slice(from), dates.slice(from));
   if (robust.values.length < CFG.minDays) {
     // Đoạn dùng được quá ngắn → baseline naive trên đoạn đó (không bỏ trống, không fit mô hình phức tạp)
     const tail = prepareDaily(robust.values, robust.dates);

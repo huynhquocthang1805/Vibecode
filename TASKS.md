@@ -82,7 +82,7 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] (runner + báo cáo **mock** — chưa chạy Gemini thật, xem AI-10) | AI-09 | `scripts/eval-ai.ts` + `docs/ai-eval-report.md` | ai-engineer | Hoàng Anh | P1 | BA-06 |
 | [x] (8 fixture do Hoàng Anh làm trong AI-09 PR #25 theo đặc tả của Nhân; Nhân rà nội dung) | BA-06 | 8 kịch bản eval AI `src/fixtures/ai-eval/` | ba-analyst | Nhân | P1 | BA-03 |
 | [ ] (runner đã sẵn sàng sau TL-06c — chỉ còn thiếu key; ai có key chạy 1 lệnh) | AI-10 | Chạy `npm run eval:ai` với **Gemini thật** (Thắng cấp `AI_API_KEY`, `AI_MODEL=gemini-flash-latest`) sau TL-06c; commit `docs/ai-eval-report.md` thật; kiểm tra 8 kịch bản qua guardrail | ai-engineer | Hoàng Anh | P0 | TL-06b |
-| [ ] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
+| [x] | BA-07 | Glossary + tooltip + microcopy UI | ba-analyst | Nhân | P1 | — |
 | [x] | QA-02 | Integration store↔storage↔worker, migrate, corrupt, quota | qa-engineer | Nhân | P1 | DATA-06 |
 | [x] | QA-03 | Test API + guardrails với provider giả (8 lỗi) | qa-engineer | Nhân | P1 | AI-04 |
 | [x] | QA-05 | Perf benchmark + `docs/perf-report.md` | qa-engineer | Nhân | P1 | DATA-06, FC-04 |
@@ -108,12 +108,13 @@ Owner bảng: `pm-release` (Thắng + Claude). **Chỉ PM / Claude review bot s�
 | [x] | DATA-FIX-03 | Sửa BUG-QA02-01 (store crash khi getter localStorage ném SecurityError) · BUG-QA04-03 (Live x60: debounce snapshot bị reset → cần throttle/maxWait) · phần data của BUG-QA04-02 (horizon bù khoảng dòng cuối → hôm nay). Test `it.fails`/`test.fail` có sẵn — sửa xong đổi thành test thường (docs/bugs.md) | data-engineer | Huy | P1 | QA-02, QA-04 |
 | [ ] | AI-FIX-02 | Sửa BUG-QA03-01: lỗi 413 PAYLOAD_TOO_LARGE phải kèm `fallback` (docs/05 §1); đổi `it.fails` trong `tests/integration/insights-api.test.ts` thành `it` | ai-engineer | Hoàng Anh | P1 | QA-03 |
 | [x] | TL-06d | Sửa BUG-QA04-01: gọi `startCrossTabSync()` trong vòng đời trang (DashboardPage) để tab B nhận dòng tab A nhập; bỏ `test.fail` ở `tests/e2e/crosstab.spec.ts` | techlead | Thắng+Claude | P1 | DATA-08 |
+| [x] | REVIEW-QA04-FC10 | Retest BUG-QA04-01 trên deploy → Closed · review vai Huy: delta từ tab khác tới trước hydrate phải xếp hàng (không ghi đè) · review vai Thắng 2: winsorize theo cùng thứ, chỉ kẹp đỉnh đơn lẻ, robust chỉ trong cửa sổ 365 ngày | techlead | Thắng+Claude | P1 | TL-06d, FC-10 |
 | [x] | ACC-FIX-01 | `lib/server/auth.ts` tạo `betterAuth()` lúc import → `npm run build` in `BetterAuthError: default secret` + cảnh báo baseURL khi chưa cấu hình (docs/14 §1.2 yêu cầu im lặng, 503). Khởi tạo lười (chỉ khi `accountConfigured()`), giữ `export const auth` qua getter/CR | data-engineer | Huy | P1 | ACC-02 |
 | [x] | ACC-FIX-02 | `npm run db:migrate` hỏng (drizzle.config thiếu `dbCredentials`) → Neon không có bảng, đăng ký lỗi 500. `npm run build` tự migrate qua `scripts/db-migrate.mjs` (neon-http, idempotent, bỏ qua khi không có DB) | techlead | Thắng+Claude | P1 | ACC-06 |
 | [x] | ACC-08b | Sau review PR #36: "Gửi lại mã" bắt lỗi mạng; nhắc bấm Gửi lại mã khi đăng ký lại email chưa xác nhận | techlead | Thắng+Claude | P1 | ACC-08 |
 | [x] | ACC-FIX-03 | Mở web qua địa chỉ deploy Vercel → đăng ký 403 "Invalid origin": `trustedOrigins` thêm đúng `VERCEL_URL`/`VERCEL_BRANCH_URL`/`VERCEL_PROJECT_PRODUCTION_URL` (không wildcard) | techlead | Thắng+Claude | P1 | ACC-02 |
 | [x] | ACC-08 | Xác nhận đăng ký bằng **mã 6 số gửi Gmail** (emailOTP, 10 phút, 5 lần sai, lưu băm), bước nhập mã trong AuthDialog, gửi lại mã, log lỗi SMTP có gợi ý (docs/14 §8) | techlead (phần data-engineer) | Thắng+Claude | P1 | ACC-05 |
-| [ ] (code đã sẵn sàng — luồng tài khoản 18/18 với DB thật PGlite; chỉ còn thao tác Vercel, xem handoffs/ACC-FIX-02.md) | ACC-07 | Bật trên Vercel: tạo Neon (Storage → Neon, tự đặt `DATABASE_URL`), đặt `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` → Redeploy (build tự migrate) | techlead | Thắng | P1 | ACC-FIX-02 |
+| [x] | ACC-07 | (Đã bật 2026-11-07: deploy trả 401 thay 503 ở `/api/account/profile`) Bật trên Vercel: tạo Neon (Storage → Neon, tự đặt `DATABASE_URL`), đặt `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` → Redeploy (build tự migrate) | techlead | Thắng | P1 | ACC-FIX-02 |
 
 ## Wave 5 — P2 (Realtime nâng cao) + Hardening + Release
 | | ID | Task | Owner | Người | P | Phụ thuộc |
